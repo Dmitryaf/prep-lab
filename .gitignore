@@ -1,0 +1,6 @@
+artifacts/
+lab/data/
+lab/.data/
+node_modules/
+*.sqlite-wal
+*.sqlite-shm
