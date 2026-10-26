@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
-import { mkdir } from 'node:fs/promises';
+import { mkdir, readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { topics } from '../dist/data.js';
+import { selectQuestionReview } from '../dist/preparation.js';
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 let testServer;
@@ -19,6 +20,9 @@ page.on('pageerror', e => errors.push(e.message));
 await mkdir('artifacts', { recursive: true });
 try {
   await page.goto(base);
+  const legacy = { 'tr-purpose': { status: 'done', updatedAt: '2026-10-26' } };
+  await page.evaluate(value => localStorage.setItem('project-map-review-v1', JSON.stringify(value)), legacy);
+  await page.reload();
   await page.getByRole('button', { name: /Inbox Point.*тем/ }).click();
   await page.locator('[data-action=mode][data-mode=topics]').click();
   await page.locator('#inlineSearch').fill('React');
@@ -26,20 +30,70 @@ try {
   await page.locator('.topic-row').first().click();
   await page.getByRole('button', { name: '✓ Могу объяснить', exact: true }).click();
   await page.getByRole('button', { name: 'Закрыть разбор' }).click();
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-review-v1')));
-  assert(Object.values(saved).some(v => v.status === 'done'));
+  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-review-v2')));
+  assert(Object.values(saved.progress).some(v => v.status === 'done'));
+  assert.deepEqual(saved.progress['tr-purpose'], legacy['tr-purpose']);
+  assert.deepEqual(saved.questionProgress, {});
+  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-review-v1'))), legacy);
   const downloadEvent = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Скачать прогресс ↓' }).click();
   const download = await downloadEvent;
   const downloaded = await download.path();
-  await page.evaluate(() => localStorage.removeItem('project-map-review-v1'));
+  await page.evaluate(() => localStorage.removeItem('project-map-review-v2'));
   await page.reload();
   await page.locator('#importProgress').setInputFiles(downloaded);
   await page.getByRole('status').filter({ hasText: 'Прогресс восстановлен' }).waitFor();
-  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-review-v1'))), saved);
+  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-review-v2'))), saved);
   await page.locator('#importProgress').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{"version":1,"progress":[]}') });
   await page.getByRole('status').filter({ hasText: 'Не удалось прочитать' }).waitFor();
-  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-review-v1'))), saved);
+  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-review-v2'))), saved);
+  await page.locator('.top-review-btn').click();
+  await page.locator('[data-action=review-filter][data-id=all]').click();
+  await page.locator('[data-action=review-scope][data-id=both]').click();
+  const allQuestions = selectQuestionReview(topics, {}, { scope: 'both', filter: 'all' });
+  assert((await page.locator('.practice-meta').innerText()).includes(`из ${allQuestions.length}`));
+  for (const card of allQuestions) {
+    assert.equal(await page.locator('.review-card h2').innerText(), card.question);
+    await page.keyboard.press('ArrowRight');
+  }
+  await page.locator('[data-action=review-mode][data-id=quick]').click();
+  assert((await page.locator('.practice-meta').innerText()).includes(`из ${topics.length}`));
+  await page.locator('[data-action=review-mode][data-id=full]').click();
+  await page.keyboard.press('Space');
+  await page.keyboard.press('1');
+  assert.equal(await page.locator('.review-card h2').innerText(), allQuestions[1].question);
+  await page.keyboard.press('Space');
+  await page.keyboard.press('2');
+  assert.equal(await page.locator('.review-card h2').innerText(), allQuestions[2].question);
+  const withQuestions = await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-review-v2')));
+  assert.equal(withQuestions.questionProgress[allQuestions[0].id].status, 'again');
+  assert.equal(withQuestions.questionProgress[allQuestions[1].id].status, 'done');
+  assert.deepEqual(withQuestions.progress, saved.progress);
+  await page.reload();
+  const secondDownloadEvent = page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Скачать прогресс ↓' }).click();
+  const secondDownload = await secondDownloadEvent;
+  await page.evaluate(() => localStorage.removeItem('project-map-review-v2'));
+  await page.reload();
+  await page.locator('#importProgress').setInputFiles(await secondDownload.path());
+  await page.getByRole('status').filter({ hasText: 'Прогресс восстановлен' }).waitFor();
+  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-review-v2'))), withQuestions);
+  await page.locator('#importProgress').setInputFiles({ name: 'legacy.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ version: 1, progress: legacy })) });
+  await page.getByRole('status').filter({ hasText: 'Прогресс восстановлен' }).waitFor();
+  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-review-v2'))), withQuestions);
+  await page.locator('#importProgress').setInputFiles({ name: 'bad-v2.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ version: 2, progress: { 'tr-purpose': { status: 'again' } }, questionProgress: [] })) });
+  await page.getByRole('status').filter({ hasText: 'Не удалось прочитать' }).waitFor();
+  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-review-v2'))), withQuestions);
+  await page.evaluate(() => { Storage.prototype.setItem = () => { throw new DOMException('Quota exceeded', 'QuotaExceededError'); }; });
+  await page.locator('#importProgress').setInputFiles({ name: 'valid-v2.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ version: 2, progress: { 'tr-purpose': { status: 'again' } }, questionProgress: {} })) });
+  await page.getByRole('status').filter({ hasText: 'Не удалось сохранить прогресс' }).waitFor();
+  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-review-v2'))), withQuestions);
+  const unchangedExportEvent=page.waitForEvent('download');
+  await page.getByRole('button', { name: 'Скачать прогресс ↓' }).click();
+  const unchangedExport=JSON.parse(await readFile(await (await unchangedExportEvent).path(),'utf8'));
+  assert.deepEqual(unchangedExport.progress,withQuestions.progress);
+  assert.deepEqual(unchangedExport.questionProgress,withQuestions.questionProgress);
+  await page.reload();
   await page.locator('.top-review-btn').click();
   await page.getByRole('button', { name: '40 минут · один проект', exact: true }).click();
   await page.keyboard.press('Space');
@@ -54,6 +108,11 @@ try {
   assert.equal(await page.locator('.review-answer').count(),0);
   await page.keyboard.press('Space');
   assert((await page.locator('.review-answer').textContent()).length>100);
+  const beforeStory=await page.evaluate(()=>JSON.parse(localStorage.getItem('project-map-review-v2')));
+  await page.keyboard.press('2');
+  const afterStory=await page.evaluate(()=>JSON.parse(localStorage.getItem('project-map-review-v2')));
+  assert.deepEqual(afterStory.questionProgress,beforeStory.questionProgress);
+  assert(Object.keys(afterStory.progress).some(id=>id.startsWith('ln-')));
   const commercial = page.locator('[data-action="project"][data-project="lanit"]');
   if (await commercial.count()) {
     await commercial.click();
@@ -94,17 +153,32 @@ try {
     await page.locator('.interview-answer .further>summary').first().click();
     assert(await page.getByRole('heading',{name:'Пример из проекта',exact:true}).first().isVisible());
     assert.equal(await page.getByText('Учебная реализация сейчас',{exact:true}).count(),0);
+    if(['ln-registration','tr-merge'].includes(topic.id)){
+      const full=page.locator('details.code-full');
+      assert.equal(await full.getAttribute('open'),null);
+      assert.equal(await full.locator('.code-step').first().isVisible(),false);
+      await full.locator('summary').focus();
+      await page.keyboard.press('Enter');
+      assert.equal(await full.locator('.code-step').count(),topic.pilot.code.steps.length);
+      assert(await full.locator('.code-step').last().isVisible());
+    }
     if(topic.id==='ln-registration'){
       await page.locator('.local-settings>summary').click();
       await page.locator('#sourceRoot').fill('C:\\Study\\cokr');
+      const firstCodeIndex=Number(await page.locator('[data-action=copy-source]').first().getAttribute('data-index'));
       await page.locator('[data-action=copy-source]').first().click();
       const copied=await page.evaluate(()=>navigator.clipboard.readText());
       assert(copied.startsWith('C:\\Study\\cokr\\'));
-      assert(copied.includes(topic.pilot.code.steps[0].symbol));
+      assert(copied.includes(topic.pilot.code.steps[firstCodeIndex].symbol));
+      const lastStep=topic.pilot.code.steps.at(-1);
+      await page.locator('details.code-full [data-action=copy-source]').last().click();
+      const copiedLast=await page.evaluate(()=>navigator.clipboard.readText());
+      assert(copiedLast.includes(lastStep.symbol));
+      assert(copiedLast.includes(`:${lastStep.line}`));
       await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('denied');}}}));
       await page.locator('[data-action=copy-source]').first().click();
       assert(await page.locator('#sourceReference').isVisible());
-      assert((await page.locator('#sourceReference').inputValue()).includes(topic.pilot.code.steps[0].symbol));
+      assert((await page.locator('#sourceReference').inputValue()).includes(topic.pilot.code.steps[firstCodeIndex].symbol));
     }else if(topic.project!=='lanit'){
       const href=await page.locator('.code-step a').first().getAttribute('href');
       assert(href.includes(topic.pilot.sourceRevision)&&/#L[0-9]+$/.test(href));
@@ -124,7 +198,13 @@ try {
   await page.locator('.code-step').first().scrollIntoViewIfNeeded();
   assert(await page.locator('#details').evaluate(el=>el.scrollWidth<=el.clientWidth));
   await page.screenshot({path:'artifacts/topic-code-mobile.png',animations:'disabled'});
+  await page.evaluate(()=>localStorage.setItem('project-map-review-v2','{broken'));
+  await page.goto(base);
+  await page.getByRole('alert').filter({hasText:'прогресс недоступен'}).waitFor();
+  await page.goto(base+'/#topic=ln-registration');
+  await page.getByRole('button',{name:'✓ Могу объяснить',exact:true}).click();
+  assert.equal(await page.evaluate(()=>localStorage.getItem('project-map-review-v2')),'{broken');
   assert.deepEqual(errors, []);
-  console.log('PASS map browser: original progress/search/routes/review; all 47 four-block topics, hidden answers, real-code links, clipboard fallback, desktop/mobile');
+  console.log(`PASS map browser: v1/v2 progress, all ${allQuestions.length} review questions, quick mode, atomic import failures; ${topics.length} four-block topics, collapsed code, links, clipboard fallback, desktop/mobile`);
 } catch(error){await page.screenshot({path:'artifacts/map-failure.png'});console.error('Browser errors:',errors);throw error;}
 finally { await browser.close(); if(testServer)await new Promise(resolve=>testServer.close(resolve)); }
