@@ -6,8 +6,8 @@ const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 let testServer;
 if(!process.env.MAP_URL){
-  const {createServer}=await import('../lab/server.mjs');
-  testServer=createServer().server;
+  const {createServer}=await import('./serve.mjs');
+  testServer=createServer();
   await new Promise(resolve=>testServer.listen(0,'127.0.0.1',resolve));
 }
 const base = process.env.MAP_URL || `http://127.0.0.1:${testServer.address().port}`;
@@ -20,7 +20,7 @@ await mkdir('artifacts', { recursive: true });
 try {
   await page.goto(base);
   await page.getByRole('button', { name: /Inbox Point.*тем/ }).click();
-  await page.getByRole('button', { name: /Все темы/ }).click();
+  await page.locator('[data-action=mode][data-mode=topics]').click();
   await page.locator('#inlineSearch').fill('React');
   assert(await page.locator('.topic-row').count() > 0);
   await page.locator('.topic-row').first().click();
@@ -49,12 +49,17 @@ try {
   assert.equal(await page.getByRole('button', { name: /Открыть разбор и исходники/ }).count(), 0);
   await page.keyboard.press('Space');
   assert.equal(await page.getByRole('button', { name: /Открыть разбор и исходники/ }).count(), 1);
+  await page.getByRole('button', {name:'10 минут · истории',exact:true}).click();
+  await page.getByRole('heading', {name:'Расскажите о задаче, своём вкладе и результате.',exact:true}).waitFor();
+  assert.equal(await page.locator('.review-answer').count(),0);
+  await page.keyboard.press('Space');
+  assert((await page.locator('.review-answer').textContent()).length>100);
   const commercial = page.locator('[data-action="project"][data-project="lanit"]');
   if (await commercial.count()) {
     await commercial.click();
-    await page.getByRole('button', { name: 'Карта проекта', exact: false }).click();
+    await page.locator('[data-action=mode][data-mode=map]').click();
     await page.getByRole('button', { name: 'Начать маршрут ↗' }).click();
-    await page.locator('.story-boundaries').waitFor();
+    await page.locator('.interview-question').first().waitFor();
     await page.getByRole('button', { name: 'Следующий шаг →', exact: true }).click();
     await page.getByRole('button', { name: 'Закрыть разбор' }).click();
   }
@@ -62,9 +67,11 @@ try {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.locator('#mobileMenu').click();
   await page.locator('[data-action="project"][data-project="inbox"]').click();
+  await page.locator('#mobileMenu').click();
+  await page.locator('[data-action=mode][data-mode=map]').click();
   await page.getByRole('button', { name: 'Начать маршрут ↗' }).click();
-  await page.getByRole('button', { name: 'Показать ориентир', exact: true }).click();
-  assert(await page.locator('#details .answer').isVisible());
+  await page.locator('.interview-question>summary').first().click();
+  assert(await page.locator('.interview-answer').first().isVisible());
   await page.screenshot({ path: 'artifacts/map-mobile.png', animations: 'disabled' });
   assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await page.keyboard.press('Escape');
@@ -72,14 +79,52 @@ try {
   await page.locator('#searchInput').fill('Inbox Point');
   assert(await page.locator('.search-result').count() > 0);
   await page.keyboard.press('Escape');
-  for(const path of new Set(topics.flatMap(t=>(t.code||[]).map(([path])=>path)))){
-    const response=await context.request.get(base+'/source/'+path);
-    assert.equal(response.status(),200,path);
-    assert.match(response.headers()['content-type'],/text\/plain/);
-    assert((await response.text()).length>20,path);
+  await page.setViewportSize({width:1440,height:1000});
+  await context.grantPermissions(['clipboard-read','clipboard-write']);
+  for(const topic of topics.filter(t=>t.pilot)){
+    await page.goto(base+'/#topic='+topic.id);
+    await page.locator('.topic-sections').waitFor();
+    assert.equal(await page.locator('.topic-sections>section').count(),4);
+    assert.deepEqual(await page.locator('.topic-sections>section>h3').allTextContents(),['Как это работает','Что нужно изучить','Вопросы на собеседовании','Реализация в коде']);
+    assert.equal(await page.locator('.interview-question[open]').count(),0);
+    assert.equal(await page.locator('.interview-answer').first().isVisible(),false);
+    await page.locator('.interview-question>summary').first().focus();
+    await page.keyboard.press('Enter');
+    assert(await page.locator('.interview-answer').first().isVisible());
+    await page.locator('.interview-answer .further>summary').first().click();
+    assert(await page.getByRole('heading',{name:'Пример из проекта',exact:true}).first().isVisible());
+    assert.equal(await page.getByText('Учебная реализация сейчас',{exact:true}).count(),0);
+    if(topic.id==='ln-registration'){
+      await page.locator('.local-settings>summary').click();
+      await page.locator('#sourceRoot').fill('C:\\Study\\cokr');
+      await page.locator('[data-action=copy-source]').first().click();
+      const copied=await page.evaluate(()=>navigator.clipboard.readText());
+      assert(copied.startsWith('C:\\Study\\cokr\\'));
+      assert(copied.includes(topic.pilot.code.steps[0].symbol));
+      await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('denied');}}}));
+      await page.locator('[data-action=copy-source]').first().click();
+      assert(await page.locator('#sourceReference').isVisible());
+      assert((await page.locator('#sourceReference').inputValue()).includes(topic.pilot.code.steps[0].symbol));
+    }else if(topic.project!=='lanit'){
+      const href=await page.locator('.code-step a').first().getAttribute('href');
+      assert(href.includes(topic.pilot.sourceRevision)&&/#L[0-9]+$/.test(href));
+    }
+    await page.locator('#details').evaluate(el=>el.scrollTop=0);
+    if(['ln-registration','tr-merge','ip-delivery','tr-auth','ip-content','ln-shared'].includes(topic.id))await page.screenshot({path:'artifacts/topic-'+topic.id+'.png',animations:'disabled'});
   }
-  await page.goto(base+'/lab/?section=rules');
-  await page.getByRole('heading',{name:'Правила сортировки',exact:true}).waitFor();
+  await page.setViewportSize({width:390,height:844});
+  await page.goto(base+'/#topic=ln-registration');
+  await page.locator('.topic-sections').waitFor();
+  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
+  assert(await page.locator('#details').evaluate(el=>el.scrollWidth<=el.clientWidth));
+  await page.screenshot({path:'artifacts/pilot-mobile.png',animations:'disabled'});
+  await page.locator('.interview-question>summary').first().click();
+  await page.locator('.interview-question').first().scrollIntoViewIfNeeded();
+  await page.screenshot({path:'artifacts/topic-answers-mobile.png',animations:'disabled'});
+  await page.locator('.code-step').first().scrollIntoViewIfNeeded();
+  assert(await page.locator('#details').evaluate(el=>el.scrollWidth<=el.clientWidth));
+  await page.screenshot({path:'artifacts/topic-code-mobile.png',animations:'disabled'});
   assert.deepEqual(errors, []);
-  console.log('PASS map browser: search, route, keyboard, progress export/import/error, sessions, desktop/mobile');
-} finally { await browser.close(); if(testServer)await new Promise(resolve=>testServer.close(resolve)); }
+  console.log('PASS map browser: original progress/search/routes/review; all 47 four-block topics, hidden answers, real-code links, clipboard fallback, desktop/mobile');
+} catch(error){await page.screenshot({path:'artifacts/map-failure.png'});console.error('Browser errors:',errors);throw error;}
+finally { await browser.close(); if(testServer)await new Promise(resolve=>testServer.close(resolve)); }

@@ -15,7 +15,20 @@ for (const topic of topics) {
     for (const field of ['confirmed','reconstruction','assumptions','short','boundaries']) assert(topic.story[field], 'Missing story ' + field + ': ' + topic.id);
     assert(topic.story.deep.length > 0, 'Missing long story: ' + topic.id);
     assert(topic.context && topic.decision && topic.failures.length && topic.interview.length, 'Incomplete study material: ' + topic.id);
-    assert(topic.code.length && topic.implementation.status === 'implemented', 'Unlinked lab: ' + topic.id);
+  }
+  assert(topic.pilot,'Topic not migrated: '+topic.id);
+  if(topic.pilot){
+    const p=topic.pilot;
+    assert(p.explanation.intro&&p.explanation.steps.length>=3,'Missing explanation: '+topic.id);
+    assert(p.study.length>=1&&p.study.length<=6,'Study list size: '+topic.id);
+    assert(p.questions.length>=3,'Missing questions: '+topic.id);
+    for(const q of p.questions)assert(q.id&&q.question&&q.short&&q.detailed.length&&q.example,'Incomplete answer: '+topic.id);
+    assert(new Set(p.questions.map(q=>q.id)).size===p.questions.length,'Question IDs: '+topic.id);
+    assert(p.code.steps.length>0||p.code.limitations,'Missing code explanation: '+topic.id);
+    for(const step of [...p.code.steps,...p.code.tests]){
+      assert(['cokr','trajectory','inbox'].includes(step.project),'Unknown code project');
+      assert(step.path&&!step.path.includes('..')&&step.symbol&&Number.isInteger(step.line)&&step.line>0&&step.explanation,'Invalid code reference: '+topic.id);
+    }
   }
   assert(topic.sources.length > 0, 'Missing source: ' + topic.id);
   for (const [path, label] of [...topic.sources, ...topic.theory]) {
