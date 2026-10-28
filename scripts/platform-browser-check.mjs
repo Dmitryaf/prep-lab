@@ -19,7 +19,7 @@ try{
   await page.goto(base);
   await page.locator('[data-action=daily]:enabled').waitFor();
   assert.equal(await page.locator('#platformNav a').count(),5);
-  assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),'rgb(244, 247, 246)');
+  assert.equal(await page.evaluate(()=>getComputedStyle(document.body).backgroundColor),'rgb(255, 255, 255)');
   await page.screenshot({path:'artifacts/platform-desktop.png',fullPage:true});
   await page.locator('[data-action=daily]').click();
   await page.locator('[data-action=session-skip]').waitFor();
@@ -79,7 +79,7 @@ try{
   await frame.locator('[data-action=mode][data-mode=topics]').click();
   await frame.locator('.topic-row').first().click();
   await frame.getByRole('button',{name:'✓ Могу объяснить',exact:true}).click();
-  assert.equal(await frame.getByRole('button',{name:'Закрыть разбор'}).count(),1);
+  assert.equal(await frame.getByRole('button',{name:'← К списку тем',exact:true}).count(),1);
   await frame.locator('.study-links a').first().click();
   await page.locator('.platform-note').waitFor();
   assert(await page.getByRole('heading',{name:'Примеры из проектов'}).count());

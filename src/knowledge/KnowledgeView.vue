@@ -33,6 +33,13 @@ const groups = computed(() => {
   }
   return [...groups];
 });
+function subgroups(notes:typeof knowledge.value.notes){
+  const result=new Map<string,typeof notes>();
+  for(const n of notes){const name=n.path.split('/').length>2?n.path.split('/')[1]!:'Обзор';if(!result.has(name))result.set(name,[]);result.get(name)!.push(n);}
+  return [...result];
+}
+const materialPlural=new Intl.PluralRules('ru');
+const materialWord=(count:number)=>{const form=materialPlural.select(count);return form==='one'?'материал':form==='few'?'материала':'материалов';};
 function back() {
   if (window.history.state.back) router.back();
   else void router.push("/themes");
@@ -89,11 +96,17 @@ function back() {
     <details
       v-for="[title, notes] in groups"
       :key="title"
-      class="platform-card"
+      class="knowledge-group"
       :open="title === 'Фронтенд'"
     >
       <summary>{{ title }} · {{ notes.length }}</summary>
-      <div class="platform-note-list">
+      <div v-if="title==='Фронтенд'" class="knowledge-categories">
+        <details v-for="[category,items] in subgroups(notes)" :key="category" class="knowledge-subgroup">
+          <summary>{{category}} <small>{{items.length}} {{materialWord(items.length)}}</small></summary>
+          <div class="platform-note-list"><RouterLink v-for="n in items" :key="n.id" :to="link('themes',{note:n.id})">{{n.title}}<small>{{n.path.split('/').slice(2,-1).join(' / ')}}</small></RouterLink></div>
+        </details>
+      </div>
+      <div v-else class="platform-note-list">
         <RouterLink
           v-for="n in notes"
           :key="n.id"

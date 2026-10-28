@@ -4,7 +4,7 @@ import { resolve, sep } from 'node:path';
 import {canonicalNotePath} from '../src/knowledge/path.js';
 
 const folders = ['Собеседования/Темы', 'Собеседования/Практика', 'Собеседования/Проектирование', 'Фронтенд', 'Опыт и проекты'];
-const singles = ['Собеседования/00. Карта раздела.md', 'Собеседования/01. Основной маршрут.md', ...['00. Карта раздела', '01. Рассказ о себе', '02. Позиционирование и причины поиска', '03. Поведенческие ответы', '04. Вопросы работодателю'].map(s => `HR и самопрезентация/${s}.md`)];
+const singles = ['Собеседования/00. Карта раздела.md', 'Собеседования/01. Основной маршрут.md', ...['06. Популярные вопросы HR', '07. Вопросы HR — Назаров, часть 1', '08. Вопросы HR — Назаров, часть 2'].map(s => `HR и самопрезентация/${s}.md`)];
 const excluded = new Set(['AGENTS.md', 'node_modules', 'labs', '_archive', '_meta']);
 export function allowedKnowledgePath(path) {
   if (typeof path !== 'string' || path.includes('\\') || path.includes('\0') || path.split('/').some(p => p.startsWith('.') || excluded.has(p))) return false;

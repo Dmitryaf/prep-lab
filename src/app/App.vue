@@ -94,7 +94,7 @@ watch(
   async () => {
     search.value = "";
     await nextTick();
-    document.getElementById("platformMain")?.focus();
+    document.getElementById("platformMain")?.focus({preventScroll:true});
   },
 );
 onMounted(() => {
@@ -107,10 +107,10 @@ onUnmounted(() => document.removeEventListener("keydown", keydown));
   <div class="platform-shell">
     <header class="platform-header">
       <RouterLink class="platform-brand" to="/interview"
-        ><span class="platform-logo">⌘</span
+        ><svg class="platform-logo" aria-hidden="true" viewBox="0 0 32 32" fill="none"><path d="M7 7h18v18H7zM7 16h18M16 7v18" stroke="currentColor" stroke-width="1.5"/><path d="M7 25l9-9 9-9" stroke="currentColor" stroke-width="3"/><circle cx="7" cy="25" r="3" fill="currentColor"/><circle cx="25" cy="7" r="3" fill="currentColor"/></svg
         ><span
-          >Подготовка<span class="platform-brand-sub"
-            >Frontend · теория и практика</span
+          >Frontend Lab<span class="platform-brand-sub"
+            >Подготовка · frontend</span
           ></span
         ></RouterLink
       >
@@ -135,7 +135,7 @@ onUnmounted(() => document.removeEventListener("keydown", keydown));
           v-model="search"
           type="search"
           :disabled="active"
-          placeholder="Вопрос, тема, проект…"
+          placeholder="Найти материал…"
           autocomplete="off"
         />
         <div class="platform-backup">

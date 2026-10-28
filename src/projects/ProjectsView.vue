@@ -28,17 +28,26 @@ const selected = computed(() =>
 );
 watch(
   () => selected.value,
-  async (t) => {
+  async (t,previous) => {
     if (t) {
       project.value = t.project;
       if (!projects[t.project].routes.some((r) => r.id === routeId.value))
         routeId.value = projects[t.project].routes[0].id;
       await nextTick();
-      document.getElementById("details")?.scrollIntoView({ block: "start" });
+      document.querySelector<HTMLElement>('#details .topic-title')?.focus({preventScroll:true});
+    }else if(previous){
+      await nextTick();document.querySelector<HTMLElement>(`[data-topic-id="${previous.id}"]`)?.focus({preventScroll:true});
     }
   },
   { immediate: true },
 );
+watch(()=>route.query,params=>{
+  if(typeof params.project==='string'&&projects[params.project]&&(!selected.value||selected.value.project===params.project))project.value=params.project;
+  if(['topics','map','review'].includes(String(params.mode)))mode.value=String(params.mode);
+  if(typeof params.group==='string')group.value=params.group;
+  if(typeof params.search==='string')query.value=params.search;
+  if(typeof params.route==='string'&&projects[project.value].routes.some(r=>r.id===params.route))routeId.value=params.route;
+},{immediate:true});
 const projectTopics = computed(() =>
   topics.filter((t) => t.project === project.value),
 );
@@ -65,6 +74,15 @@ const routeTopics = computed(
       .map((id) => topics.find((t) => t.id === id)!)
       .filter(Boolean) || [],
 );
+const contextQuery=()=>({project:project.value,mode:mode.value,group:group.value,search:query.value,route:routeId.value});
+const topicLink=(id:string)=>link('projects',{...contextQuery(),projectTopic:id});
+const readingTopics=computed(()=>mode.value==='map'&&routeTopics.value.some(t=>t.id===selected.value?.id)?routeTopics.value:filtered.value.some(t=>t.id===selected.value?.id)?filtered.value:projectTopics.value);
+const position=computed(()=>readingTopics.value.findIndex(t=>t.id===selected.value?.id));
+async function closeTopic(){
+  const id=selected.value?.id;
+  await router.push(link('projects',contextQuery()));await nextTick();
+  document.querySelector<HTMLElement>(`[data-topic-id="${id}"]`)?.focus();
+}
 const reviews = computed(() =>
   selectQuestionReview(topics, progress.value.questionProgress, {
     project: project.value,
@@ -94,6 +112,24 @@ function reviewNext() {
 }
 </script>
 <template>
+  <template v-if="selected">
+    <div class="reading-toolbar">
+      <button class="platform-back" data-action="back-to-topics" @click="closeTopic">← {{mode==='map'?'К маршруту':'К списку тем'}}</button>
+      <span class="reading-location">{{projects[selected.project].name}} <span aria-hidden="true">/</span> {{selected.group}}</span>
+      <span class="reading-position">Тема {{position+1}} из {{readingTopics.length}}</span>
+    </div>
+    <nav class="reading-neighbours" aria-label="Соседние темы">
+      <RouterLink v-if="position>0" :to="topicLink(readingTopics[position-1]!.id)">← <span class="neighbour-title">{{readingTopics[position-1]!.title}}</span><span class="neighbour-label">Предыдущая тема</span></RouterLink><span v-else />
+      <RouterLink v-if="position>=0&&position<readingTopics.length-1" :to="topicLink(readingTopics[position+1]!.id)"><span class="neighbour-title">{{readingTopics[position+1]!.title}}</span><span class="neighbour-label">Следующая тема</span> →</RouterLink>
+    </nav>
+    <TopicDetail :key="selected.id" :topic="selected" :route-nodes="mode==='map'?currentRoute?.nodes:undefined" />
+  </template>
+  <template v-else-if="route.query.projectTopic">
+    <PageHeading title="Тема не найдена" description="Возможно, ссылка устарела. Выберите тему из списка проекта." />
+    <RouterLink :to="link('projects',contextQuery())">К списку тем →</RouterLink>
+  </template>
+  <template v-else>
+  <div class="catalog-heading">
   <PageHeading
     title="Проекты"
     description="Карта проектов, маршруты, объяснения и ссылки на реализацию."
@@ -106,6 +142,7 @@ function reviewNext() {
       >Проекты и рабочий опыт · {{ projectCards.length }} вопросов</RouterLink
     >
   </div>
+  </div>
   <div class="platform-actions project-switch">
     <button
       v-for="p in projects"
@@ -115,8 +152,8 @@ function reviewNext() {
       :aria-pressed="project === p.id"
       @click="selectProject(p.id)"
     >
-      {{ p.icon }} {{ p.name }} ·
-      {{ topics.filter((t) => t.project === p.id).length }} тем
+      <span>{{ p.name }}</span>
+      <small>{{ topics.filter((t) => t.project === p.id).length }} тем</small>
     </button>
   </div>
   <nav class="platform-actions" aria-label="Карта проектов">
@@ -142,7 +179,7 @@ function reviewNext() {
   <template v-if="mode === 'topics'"
     ><div class="platform-filters">
       <label
-        >Раздел<select v-model="group">
+        >Раздел<select v-model="group" aria-label="Раздел">
           <option v-for="g in groups" :key="g">{{ g }}</option>
         </select></label
       ><label
@@ -163,7 +200,8 @@ function reviewNext() {
       v-for="t in filtered"
       :key="t.id"
       class="platform-list-row topic-row"
-      :to="link('projects', { projectTopic: t.id })"
+      :data-topic-id="t.id"
+      :to="topicLink(t.id)"
       ><span
         ><strong>{{ t.title }}</strong
         ><small
@@ -202,7 +240,8 @@ function reviewNext() {
       <li v-for="t in routeTopics" :key="t.id">
         <RouterLink
           class="platform-list-row"
-          :to="link('projects', { projectTopic: t.id })"
+          :data-topic-id="t.id"
+          :to="topicLink(t.id)"
           >{{ t.title }} →</RouterLink
         >
       </li>
@@ -281,11 +320,5 @@ function reviewNext() {
     ></template>
     <p v-else>Здесь пока нет вопросов. Выберите другой набор.</p>
   </template>
-  <TopicDetail
-    v-if="selected"
-    :key="selected.id"
-    :topic="selected"
-    :route-nodes="mode === 'map' ? currentRoute?.nodes : undefined"
-    @close="router.push('/projects')"
-  />
+  </template>
 </template>

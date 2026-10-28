@@ -2,7 +2,8 @@
 defineProps<{ title: string; description?: string }>();
 </script>
 <template>
-  <div class="platform-eyebrow">ПОДГОТОВКА К СОБЕСЕДОВАНИЯМ</div>
+  <header class="page-heading">
   <h1>{{ title }}</h1>
   <p v-if="description" class="platform-lead">{{ description }}</p>
+  </header>
 </template>

@@ -54,6 +54,7 @@ export const router = createRouter({
     { path: "/:pathMatch(.*)*", component: InterviewView },
   ],
   scrollBehavior(to, from, saved) {
+    if(!saved&&to.path==='/projects'&&from.query.projectTopic&&!to.query.projectTopic&&/^[\w-]+$/.test(String(from.query.projectTopic)))return {el:`[data-topic-id="${from.query.projectTopic}"]`,top:160};
     return (
       saved ||
       (to.query.heading || to.fullPath === from.fullPath ? false : { top: 0 })

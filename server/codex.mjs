@@ -23,7 +23,7 @@ export class Codex {
     });
     const failed=()=>{for(const p of this.pending.values()){clearTimeout(p.timer);p.reject(new Error('Codex недоступен. Проверьте установку CLI и вход командой codex login.'));}this.pending.clear();for(const l of this.listeners)l({method:'transport/closed'});};
     this.proc.on('error',failed);this.proc.on('exit',failed);
-    this.ready=this.call('initialize',{clientInfo:{name:'projects_map_study',title:'Projects Map',version:'1.0.0'}}).then(()=>this.send({method:'initialized',params:{}}));
+    this.ready=this.call('initialize',{clientInfo:{name:'projects_map_study',title:'Frontend Lab',version:'1.0.0'}}).then(()=>this.send({method:'initialized',params:{}}));
   }
   send(message){if(!this.proc.stdin.destroyed)this.proc.stdin.write(JSON.stringify(message)+'\n');}
   call(method,params){return new Promise((resolve,reject)=>{const id=++this.seq;const timer=setTimeout(()=>{this.pending.delete(id);reject(new Error('Codex не ответил вовремя.'));},30000);this.pending.set(id,{resolve,reject,timer});this.send({id,method,params});});}

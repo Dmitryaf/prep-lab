@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch, nextTick } from "vue";
 import type { Topic, CodeStep } from "../shared/types";
-import { projects, topics } from "./catalog";
+import { topics } from "./catalog";
+import {useRoute} from 'vue-router';
 import { progress, markTopic, notify } from "../app/store";
 import { link } from "../app/router";
 import { canonicalNotePath } from "../knowledge/path.js";
@@ -10,7 +11,8 @@ import { highlightedCode } from "./catalog/code-highlights.js";
 import CodeReference from "./CodeReference.vue";
 import StudyChat from '../assistant/StudyChat.vue';
 const props = defineProps<{ topic: Topic; routeNodes?: string[] }>();
-defineEmits<{ close: [] }>();
+const route=useRoute();
+const stepLink=(id:string)=>({path:'/projects',query:{...route.query,projectTopic:id}});
 const sourceRoot = ref(""),
   fallback = ref(""),
   textarea = ref<HTMLTextAreaElement>();
@@ -49,22 +51,17 @@ async function copy(step: CodeStep) {
     textarea.value?.select();
   }
 }
+function jump(section:string){
+  const heading=document.querySelector<HTMLElement>(`#details [data-section="${section}"] h3`);
+  heading?.focus({preventScroll:true});heading?.scrollIntoView({block:'start',behavior:'instant'});
+}
+const sections=[['explanation','Как это работает'],['study','Что нужно изучить'],['interview','Вопросы на собеседовании'],['code','Реализация в коде']];
 </script>
 <template>
   <article id="details" class="platform-card project-detail">
-    <div class="platform-actions">
-      <span>{{ projects[topic.project].name }} / {{ topic.group }}</span
-      ><button
-        data-action="close-detail"
-        aria-label="Закрыть разбор"
-        @click="$emit('close')"
-      >
-        ✕
-      </button>
-    </div>
-    <h2>{{ topic.title }}</h2>
+    <header class="topic-intro">
+    <h1 class="topic-title" tabindex="-1">{{ topic.title }}</h1>
     <p>{{ topic.summary }}</p>
-    <StudyChat :key="topic.id" :material-key="'topic:'+topic.id" :title="topic.title" :context="JSON.stringify(topic,null,2)" />
     <p class="platform-meta">
       {{ topic.priority }} · {{ topic.minutes }} мин ·
       {{
@@ -75,6 +72,8 @@ async function copy(step: CodeStep) {
             : "Не проверено"
       }}
     </p>
+    <StudyChat :key="topic.id" :material-key="'topic:'+topic.id" :title="topic.title" :context="JSON.stringify(topic,null,2)" />
+    </header>
     <details v-if="topic.story">
       <summary>История и границы подтверждённого опыта</summary>
       <p>{{ topic.story.short }}</p>
@@ -84,9 +83,11 @@ async function copy(step: CodeStep) {
       <p>{{ topic.story.boundaries }}</p>
       <p v-for="text in topic.story.deep" :key="text">{{ text }}</p>
     </details>
+    <div class="topic-reading-layout">
+    <nav class="topic-outline" aria-label="В этом разборе"><span>В этом разборе</span><button v-for="([id,label],i) in sections" :key="id" @click="jump(id!)"><span>{{String(i+1).padStart(2,'0')}}</span>{{label}}</button></nav>
     <div class="topic-sections">
       <section data-section="explanation">
-        <h3>Как это работает</h3>
+        <h3 tabindex="-1">Как это работает</h3>
         <p>{{ topic.pilot.explanation.intro }}</p>
         <ol class="explanation-steps">
           <li v-for="step in topic.pilot.explanation.steps" :key="step.title">
@@ -100,7 +101,7 @@ async function copy(step: CodeStep) {
         </details>
       </section>
       <section data-section="study">
-        <h3>Что нужно изучить</h3>
+        <h3 tabindex="-1">Что нужно изучить</h3>
         <ul class="study-links">
           <li v-for="note in topic.pilot.study" :key="note.path">
             <RouterLink
@@ -112,7 +113,7 @@ async function copy(step: CodeStep) {
         </ul>
       </section>
       <section data-section="interview">
-        <h3>Вопросы на собеседовании</h3>
+        <h3 tabindex="-1">Вопросы на собеседовании</h3>
         <p class="section-hint">
           Сначала ответьте вслух. Нажмите на вопрос, чтобы сравнить ответ.
         </p>
@@ -135,7 +136,7 @@ async function copy(step: CodeStep) {
         </details>
       </section>
       <section data-section="code">
-        <h3>Реализация в коде</h3>
+        <h3 tabindex="-1">Реализация в коде</h3>
         <p>{{ topic.pilot.code.intro }}</p>
         <details
           v-if="
@@ -230,13 +231,14 @@ async function copy(step: CodeStep) {
         </div>
       </section>
     </div>
+    </div>
     <div v-if="related.length">
       <h3>Связанные узлы карты</h3>
       <RouterLink
         v-for="t in related"
         :key="t.id"
         class="platform-list-row"
-        :to="link('projects', { projectTopic: t.id })"
+        :to="link('projects', { projectTopic: t.id,project:t.project,mode:'topics',group:'Все',search:'' })"
         >{{ t.title }} ↗</RouterLink
       >
     </div>
@@ -267,12 +269,12 @@ async function copy(step: CodeStep) {
         <RouterLink
           v-if="stepIndex > 0"
           class="platform-button"
-          :to="link('projects', { projectTopic: routeNodes[stepIndex - 1] })"
+          :to="stepLink(routeNodes[stepIndex - 1]!)"
           >← Предыдущий шаг</RouterLink
         ><RouterLink
           v-if="stepIndex < routeNodes.length - 1"
           class="platform-button"
-          :to="link('projects', { projectTopic: routeNodes[stepIndex + 1] })"
+          :to="stepLink(routeNodes[stepIndex + 1]!)"
           >Следующий шаг →</RouterLink
         ><span v-else>Последний шаг маршрута</span>
       </div>

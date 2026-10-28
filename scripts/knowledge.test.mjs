@@ -10,6 +10,11 @@ test('allowlist excludes private and service documents, traversal and executable
   for (const path of ['Фронтенд/Vue/01. Тема.md', 'Собеседования/Практика/Vue.md']) assert(allowedKnowledgePath(path));
   for (const path of ['Резюме/Резюме.md', 'Поиск работы/00.md', 'Собеседования/Текущая подготовка.md', 'HR и самопрезентация/05. Зарплатные ожидания.md', 'Фронтенд/_archive/a.md', 'Фронтенд/AGENTS.md', 'Фронтенд/labs/README.md', 'Фронтенд/../../secret.md', 'Фронтенд\\secret.md']) assert(!allowedKnowledgePath(path), path);
 });
+
+test('only requested HR sources are exposed; personal preparation and private notes stay excluded',()=>{
+  for(const name of ['06. Популярные вопросы HR','07. Вопросы HR — Назаров, часть 1','08. Вопросы HR — Назаров, часть 2'])assert(allowedKnowledgePath(`HR и самопрезентация/${name}.md`));
+  for(const name of ['00. Карта раздела','01. Рассказ о себе','02. Позиционирование и причины поиска','03. Поведенческие ответы','04. Вопросы работодателю','05. Зарплатные ожидания','09. Личные ответы','06. Популярные вопросы HR/private'])assert(!allowedKnowledgePath(`HR и самопрезентация/${name}.md`));
+});
 test('theory extracts questions with answers, not toc or headings inside code; retains parent and followups', () => {
   const note = { id: 'Собеседования/Темы/Vue', path: 'Собеседования/Темы/Vue.md', markdown: '# Vue\n> [!abstract]- Оглавление\n> [[x#Вопрос]]\n\n## Вопрос\n> [!answer]- Ответ\n> Объяснение.\n\n**Уточнения**\n- Почему?\n\n### Деталь\n> [!answer]- Ответ\n> ```js\n> ## не заголовок\n> ```\n\n## Группа\n### Ещё вопрос\n> [!answer]- Ответ\n> Да.' };
   const qs = extractQuestions(note);

@@ -5,7 +5,7 @@ import {Codex} from './codex.mjs';
 
 const json=(res,status,data)=>{res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});res.end(JSON.stringify(data));};
 export function createStudyChat({directory=resolve('artifacts/study-chats'),answer}={}){
-  const active=new Map();let codex;
+  const active=new Map(),idleWaiters=new Set();let codex;
   const pathFor=key=>join(directory,createHash('sha256').update(key).digest('hex')+'.json');
   const read=key=>{
     let raw;try{raw=readFileSync(pathFor(key),'utf8');}catch(e){if(e.code==='ENOENT')return {key,messages:[]};throw e;}
@@ -52,9 +52,9 @@ export function createStudyChat({directory=resolve('artifacts/study-chats'),answ
         reply.text=await generate({context:input.context,messages:data.messages.filter(m=>m!==reply&&m.status==='completed'),signal:controller.signal,onDelta:delta=>{reply.text+=delta;emit({delta});}});
         reply.status='completed';save(data);emit({done:true});
       }catch(e){reply.status=controller.signal.aborted?'interrupted':'failed';try{save(data);}catch{emit({error:'Не удалось сохранить ответ на диске. Текст остаётся в открытой панели.'});}emit({error:controller.signal.aborted?'Запрос остановлен.':e.message});}
-      finally{active.delete(key);res.off('close',disconnected);res.end();}
+      finally{active.delete(key);if(!active.size){for(const done of idleWaiters)done();idleWaiters.clear();}res.off('close',disconnected);res.end();}
     }catch(e){if(!res.headersSent)json(res,500,{error:e instanceof SyntaxError?'Не удалось прочитать данные обсуждения. Существующая история не изменена.':e.message});else res.end();}
     return true;
   }
-  return {handle,close(){for(const c of active.values())c.abort();codex?.close();}};
+  return {handle,async close(){for(const c of active.values())c.abort();codex?.close();if(active.size)await new Promise(done=>idleWaiters.add(done));}};
 }

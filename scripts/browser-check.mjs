@@ -57,6 +57,6 @@ try{
   await page.locator('[data-action=copy-source]').first().click();await page.locator('#sourceReference').waitFor();assert((await page.locator('#sourceReference').inputValue()).includes('C:\\Work\\cokr\\src\\'));
   await page.screenshot({path:'artifacts/vue-migration/native-map-desktop.png',fullPage:true});
   await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await page.screenshot({path:'artifacts/vue-migration/native-map-mobile.png',fullPage:true});
-  await page.goto(base+'/#topic=tr-local');await page.locator('#details').waitFor();assert((await page.locator('#details h2').innerText()).includes('IndexedDB'));
+  await page.goto(base+'/#topic=tr-local');await page.locator('#details').waitFor();assert((await page.locator('#details .topic-title').innerText()).includes('IndexedDB'));
   assert.deepEqual(errors,[]);console.log('PASS native Vue map: 50 four-block topics, 153 review questions, quick50, routes17, v1/import/export, clipboard/fallback, old links, desktop/mobile, no iframe');
 }finally{await browser.close();await new Promise(r=>server.close(r));}

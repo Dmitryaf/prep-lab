@@ -6,23 +6,28 @@ import {fileURLToPath} from 'node:url';
 import {loadKnowledge} from './knowledge.mjs';
 import {createStudyChat} from '../server/study-chat.mjs';
 import {workspaceId} from './workspace.mjs';
+import {createLifecycle} from '../server/lifecycle.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../dist');
 const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml'};
-export function createServer({knowledgeRoot=process.env.CAREER_KNOWLEDGE_ROOT||resolve(root,'../../career-knowledge'),studyChatOptions}={}){
+export function createServer({knowledgeRoot=process.env.CAREER_KNOWLEDGE_ROOT||resolve(root,'../../career-knowledge'),studyChatOptions,lifecycle: lifecycleOptions}={}){
   const chat=createStudyChat(studyChatOptions);
+  const lifecycle=lifecycleOptions?createLifecycle(lifecycleOptions):null;
   const server=http.createServer(async(req,res)=>{
     const reject=(status)=>{res.writeHead(status,{'Content-Type':'text/plain; charset=utf-8'});res.end(status===404?'Страница не найдена':'Запрос не разрешён');};
     const host=req.headers.host||'';
     if(!/^127\.0\.0\.1(?::\d+)?$/.test(host)&&!/^localhost(?::\d+)?$/.test(host))return reject(403);
     if(req.headers.origin&&req.headers.origin!==`http://${host}`)return reject(403);
+    if(lifecycle?.handle(req,res))return;
+    if(req.url==='/api/lifecycle'){res.writeHead(204);res.end();return;}
     if(await chat.handle(req,res))return;
     if(req.method!=='GET'&&req.method!=='HEAD')return reject(405);
     try{
       const pathname=decodeURIComponent(new URL(req.url,'http://localhost').pathname);
       if(pathname.includes('\\')||pathname.includes('\0')||pathname.split('/').some(p=>p.startsWith('.')))return reject(403);
       if(pathname==='/api/health'){
+        lifecycle?.reserve();
         res.writeHead(200,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store'});
-        return res.end(req.method==='HEAD'?undefined:JSON.stringify({application:'projects-map',workspace:workspaceId}));
+        return res.end(req.method==='HEAD'?undefined:JSON.stringify({application:'projects-map',workspace:workspaceId,autoClose:!!lifecycle}));
       }
       if(pathname==='/api/knowledge'){
         let body;let status=200;
@@ -38,10 +43,11 @@ export function createServer({knowledgeRoot=process.env.CAREER_KNOWLEDGE_ROOT||r
       res.end(req.method==='HEAD'?undefined:readFileSync(path));
     }catch{return reject(404);}
   });
-  server.on('close',()=>chat.close());
+  server.closeStudyChat=()=>chat.close();
+  server.on('close',()=>{lifecycle?.dispose();void chat.close();});
   return server;
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const port=Number(process.env.PORT||4173);
-  createServer().listen(port,'127.0.0.1',()=>console.log(`Projects Map: http://127.0.0.1:${port}/`));
+  createServer().listen(port,'127.0.0.1',()=>console.log(`Frontend Lab: http://127.0.0.1:${port}/`));
 }

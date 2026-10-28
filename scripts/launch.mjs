@@ -52,14 +52,16 @@ async function main(){
         await run(process.env.ComSpec||'cmd.exe',['/d','/s','/c','npm ci'],{cwd:root,stdio:['ignore',log,log]});
       }
       const {createDevelopmentServer}=await import('./dev.mjs');
-      return createDevelopmentServer({port});
+      let service;
+      service=await createDevelopmentServer({port,lifecycle:{onIdle:()=>service.close()}});
+      return service;
     }});
     await run('rundll32.exe',['url.dll,FileProtocolHandler',result.base],{stdio:'ignore'});
     if(result.reused)process.exitCode=0;
   }catch(error){
     const message=`${error.message}\n\nЖурнал: ${resolve(logs,'launch.log')}`;
     process.stderr.write(message+'\n');
-    await run('powershell.exe',['-NoProfile','-NonInteractive','-WindowStyle','Hidden','-Command',"Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show($env:PROJECTS_MAP_ERROR, 'Projects Map') | Out-Null"],{env:{...process.env,PROJECTS_MAP_ERROR:message},stdio:'ignore'}).catch(()=>{});
+    await run('powershell.exe',['-NoProfile','-NonInteractive','-WindowStyle','Hidden','-Command',"Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show($env:PROJECTS_MAP_ERROR, 'Frontend Lab') | Out-Null"],{env:{...process.env,PROJECTS_MAP_ERROR:message},stdio:'ignore'}).catch(()=>{});
     process.exitCode=1;
   }
 }
