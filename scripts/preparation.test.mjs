@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { projects, topics } from '../dist/data.js';
-import { selectReview, mergeProgressFile, questionKey, questionCards, selectQuestionReview, progressSnapshot, mergeProgressSnapshot } from '../dist/preparation.js';
+import { projects, topics } from '../src/projects/catalog/data.js';
+import { selectReview, mergeProgressFile, questionKey, questionCards, selectQuestionReview, progressSnapshot, mergeProgressSnapshot } from '../src/projects/review.js';
 
 test('existing v1 progress round trips and preserves other projects', () => {
   const current = { 'tr-purpose': { status: 'done', updatedAt: '2026-10-26' } };

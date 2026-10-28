@@ -26,13 +26,14 @@ try{
   await page.locator('.platform-answer').waitFor();await page.reload();await page.locator('.platform-answer').waitFor();
   assert.deepEqual(current(await state()).questionIds,first.questionIds);assert.equal(current(await state()).index,0);
   assert.equal((await state()).questionProgress[id].status,'partial');
-  // Reach a project, open its source map and inspect actual code references in the iframe.
+  // Reach a project, open its source map and inspect actual code references in the native project view.
   const projectIndex=first.questionIds.findIndex(id=>first.snapshots[id].kind==='project');
   for(let i=0;i<projectIndex;i++)await page.locator('[data-action=session-skip]').click();
   await page.locator('[data-action=session-review]').click();await page.locator('[data-rating=again]').click();
   const projectId=first.questionIds[projectIndex];
   await page.getByRole('link',{name:'Проект и реализация в коде',exact:true}).click();
-  const frame=page.frameLocator('.platform-project-frame');
+  assert.equal(await page.locator('iframe').count(),0);
+  const frame=page;
   await frame.getByRole('button',{name:'Закрыть разбор'}).waitFor();
   assert((await frame.locator('body').innerText()).includes('Реализация'));
   const code=frame.locator('.code-step a').first();
@@ -40,8 +41,8 @@ try{
   assert.match(await code.getAttribute('href'),/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/blob\/[a-f0-9]+\/.+#L\d+/);
   await page.screenshot({path:'artifacts/interview-fixes/project-code.png',fullPage:true});
   // B: project gap opens the same answer, theory and code; marks persist.
-  await page.locator('#platformNav a[href="#view=repeat"]').click();
-  await page.locator(`.platform-list-row[href*="${encodeURIComponent(projectId)}"]`).click();
+  await page.locator('#platformNav a[href="#/repeat"]').click();
+  await page.locator('.platform-list-row').filter({hasText:first.snapshots[projectId].title}).click();
   await page.locator('[data-action=reveal]').click();
   assert(await page.getByRole('link',{name:'Проект и реализация в коде',exact:true}).count());
   await page.locator('[data-rating=done]').click();await page.reload();await page.locator('[data-action=reveal]').waitFor();
@@ -77,6 +78,14 @@ try{
   await page.goto(url);await page.locator('[data-action=session-next]').waitFor();
   assert.equal(current(await state()).index,projectIndex);
   await page.screenshot({path:'artifacts/interview-fixes/daily-review-mobile.png',fullPage:true});
+  assert.deepEqual(errors,[]);
+  // Free practice keeps its position when searching and when returning from theory.
+  await page.goto(base+'/#/practice');await page.locator('#practiceCategory').selectOption('route');
+  await page.locator('[data-action=next-question]').click();await page.locator('[data-action=next-question]').click();
+  const practiceTitle=await page.locator('.question-card h2').innerText();
+  await page.locator('[data-action=reveal]').click();await page.getByRole('link',{name:/^Изучить тему:/}).first().click();await page.locator('.platform-note').waitFor();
+  await page.locator('[data-action=back]').click();await page.locator('.question-card').waitFor();assert.equal(await page.locator('.question-card h2').innerText(),practiceTitle);
+  await page.locator('#platformSearch').fill('IndexedDB');await page.keyboard.press('Escape');assert.equal(await page.locator('.question-card h2').innerText(),practiceTitle);
   assert.deepEqual(errors,[]);
   console.log('PASS daily review/study/return/reload, project code and repeat, legacy paths, full20 without required followups and persisted ratings, mobile');
 }finally{await browser.close();await new Promise(r=>server.close(r));}

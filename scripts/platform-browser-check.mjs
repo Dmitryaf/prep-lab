@@ -12,7 +12,7 @@ const context=await browser.newContext({viewport:{width:1440,height:1000},timezo
 const page=await context.newPage(),errors=[];
 page.on('pageerror',e=>errors.push(e.message));
 const state=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('project-map-platform-v3')));
-const go=async view=>{await page.locator(`#platformNav a[href="#view=${view}"]`).click();await page.locator('#platformMain h1').filter({hasText:({interview:'Пробное интервью',practice:'Практика',themes:'Темы',projects:'Проекты',repeat:'Повторить'})[view]}).waitFor();};
+const go=async view=>{await page.locator(`#platformNav a[href="#/${view}"]`).click();await page.locator('#platformMain h1').filter({hasText:({interview:'Пробное интервью',practice:'Практика',themes:'Темы',projects:'Проекты',repeat:'Повторить'})[view]}).waitFor();};
 await mkdir('artifacts',{recursive:true});
 try{
   await page.clock.install({time:new Date('2026-10-28T12:00:00+05:00')});
@@ -65,7 +65,7 @@ try{
   await page.locator('.platform-note').waitFor();
   await page.screenshot({path:'artifacts/platform-note.png',fullPage:true});
   const noteURL=page.url();
-  const wiki=page.locator('.platform-note a[href^="#view=themes"]').first();
+  const wiki=page.locator('.platform-note a[href^="#/themes"]').first();
   if(await wiki.count()){
     await wiki.click();await page.waitForFunction(url=>location.href!==url,noteURL);
     await page.locator('[data-action=back]').click();await page.waitForURL(noteURL);
@@ -74,7 +74,8 @@ try{
   await page.locator('#platformSearch').fill('IndexedDB');
   assert(await page.locator('.platform-list-row').count()>0);await page.keyboard.press('Escape');
   await go('projects');
-  const frame=page.frameLocator('.platform-project-frame');
+  assert.equal(await page.locator('iframe').count(),0);
+  const frame=page;
   await frame.locator('[data-action=mode][data-mode=topics]').click();
   await frame.locator('.topic-row').first().click();
   await frame.getByRole('button',{name:'✓ Могу объяснить',exact:true}).click();
@@ -96,7 +97,7 @@ try{
   assert((await page.locator('.platform-answer').innerText()).includes('временная мёртвая зона'));
   await page.getByRole('heading',{name:'Проверьте себя',exact:true}).waitFor();
   const theory=page.getByRole('link',{name:/^Изучить тему:/});
-  const target=new URLSearchParams((await theory.getAttribute('href')).slice(1));
+  const target=new URLSearchParams((await theory.getAttribute('href')).split('?')[1]||'');
   assert(target.get('note').startsWith('Фронтенд/JavaScript/'));
   await page.screenshot({path:'artifacts/platform-tdz.png',fullPage:true});
   await page.setViewportSize({width:390,height:844});
@@ -109,7 +110,7 @@ try{
   await page.locator('[data-action=reveal]').click();
   await page.getByRole('link',{name:/^Решить задачу:/}).click();
   await page.locator('.platform-note').waitFor();
-  assert(new URLSearchParams(new URL(page.url()).hash.slice(1)).get('heading')==='TDZ и затенение age');
+  assert(new URLSearchParams(new URL(page.url()).hash.split('?')[1]||'').get('heading')==='TDZ и затенение age');
   assert.deepEqual(await state(),before);
   const downloadEvent=page.waitForEvent('download');await page.locator('[data-action=export]').click();
   const download=await downloadEvent;const payload=await readFile(await download.path(),'utf8');

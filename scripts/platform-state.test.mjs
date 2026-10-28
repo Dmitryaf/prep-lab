@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {loadState,saveState,importState,exportState,rateQuestion,dailySession,createSession,selectInterview,localDate,storageKey,availableFollowups,openFollowup,advanceQuestion} from '../dist/platform-state.js';
+import {loadState,saveState,importState,exportState,rateQuestion,dailySession,createSession,selectInterview,localDate,storageKey,availableFollowups,openFollowup,advanceQuestion} from '../src/progress/engine.js';
 const memory=()=>{const data=new Map();return {getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)};};
 const categories=['JavaScript','TypeScript','Vue','Браузер, HTML и CSS','Сети и безопасность','Архитектура, производительность и тестирование'];
 const qs=categories.flatMap(category=>Array.from({length:10},(_,i)=>({id:`${category}/${i}`,title:`Q${i}`,prompt:'Question',answer:'Answer',category,kind:'theory',source:'knowledge'})));

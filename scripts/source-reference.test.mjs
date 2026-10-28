@@ -1,9 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {localCodeReference,sourceUrl,pilots} from '../dist/implementation.js';
-import {topics} from '../dist/data.js';
-import {codeHighlights,highlightedCode,sourceContext} from '../dist/code-highlights.js';
-import {renderPilot} from '../dist/topic-view.js';
+import {localCodeReference,sourceUrl,pilots} from '../src/projects/catalog/implementation.js';
+import {topics} from '../src/projects/catalog/data.js';
+import {codeHighlights,highlightedCode,sourceContext} from '../src/projects/catalog/code-highlights.js';
 test('local code references copy paths and locations without a source-serving URL',()=>{
   const step={project:'cokr',path:'src/app/example.vue',line:21,symbol:'saveCard'};
   assert.equal(sourceUrl(step),null);
@@ -30,13 +29,8 @@ test('editorial highlights resolve real steps and preserve original copy indices
     const selection=highlightedCode(pilot);
     assert.equal(selection.length,symbols.length,'Unresolved or repeated symbol: '+id);
     for(const {step,index} of selection)assert.equal(pilot.code.steps[index],step);
-    const markup=renderPilot({pilot},{esc:String,knowledgeUrl:String,root:''});
-    assert(markup.includes('class="further code-full"'));
-    const full=markup.slice(markup.indexOf('class="further code-full"'));
-    for(const [index,step] of pilot.code.steps.entries()){
-      assert(full.includes(step.path));
-      if(step.project==='cokr')assert(full.includes(`data-index="${index}"`));
-    }
+    // Native Vue rendering, collapsed full lists and clipboard indices are exercised
+    // by browser-check.mjs across all 50 actual topics.
   }
   assert.equal(sourceContext({project:'trajectory'}),'');
   assert.equal(sourceContext({project:'cokr',path:'src/app/application/services/medo.service.ts'}),'Прикладной сервис Landocs');

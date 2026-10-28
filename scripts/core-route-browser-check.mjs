@@ -30,7 +30,7 @@ try{
       const prefix=link.kind==='theory'?'Изучить тему':'Решить задачу';
       await page.getByRole('link',{name:`${prefix}: ${expected.title}`,exact:true}).click();
       await page.locator('.platform-note').waitFor();
-      const r=new URLSearchParams(new URL(page.url()).hash.slice(1));assert.equal(r.get('note'),link.noteId);assert.equal(r.get('heading')||'',link.heading||'');
+      const r=new URLSearchParams(new URL(page.url()).hash.split('?')[1]||'');assert.equal(r.get('note'),link.noteId);assert.equal(r.get('heading')||'',link.heading||'');
       assert((await page.locator('.platform-note').innerText()).length>100);
       links++;
       await page.goto(destination(q));await page.locator('[data-action=reveal]').click();
@@ -48,9 +48,9 @@ try{
   // Study → mark a gap → repeat → independent retry can be marked confident.
   const q=questions[15];await page.goto(destination(q));await page.locator('[data-action=reveal]').click();
   assert((await page.locator('.platform-answer').innerText()).includes('[2, 1, 3]'));
-  await page.locator('[data-rating=partial]').click();await page.locator('#platformNav a[href="#view=repeat"]').click();
+  await page.locator('[data-rating=partial]').click();await page.locator('#platformNav a[href="#/repeat"]').click();
   await page.getByRole('link').filter({hasText:q.title}).click();await page.locator('[data-action=reveal]').click();await page.locator('[data-rating=done]').click();
-  await page.locator('#platformNav a[href="#view=repeat"]').click();assert.equal(await page.locator('.platform-list-row').count(),0);
+  await page.locator('#platformNav a[href="#/repeat"]').click();assert.equal(await page.locator('.platform-list-row').count(),0);
   const saved=JSON.parse(await state());assert.equal(saved.questionProgress[q.id].status,'done');
   await page.reload();assert.deepEqual(JSON.parse(await state()),saved);
   assert.deepEqual(errors,[]);

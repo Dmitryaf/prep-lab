@@ -3,8 +3,8 @@ import {resolve} from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {loadKnowledge,headings} from './knowledge.mjs';
-import {topics} from '../dist/data.js';
-import {projectQuestions} from '../dist/project-questions.js';
+import {topics} from '../src/projects/catalog/data.js';
+import {projectQuestions} from '../src/projects/questions.js';
 
 export function validateKnowledge(bank,topicList) {
   const notes=new Map(bank.notes.map(n=>[n.id,n]));

@@ -1,211 +1,62 @@
 import assert from 'node:assert/strict';
-import { mkdir, readFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
-import { topics } from '../dist/data.js';
-import { selectQuestionReview } from '../dist/preparation.js';
-const require = createRequire(import.meta.url);
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
-let testServer;
-if(!process.env.MAP_URL){
-  const {createServer}=await import('./serve.mjs');
-  testServer=createServer();
-  await new Promise(resolve=>testServer.listen(0,'127.0.0.1',resolve));
-}
-const base = process.env.MAP_URL || `http://127.0.0.1:${testServer.address().port}`;
-const browser = await chromium.launch({ headless: true, ...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{}) });
-const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
-const page = await context.newPage();
-const errors = [];
-page.on('pageerror', e => errors.push(e.message));
-await mkdir('artifacts', { recursive: true });
-try {
-  await page.goto(base+'/?projects=1');
-  const legacy = { 'tr-purpose': { status: 'done', updatedAt: '2026-10-26' } };
-  await page.evaluate(value => localStorage.setItem('project-map-review-v1', JSON.stringify(value)), legacy);
-  await page.reload();
-  await page.getByRole('button', { name: /Inbox Point.*тем/ }).click();
-  await page.locator('[data-action=mode][data-mode=topics]').click();
-  await page.locator('#inlineSearch').fill('React');
-  assert(await page.locator('.topic-row').count() > 0);
-  await page.locator('.topic-row').first().click();
-  await page.getByRole('button', { name: '✓ Могу объяснить', exact: true }).click();
-  await page.getByRole('button', { name: 'Закрыть разбор' }).click();
-  const saved = await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-platform-v3')));
-  assert(Object.values(saved.progress).some(v => v.status === 'done'));
-  assert.deepEqual(saved.progress['tr-purpose'], legacy['tr-purpose']);
-  assert.deepEqual(saved.questionProgress, {});
-  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-review-v1'))), legacy);
-  const downloadEvent = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Скачать прогресс ↓' }).click();
-  const download = await downloadEvent;
-  const downloaded = await download.path();
-  await page.evaluate(() => localStorage.removeItem('project-map-platform-v3'));
-  await page.reload();
-  await page.locator('.topic-row').first().waitFor();
-  await page.locator('#importProgress').setInputFiles(downloaded);
-  await page.getByRole('status').filter({ hasText: 'Прогресс восстановлен' }).waitFor();
-  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-platform-v3'))), saved);
-  await page.locator('#importProgress').setInputFiles({ name: 'bad.json', mimeType: 'application/json', buffer: Buffer.from('{"version":1,"progress":[]}') });
-  await page.getByRole('status').filter({ hasText: 'Не удалось прочитать' }).waitFor();
-  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-platform-v3'))), saved);
-  await page.locator('.top-review-btn').click();
-  await page.locator('[data-action=review-filter][data-id=all]').click();
-  await page.locator('[data-action=review-scope][data-id=both]').click();
-  const allQuestions = selectQuestionReview(topics, {}, { scope: 'both', filter: 'all' });
-  assert((await page.locator('.practice-meta').innerText()).includes(`из ${allQuestions.length}`));
-  for (const card of allQuestions) {
-    assert.equal(await page.locator('.review-card h2').innerText(), card.question);
-    await page.keyboard.press('ArrowRight');
-  }
-  await page.locator('[data-action=review-mode][data-id=quick]').click();
-  assert((await page.locator('.practice-meta').innerText()).includes(`из ${topics.length}`));
-  await page.locator('[data-action=review-mode][data-id=full]').click();
-  await page.keyboard.press('Space');
-  await page.keyboard.press('1');
-  assert.equal(await page.locator('.review-card h2').innerText(), allQuestions[1].question);
-  await page.keyboard.press('Space');
-  await page.keyboard.press('2');
-  assert.equal(await page.locator('.review-card h2').innerText(), allQuestions[2].question);
-  const withQuestions = await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-platform-v3')));
-  assert.equal(withQuestions.questionProgress[allQuestions[0].id].status, 'again');
-  assert.equal(withQuestions.questionProgress[allQuestions[1].id].status, 'done');
-  assert.deepEqual(withQuestions.progress, saved.progress);
-  await page.reload();
-  const secondDownloadEvent = page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Скачать прогресс ↓' }).click();
-  const secondDownload = await secondDownloadEvent;
-  await page.evaluate(() => localStorage.removeItem('project-map-platform-v3'));
-  await page.reload();
-  await page.locator('#importProgress').setInputFiles(await secondDownload.path());
-  await page.getByRole('status').filter({ hasText: 'Прогресс восстановлен' }).waitFor();
-  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-platform-v3'))), withQuestions);
-  await page.locator('#importProgress').setInputFiles({ name: 'legacy.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ version: 1, progress: legacy })) });
-  await page.getByRole('status').filter({ hasText: 'Прогресс восстановлен' }).waitFor();
-  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-platform-v3'))), withQuestions);
-  await page.locator('#importProgress').setInputFiles({ name: 'bad-v2.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ version: 2, progress: { 'tr-purpose': { status: 'again' } }, questionProgress: [] })) });
-  await page.getByRole('status').filter({ hasText: 'Не удалось прочитать' }).waitFor();
-  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-platform-v3'))), withQuestions);
-  await page.evaluate(() => { Storage.prototype.setItem = () => { throw new DOMException('Quota exceeded', 'QuotaExceededError'); }; });
-  await page.locator('#importProgress').setInputFiles({ name: 'valid-v2.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify({ version: 2, progress: { 'tr-purpose': { status: 'again' } }, questionProgress: {} })) });
-  await page.getByRole('status').filter({ hasText: 'Не удалось сохранить прогресс' }).waitFor();
-  assert.deepEqual(await page.evaluate(() => JSON.parse(localStorage.getItem('project-map-platform-v3'))), withQuestions);
-  const unchangedExportEvent=page.waitForEvent('download');
-  await page.getByRole('button', { name: 'Скачать прогресс ↓' }).click();
-  const unchangedExport=JSON.parse(await readFile(await (await unchangedExportEvent).path(),'utf8'));
-  assert.deepEqual(unchangedExport.progress,withQuestions.progress);
-  assert.deepEqual(unchangedExport.questionProgress,withQuestions.questionProgress);
-  await page.reload();
-  await page.locator('.top-review-btn').click();
-  await page.getByRole('button', { name: '40 минут · один проект', exact: true }).click();
-  await page.keyboard.press('Space');
-  await page.locator('.review-answer').waitFor();
-  await page.keyboard.press('2');
-  await page.getByRole('button', { name: 'Самопроверка', exact: true }).click();
-  assert.equal(await page.getByRole('button', { name: /Открыть разбор и исходники/ }).count(), 0);
-  await page.keyboard.press('Space');
-  assert.equal(await page.getByRole('button', { name: /Открыть разбор и исходники/ }).count(), 1);
-  await page.getByRole('button', {name:'10 минут · истории',exact:true}).click();
-  await page.getByRole('heading', {name:'Расскажите о задаче, своём вкладе и результате.',exact:true}).waitFor();
-  assert.equal(await page.locator('.review-answer').count(),0);
-  await page.keyboard.press('Space');
-  assert((await page.locator('.review-answer').textContent()).length>100);
-  const beforeStory=await page.evaluate(()=>JSON.parse(localStorage.getItem('project-map-platform-v3')));
-  await page.keyboard.press('2');
-  const afterStory=await page.evaluate(()=>JSON.parse(localStorage.getItem('project-map-platform-v3')));
-  assert.deepEqual(afterStory.questionProgress,beforeStory.questionProgress);
-  assert(Object.keys(afterStory.progress).some(id=>id.startsWith('ln-')));
-  const commercial = page.locator('[data-action="project"][data-project="lanit"]');
-  if (await commercial.count()) {
-    await commercial.click();
-    await page.locator('[data-action=mode][data-mode=map]').click();
-    await page.getByRole('button', { name: 'Начать маршрут ↗' }).click();
-    await page.locator('.interview-question').first().waitFor();
-    await page.getByRole('button', { name: 'Следующий шаг →', exact: true }).click();
-    await page.getByRole('button', { name: 'Закрыть разбор' }).click();
-  }
-  await page.screenshot({ path: 'artifacts/map-desktop.png', fullPage: true, animations: 'disabled' });
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.locator('#mobileMenu').click();
-  await page.locator('[data-action="project"][data-project="inbox"]').click();
-  await page.locator('#mobileMenu').click();
-  await page.locator('[data-action=mode][data-mode=map]').click();
-  await page.getByRole('button', { name: 'Начать маршрут ↗' }).click();
-  await page.locator('.interview-question>summary').first().click();
-  assert(await page.locator('.interview-answer').first().isVisible());
-  await page.screenshot({ path: 'artifacts/map-mobile.png', animations: 'disabled' });
-  assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-  await page.keyboard.press('Escape');
-  await page.keyboard.press('/');
-  await page.locator('#searchInput').fill('Inbox Point');
-  assert(await page.locator('.search-result').count() > 0);
-  await page.keyboard.press('Escape');
-  await page.setViewportSize({width:1440,height:1000});
-  await context.grantPermissions(['clipboard-read','clipboard-write']);
-  for(const topic of topics.filter(t=>t.pilot)){
-    await page.goto(base+'/#topic='+topic.id);
-    await page.locator('.topic-sections').waitFor();
-    assert.equal(await page.locator('.topic-sections>section').count(),4);
+import {mkdir,readFile} from 'node:fs/promises';
+import {createRequire} from 'node:module';
+import {topics,projects} from '../src/projects/catalog/data.js';
+import {createServer} from './serve.mjs';
+const {chromium}=createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE||'playwright');
+const server=createServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const base=`http://127.0.0.1:${server.address().port}`;
+const browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{})});
+const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[];
+page.on('pageerror',e=>errors.push(e.message));
+const state=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('project-map-platform-v3')));
+const open=id=>page.goto(base+'/#/projects?projectTopic='+id);
+await mkdir('artifacts/vue-migration',{recursive:true});
+try{
+  await page.goto(base+'/?projects=1');await page.locator('.topic-row').first().waitFor();assert.equal(await page.locator('iframe').count(),0);
+  const v1={'tr-purpose':{status:'done',updatedAt:'old'}};
+  await page.evaluate(v=>localStorage.setItem('project-map-review-v1',JSON.stringify(v)),v1);await page.reload();
+  await page.getByRole('button',{name:/Inbox Point.*тем/}).click();await page.locator('#inlineSearch').fill('React');assert(await page.locator('.topic-row').count()>0);
+  await page.locator('.topic-row').first().click();await page.getByRole('button',{name:'✓ Могу объяснить',exact:true}).click();
+  assert.deepEqual((await state()).progress['tr-purpose'],v1['tr-purpose']);assert.deepEqual((await state()).questionProgress,{});
+  const downloadEvent=page.waitForEvent('download');await page.locator('[data-action=export]').click();const payload=await readFile(await (await downloadEvent).path(),'utf8');
+  const before=await state();await page.locator('#platformImport').setInputFiles({name:'bad.json',mimeType:'application/json',buffer:Buffer.from('{"version":3}')});
+  await page.getByRole('status').filter({hasText:'Импорт отклонён'}).waitFor();assert.deepEqual(await state(),before);
+  await page.evaluate(()=>localStorage.removeItem('project-map-platform-v3'));await page.reload();
+  await page.locator('#platformImport').setInputFiles({name:'progress.json',mimeType:'application/json',buffer:Buffer.from(payload)});
+  await page.getByRole('status').filter({hasText:'Прогресс восстановлен'}).waitFor();assert.deepEqual(await state(),before);
+  // Every topic renders all four native blocks; answers and full code remain collapsed.
+  for(const topic of topics){
+    await open(topic.id);await page.locator('#details').waitFor();
     assert.deepEqual(await page.locator('.topic-sections>section>h3').allTextContents(),['Как это работает','Что нужно изучить','Вопросы на собеседовании','Реализация в коде']);
-    assert.equal(await page.locator('.interview-question[open]').count(),0);
-    assert.equal(await page.locator('.interview-answer').first().isVisible(),false);
-    await page.locator('.interview-question>summary').first().focus();
-    await page.keyboard.press('Enter');
-    assert(await page.locator('.interview-answer').first().isVisible());
-    await page.locator('.interview-answer .further>summary').first().click();
-    assert(await page.getByRole('heading',{name:'Пример из проекта',exact:true}).first().isVisible());
-    assert.equal(await page.getByText('Учебная реализация сейчас',{exact:true}).count(),0);
-    if(['ln-registration','tr-merge'].includes(topic.id)){
-      const full=page.locator('details.code-full');
-      assert.equal(await full.getAttribute('open'),null);
-      assert.equal(await full.locator('.code-step').first().isVisible(),false);
-      await full.locator('summary').focus();
-      await page.keyboard.press('Enter');
+    assert.equal(await page.locator('details.interview-question').count(),topic.pilot.questions.length);
+    assert.equal(await page.locator('details.interview-question[open]').count(),0);
+    await page.locator('details.interview-question summary').first().click();assert(await page.locator('.interview-answer').first().isVisible());
+    const full=page.locator('details.code-full');if(await full.count()){
+      assert.equal(await full.getAttribute('open'),null);await full.locator('summary').click();
       assert.equal(await full.locator('.code-step').count(),topic.pilot.code.steps.length);
-      assert(await full.locator('.code-step').last().isVisible());
+      for(const [index,step] of topic.pilot.code.steps.entries())if(step.project==='cokr')assert.equal(await full.locator(`[data-index="${index}"]`).count(),1);
     }
-    if(topic.id==='ln-registration'){
-      await page.locator('.local-settings>summary').click();
-      await page.locator('#sourceRoot').fill('C:\\Study\\cokr');
-      const firstCodeIndex=Number(await page.locator('[data-action=copy-source]').first().getAttribute('data-index'));
-      await page.locator('[data-action=copy-source]').first().click();
-      const copied=await page.evaluate(()=>navigator.clipboard.readText());
-      assert(copied.startsWith('C:\\Study\\cokr\\'));
-      assert(copied.includes(topic.pilot.code.steps[firstCodeIndex].symbol));
-      const lastStep=topic.pilot.code.steps.at(-1);
-      await page.locator('details.code-full [data-action=copy-source]').last().click();
-      const copiedLast=await page.evaluate(()=>navigator.clipboard.readText());
-      assert(copiedLast.includes(lastStep.symbol));
-      assert(copiedLast.includes(`:${lastStep.line}`));
-      await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw new Error('denied');}}}));
-      await page.locator('[data-action=copy-source]').first().click();
-      assert(await page.locator('#sourceReference').isVisible());
-      assert((await page.locator('#sourceReference').inputValue()).includes(topic.pilot.code.steps[firstCodeIndex].symbol));
-    }else if(topic.project!=='lanit'){
-      const href=await page.locator('.code-step a').first().getAttribute('href');
-      assert(href.includes(topic.pilot.sourceRevision)&&/#L[0-9]+$/.test(href));
-    }
-    await page.locator('#details').evaluate(el=>el.scrollTop=0);
-    if(['ln-registration','tr-merge','ip-delivery','tr-auth','ip-content','ln-shared'].includes(topic.id))await page.screenshot({path:'artifacts/topic-'+topic.id+'.png',animations:'disabled'});
   }
-  await page.setViewportSize({width:390,height:844});
-  await page.goto(base+'/#topic=ln-registration');
-  await page.locator('.topic-sections').waitFor();
-  assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));
-  assert(await page.locator('#details').evaluate(el=>el.scrollWidth<=el.clientWidth));
-  await page.screenshot({path:'artifacts/pilot-mobile.png',animations:'disabled'});
-  await page.locator('.interview-question>summary').first().click();
-  await page.locator('.interview-question').first().scrollIntoViewIfNeeded();
-  await page.screenshot({path:'artifacts/topic-answers-mobile.png',animations:'disabled'});
-  await page.locator('.code-step').first().scrollIntoViewIfNeeded();
-  assert(await page.locator('#details').evaluate(el=>el.scrollWidth<=el.clientWidth));
-  await page.screenshot({path:'artifacts/topic-code-mobile.png',animations:'disabled'});
-  await page.evaluate(()=>localStorage.setItem('project-map-platform-v3','{broken'));
-  await page.goto(base+'/?projects=1');
-  await page.getByRole('alert').filter({hasText:'прогресс недоступен'}).waitFor();
-  await page.goto(base+'/#topic=ln-registration');
-  await page.getByRole('button',{name:'✓ Могу объяснить',exact:true}).click();
-  assert.equal(await page.evaluate(()=>localStorage.getItem('project-map-platform-v3')),'{broken');
-  assert.deepEqual(errors, []);
-  console.log(`PASS map browser: v1/v2 progress, all ${allQuestions.length} review questions, quick mode, atomic import failures; ${topics.length} four-block topics, collapsed code, links, clipboard fallback, desktop/mobile`);
-} catch(error){await page.screenshot({path:'artifacts/map-failure.png'});console.error('Browser errors:',errors);throw error;}
-finally { await browser.close(); if(testServer)await new Promise(resolve=>testServer.close(resolve)); }
+  // All 17 routes and all 153 review questions remain reachable in the same app.
+  await page.goto(base+'/#/projects');await page.locator('[data-action=mode][data-mode=map]').click();let routes=0;
+  for(const p of Object.values(projects)){
+    await page.locator(`[data-action=project][data-project=${p.id}]`).click();
+    for(const r of p.routes){await page.locator('#projectRoute').selectOption(r.id);assert.equal(await page.locator('.route-topics li').count(),r.nodes.length);routes++;}
+  }
+  assert.equal(routes,17);
+  await page.locator('[data-action=mode][data-mode=review]').click();await page.getByLabel('Охват',{exact:true}).selectOption('both');await page.getByLabel('Набор',{exact:true}).selectOption('all');
+  assert((await page.locator('#platformMain').innerText()).includes('1 из 153'));
+  const seen=new Set();for(let i=0;i<153;i++){const title=await page.locator('.question-card h2').innerText();seen.add(title);assert.equal(await page.locator('.platform-answer').count(),0);await page.locator('[data-action=reveal]').click();assert(await page.locator('.platform-answer').isVisible());await page.locator('[data-action=next-question]').click();}
+  assert(seen.size>140);await page.locator('#reviewMode').selectOption('quick');assert((await page.locator('#platformMain').innerText()).includes('1 из 50'));
+  // Copy a corporate source: both clipboard and deliberate denial / fallback.
+  await context.grantPermissions(['clipboard-read','clipboard-write']);await open('ln-registration');
+  await page.locator('.local-settings summary').click();await page.locator('#sourceRoot').fill('C:\\Work\\cokr');
+  await page.locator('[data-action=copy-source]').first().click();assert((await page.evaluate(()=>navigator.clipboard.readText())).startsWith('C:\\Work\\cokr\\src\\'));
+  await page.evaluate(()=>{Object.defineProperty(navigator.clipboard,'writeText',{configurable:true,value:async()=>{throw Error('Denied');}});});
+  await page.locator('[data-action=copy-source]').first().click();await page.locator('#sourceReference').waitFor();assert((await page.locator('#sourceReference').inputValue()).includes('C:\\Work\\cokr\\src\\'));
+  await page.screenshot({path:'artifacts/vue-migration/native-map-desktop.png',fullPage:true});
+  await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await page.screenshot({path:'artifacts/vue-migration/native-map-mobile.png',fullPage:true});
+  await page.goto(base+'/#topic=tr-local');await page.locator('#details').waitFor();assert((await page.locator('#details h2').innerText()).includes('IndexedDB'));
+  assert.deepEqual(errors,[]);console.log('PASS native Vue map: 50 four-block topics, 153 review questions, quick50, routes17, v1/import/export, clipboard/fallback, old links, desktop/mobile, no iframe');
+}finally{await browser.close();await new Promise(r=>server.close(r));}

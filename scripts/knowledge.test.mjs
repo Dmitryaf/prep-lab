@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } from 'node
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { allowedKnowledgePath, extractQuestions, loadKnowledge } from './knowledge.mjs';
-import { renderMarkdown, headingId } from '../dist/markdown.js';
+import { renderMarkdown, headingId } from '../src/knowledge/markdown.js';
 
 test('allowlist excludes private and service documents, traversal and executable labs', () => {
   for (const path of ['Фронтенд/Vue/01. Тема.md', 'Собеседования/Практика/Vue.md']) assert(allowedKnowledgePath(path));

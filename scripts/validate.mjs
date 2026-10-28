@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { projects, topics } from '../dist/data.js';
+import { projects, topics } from '../src/projects/catalog/data.js';
 
 const ids = new Set();
 for (const topic of topics) {

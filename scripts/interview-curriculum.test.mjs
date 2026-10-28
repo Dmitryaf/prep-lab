@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {resolve} from 'node:path';
-import {topics} from '../dist/data.js';
-import {projectQuestions} from '../dist/project-questions.js';
+import {topics} from '../src/projects/catalog/data.js';
+import {projectQuestions} from '../src/projects/questions.js';
 import {loadKnowledge} from './knowledge.mjs';
-import {selectInterview,dailySession,loadState,saveState,exportState,importState,rateQuestion} from '../dist/platform-state.js';
+import {selectInterview,dailySession,loadState,saveState,exportState,importState,rateQuestion} from '../src/progress/engine.js';
 const knowledge=loadKnowledge(resolve(process.env.CAREER_KNOWLEDGE_ROOT||'../career-knowledge'));
 const projects=projectQuestions(topics),bank=[...knowledge.questions,...projects];
 const blank=()=>loadState({getItem:()=>null});

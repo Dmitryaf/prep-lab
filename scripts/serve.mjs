@@ -4,7 +4,7 @@ import {readFileSync,realpathSync,statSync} from 'node:fs';
 import {resolve,dirname,sep,extname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {loadKnowledge} from './knowledge.mjs';
-const root=realpathSync(resolve(dirname(fileURLToPath(import.meta.url)),'../dist'));
+const root=resolve(dirname(fileURLToPath(import.meta.url)),'../dist');
 const types={'.html':'text/html','.js':'text/javascript','.css':'text/css','.svg':'image/svg+xml'};
 export function createServer({knowledgeRoot=process.env.CAREER_KNOWLEDGE_ROOT||resolve(root,'../../career-knowledge')}={}){
   return http.createServer((req,res)=>{
