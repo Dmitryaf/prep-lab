@@ -8,6 +8,7 @@ import { canonicalNotePath } from "../knowledge/path.js";
 import { localCodeReference } from "./catalog/implementation.js";
 import { highlightedCode } from "./catalog/code-highlights.js";
 import CodeReference from "./CodeReference.vue";
+import StudyChat from '../assistant/StudyChat.vue';
 const props = defineProps<{ topic: Topic; routeNodes?: string[] }>();
 defineEmits<{ close: [] }>();
 const sourceRoot = ref(""),
@@ -63,6 +64,7 @@ async function copy(step: CodeStep) {
     </div>
     <h2>{{ topic.title }}</h2>
     <p>{{ topic.summary }}</p>
+    <StudyChat :key="topic.id" :material-key="'topic:'+topic.id" :title="topic.title" :context="JSON.stringify(topic,null,2)" />
     <p class="platform-meta">
       {{ topic.priority }} · {{ topic.minutes }} мин ·
       {{

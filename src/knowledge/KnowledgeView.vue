@@ -8,6 +8,7 @@ import { canonicalNotePath } from "./path.js";
 import PageHeading from "../shared/PageHeading.vue";
 import MarkdownContent from "./MarkdownContent.vue";
 import QuestionList from "../shared/QuestionList.vue";
+import StudyChat from '../assistant/StudyChat.vue';
 const route = useRoute(),
   router = useRouter(),
   note = computed(() =>
@@ -50,6 +51,7 @@ function back() {
           :source-id="note.id"
         />
       </article>
+      <StudyChat :key="note.id" :material-key="'note:'+note.id" :title="note.title" :context="note.markdown" />
       <details v-if="noteQuestions.length" class="platform-card">
         <summary>
           Вопросы по этому материалу ({{ noteQuestions.length }})

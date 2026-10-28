@@ -8,7 +8,7 @@ export async function createDevelopmentServer({port=Number(process.env.PORT||417
     vite=await createViteServer({server:{host:'127.0.0.1',port,strictPort:true,proxy:{'/api':{target:`http://127.0.0.1:${api.address().port}`}}}});
     await vite.listen();
     return {vite,api,async close(){await vite.close();api.closeAllConnections();await new Promise(r=>api.close(r));}};
-  }catch(error){api.closeAllConnections();api.close();throw error;}
+  }catch(error){await vite?.close();api.closeAllConnections();await new Promise(r=>api.close(r));throw error;}
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   const dev=await createDevelopmentServer();dev.vite.printUrls();

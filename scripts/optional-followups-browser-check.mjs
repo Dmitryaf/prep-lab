@@ -82,7 +82,7 @@ try{
     await page.goto(base+'/#'+new URLSearchParams({view:'practice',question:q.id}));await page.locator('.question-card').waitFor();
     const meta=await page.locator('.question-card .platform-meta').innerText();
     assert(meta.startsWith(project==='lanit'?'Коммерческий опыт':'Личный проект'));
-    assert((await page.locator('#practiceCategory option:checked').innerText()).startsWith('Проекты и рабочий опыт'));
+    assert((await page.locator('#practiceCategory option:checked').innerText()).trim().startsWith('Проекты и рабочий опыт'));
   }
   assert.deepEqual(errors,[]);
   console.log('PASS daily11, optional daily1/full2, review/rating/study return, reload/export/import, legacy third followups, project labels and mobile');

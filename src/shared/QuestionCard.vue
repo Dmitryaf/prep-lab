@@ -3,6 +3,7 @@ import type { Question } from "./types";
 import { kindLabel, categoryLabel } from "./presentation";
 import MarkdownContent from "../knowledge/MarkdownContent.vue";
 import AnswerPanel from "./AnswerPanel.vue";
+import StudyChat from '../assistant/StudyChat.vue';
 defineProps<{ question: Question; revealed?: boolean; followup?: number }>();
 </script>
 <template>
@@ -31,5 +32,6 @@ defineProps<{ question: Question; revealed?: boolean; followup?: number }>();
       :question="question"
       :for-followup="!!followup"
     />
+    <StudyChat v-if="revealed" :key="question.id" :material-key="'question:'+question.id" :title="question.title" :context="JSON.stringify(question,null,2)" />
   </article>
 </template>
