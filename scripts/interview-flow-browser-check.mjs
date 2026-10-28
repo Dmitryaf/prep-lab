@@ -63,10 +63,11 @@ try{
   assert.equal(await page.locator('[data-action=session-review]').count(),0);
   let steps=0;
   while(await page.locator('[data-action=session-next]').count()){
-    assert(++steps<160);assert.equal(await page.locator('.platform-answer').count(),0);
+    assert(++steps<=20);assert.equal(await page.locator('.platform-answer').count(),0);
     await page.locator('[data-action=session-next]').click();
     if(steps===5){await page.reload();await page.locator('[data-action=session-next]').waitFor();}
   }
+  assert.equal(steps,20);
   assert.equal(await page.locator('.platform-answer').count(),20);
   await page.locator('[data-rating=again]').last().click();
   assert(Object.values((await state()).sessions).at(-1).finished);
@@ -77,5 +78,5 @@ try{
   assert.equal(current(await state()).index,projectIndex);
   await page.screenshot({path:'artifacts/interview-fixes/daily-review-mobile.png',fullPage:true});
   assert.deepEqual(errors,[]);
-  console.log('PASS daily review/study/return/reload, project code and repeat, legacy paths, full20 with followups and persisted ratings, mobile');
+  console.log('PASS daily review/study/return/reload, project code and repeat, legacy paths, full20 without required followups and persisted ratings, mobile');
 }finally{await browser.close();await new Promise(r=>server.close(r));}

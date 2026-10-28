@@ -33,10 +33,12 @@ try{
   await page.screenshot({path:'artifacts/platform-interview.png',fullPage:true});
   const q=first.snapshots[first.questionIds[0]];
   if(q.followups.length){
-    await page.locator('[data-action=session-next]').click();
-    assert.equal(await page.locator('.question-card h2').innerText(),q.followups[0]);
+    await page.locator('[data-action=session-followup]').click();
+    const selected=await page.locator('.question-card h2').innerText();
+    assert(q.followups.includes(selected));
+    assert.equal(await page.locator('[data-action=session-followup]').count(),0);
     await page.reload();await page.locator('[data-action=session-next]').waitFor();
-    assert.equal(await page.locator('.question-card h2').innerText(),q.followups[0]);
+    assert.equal(await page.locator('.question-card h2').innerText(),selected);
   }
   await page.locator('[data-action=session-skip]').click();
   await page.reload();await page.locator('[data-action=session-skip]').waitFor();
@@ -141,5 +143,5 @@ try{
   assert((await page.locator('#platformMain').innerText()).includes('1 из 153'));
   assert.equal(Object.keys((await state()).daily).length,2);
   assert.deepEqual(errors,[]);
-  console.log('PASS platform browser: daily/full, sequential followups, reload, local midnight, ratings, route66, project153, internal links, shared progress, export/import, keyboard, desktop/mobile, missing knowledge');
+  console.log('PASS platform browser: daily/full, optional followups, reload, local midnight, ratings, route66, project153, internal links, shared progress, export/import, keyboard, desktop/mobile, missing knowledge');
 }catch(error){await page.screenshot({path:'artifacts/platform-failure.png',fullPage:true});console.error(await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>innerWidth+1).slice(0,15).map(e=>({tag:e.tagName,class:e.className,width:e.getBoundingClientRect().width,text:e.textContent.slice(0,80)}))));throw error;}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
