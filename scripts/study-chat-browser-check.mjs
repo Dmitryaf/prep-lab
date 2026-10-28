@@ -37,4 +37,3 @@ try{
   await page.goto(base+'/#/projects?projectTopic=tr-local');await page.getByRole('button',{name:'Разобраться с Codex',exact:true}).click();await input.waitFor();assert.equal(await page.locator('.study-message').count(),0);
   assert.deepEqual(errors,[]);console.log(`PASS ${live?'LIVE Codex':'controlled Codex'}: keyboard, stream, reload, follow-up context, separate topics, mobile layout, full interview gating${live?'':', failure and cancel'}`);
 }finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));rmSync(directory,{recursive:true,force:true});}
-
