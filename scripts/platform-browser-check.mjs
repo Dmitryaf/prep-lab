@@ -25,8 +25,9 @@ try{
   await page.locator('[data-action=session-skip]').waitFor();
   const first=(await state()).daily['2026-10-28'];
   assert(first.questionIds.length>=7);
-  assert(Object.values(first.snapshots).every(q=>q.source==='knowledge'&&!['project','behavioral'].includes(q.kind)));
-  assert(Object.values(first.snapshots).every(q=>q.curriculumTier==='core'));
+  assert(Object.values(first.snapshots).filter(q=>q.kind==='project').length===2);
+  assert(Object.values(first.snapshots).filter(q=>q.category==='Vue'&&q.kind==='theory').length>=2);
+  assert(Object.values(first.snapshots).every(q=>q.source==='projects'||q.curriculumTier==='core'));
   assert.equal(await page.locator('.platform-answer').count(),0);
   assert.equal(await page.locator('#platformSearch').isDisabled(),true);
   await page.screenshot({path:'artifacts/platform-interview.png',fullPage:true});

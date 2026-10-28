@@ -1,6 +1,7 @@
 // Read-only adapter. Only an indexed allowlist can become browser-visible material.
 import { readdirSync, readFileSync, realpathSync, statSync, lstatSync } from 'node:fs';
 import { resolve, sep } from 'node:path';
+import {canonicalNotePath} from '../dist/knowledge-path.js';
 
 const folders = ['Собеседования/Темы', 'Собеседования/Практика', 'Собеседования/Проектирование', 'Фронтенд', 'Опыт и проекты'];
 const singles = ['Собеседования/00. Карта раздела.md', 'Собеседования/01. Основной маршрут.md', ...['00. Карта раздела', '01. Рассказ о себе', '02. Позиционирование и причины поиска', '03. Поведенческие ответы', '04. Вопросы работодателю'].map(s => `HR и самопрезентация/${s}.md`)];
@@ -33,7 +34,7 @@ export function headings(markdown) {
 }
 function categoryFor(path, heading = '') {
   const name = path.split('/').at(-1).replace(/\.md$/, '');
-  const section = path.split('/')[1];
+  const section = canonicalNotePath(path).split('/')[1];
   if (path.startsWith('Фронтенд/') && ['JavaScript', 'TypeScript', 'Vue', 'React', 'Angular', 'RxJS'].includes(section)) return section;
   if (/^Фронтенд\/(API браузера|HTML и CSS)\//.test(path)) return 'Браузер, HTML и CSS';
   if (/^(JavaScript|TypeScript|Vue|React|Angular|RxJS)$/.test(name)) return name;
