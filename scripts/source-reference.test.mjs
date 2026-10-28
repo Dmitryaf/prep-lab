@@ -39,6 +39,7 @@ test('editorial highlights resolve real steps and preserve original copy indices
     }
   }
   assert.equal(sourceContext({project:'trajectory'}),'');
-  assert.equal(sourceContext({project:'cokr',path:'src/app/extensions/platform.ts'}),'Модуль extensions');
+  assert.equal(sourceContext({project:'cokr',path:'src/app/application/services/medo.service.ts'}),'Прикладной сервис Landocs');
+  assert.equal(sourceContext({project:'cokr',path:'src/app/domain/models/medo.ts'}),'Предметная модель Landocs');
   assert.equal(sourceContext({project:'cokr',path:'src/assets/cokr-front/templates/medo.vue'}),'Шаблон Landocs');
 });
