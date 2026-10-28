@@ -38,7 +38,7 @@ try{
       for(const [index,step] of topic.pilot.code.steps.entries())if(step.project==='cokr')assert.equal(await full.locator(`[data-index="${index}"]`).count(),1);
     }
   }
-  // All 17 routes and all 153 review questions remain reachable in the same app.
+  // All 17 routes and all 177 review questions remain reachable in the same app.
   await page.goto(base+'/#/projects');await page.locator('[data-action=mode][data-mode=map]').click();let routes=0;
   for(const p of Object.values(projects)){
     await page.locator(`[data-action=project][data-project=${p.id}]`).click();
@@ -46,8 +46,8 @@ try{
   }
   assert.equal(routes,17);
   await page.locator('[data-action=mode][data-mode=review]').click();await page.getByLabel('Охват',{exact:true}).selectOption('both');await page.getByLabel('Набор',{exact:true}).selectOption('all');
-  assert((await page.locator('#platformMain').innerText()).includes('1 из 153'));
-  const seen=new Set();for(let i=0;i<153;i++){const title=await page.locator('.question-card h2').innerText();seen.add(title);assert.equal(await page.locator('.platform-answer').count(),0);await page.locator('[data-action=reveal]').click();assert(await page.locator('.platform-answer').isVisible());await page.locator('[data-action=next-question]').click();}
+  assert((await page.locator('#platformMain').innerText()).includes('1 из 177'));
+  const seen=new Set();for(let i=0;i<177;i++){const title=await page.locator('.question-card h2').innerText();seen.add(title);assert.equal(await page.locator('.platform-answer').count(),0);await page.locator('[data-action=reveal]').click();assert(await page.locator('.platform-answer').isVisible());await page.locator('[data-action=next-question]').click();}
   assert(seen.size>140);await page.locator('#reviewMode').selectOption('quick');assert((await page.locator('#platformMain').innerText()).includes('1 из 50'));
   // Copy a corporate source: both clipboard and deliberate denial / fallback.
   await context.grantPermissions(['clipboard-read','clipboard-write']);await open('ln-registration');
@@ -58,5 +58,5 @@ try{
   await page.screenshot({path:'artifacts/vue-migration/native-map-desktop.png',fullPage:true});
   await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await page.screenshot({path:'artifacts/vue-migration/native-map-mobile.png',fullPage:true});
   await page.goto(base+'/#topic=tr-local');await page.locator('#details').waitFor();assert((await page.locator('#details .topic-title').innerText()).includes('IndexedDB'));
-  assert.deepEqual(errors,[]);console.log('PASS native Vue map: 50 four-block topics, 153 review questions, quick50, routes17, v1/import/export, clipboard/fallback, old links, desktop/mobile, no iframe');
+  assert.deepEqual(errors,[]);console.log('PASS native Vue map: 50 four-block topics, 177 review questions, quick50, routes17, v1/import/export, clipboard/fallback, old links, desktop/mobile, no iframe');
 }finally{await browser.close();await new Promise(r=>server.close(r));}

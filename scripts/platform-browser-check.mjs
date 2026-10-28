@@ -84,8 +84,8 @@ try{
   await page.locator('.platform-note').waitFor();
   assert(await page.getByRole('heading',{name:'Примеры из проектов'}).count());
   await go('projects');await page.locator('[data-action=project-practice]').click();
-  await page.getByText('1 из 153',{exact:true}).waitFor();
-  assert((await page.locator('#platformMain').innerText()).includes('1 из 153'));
+  await page.getByText('1 из 177',{exact:true}).waitFor();
+  assert((await page.locator('#platformMain').innerText()).includes('1 из 177'));
   await page.locator('[data-action=reveal]').click();await page.locator('[data-rating=again]').click();
   await go('repeat');assert(await page.locator('.platform-list-row').count());
   const before=await state();assert.equal(before.questionProgress[markedId].status,'done');
@@ -140,9 +140,9 @@ try{
   await page.locator('[data-action=daily]').click();await page.locator('[data-action=session-skip]').waitFor();
   assert.equal(await page.locator('.question-card h2').innerText(),tomorrow.snapshots[tomorrow.questionIds[0]].title);
   await go('projects');await page.locator('[data-action=project-practice]').click();
-  await page.getByText('1 из 153',{exact:true}).waitFor();
-  assert((await page.locator('#platformMain').innerText()).includes('1 из 153'));
+  await page.getByText('1 из 177',{exact:true}).waitFor();
+  assert((await page.locator('#platformMain').innerText()).includes('1 из 177'));
   assert.equal(Object.keys((await state()).daily).length,2);
   assert.deepEqual(errors,[]);
-  console.log('PASS platform browser: daily/full, optional followups, reload, local midnight, ratings, route66, project153, internal links, shared progress, export/import, keyboard, desktop/mobile, missing knowledge');
+  console.log('PASS platform browser: daily/full, optional followups, reload, local midnight, ratings, route66, project177, internal links, shared progress, export/import, keyboard, desktop/mobile, missing knowledge');
 }catch(error){await page.screenshot({path:'artifacts/platform-failure.png',fullPage:true});console.error(await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>innerWidth+1).slice(0,15).map(e=>({tag:e.tagName,class:e.className,width:e.getBoundingClientRect().width,text:e.textContent.slice(0,80)}))));throw error;}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}

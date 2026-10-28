@@ -39,7 +39,7 @@ test('real curriculum keeps Vue, project and experience coverage across 90 days,
   assert(visited.size>80,`Only ${visited.size} unique questions across 90 days`);
 });
 test('project adapters preserve map IDs, use confirmed stories and keep code separate from experience',()=>{
-  assert.equal(projects.length,153);
+  assert.equal(projects.length,177);
   for(const q of projects){
     assert(q.answer&&q.criteria&&q.followups.length&&q.learningLinks.length);
     const t=topics.find(t=>t.id===q.topicId);assert(t.pilot.questions.some(p=>`${t.id}/${p.id}`===q.id));
