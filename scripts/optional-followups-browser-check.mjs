@@ -17,7 +17,10 @@ const restore=async value=>{
 await mkdir('artifacts/optional-followups',{recursive:true});
 try{
   await page.clock.install({time:new Date('2026-10-28T12:00:00+05:00')});
-  await page.goto(base);await page.locator('[data-action=daily]:enabled').click();
+  await page.goto(base);
+  await page.getByRole('heading',{name:'Ежедневное интервью',exact:true}).waitFor();
+  await page.locator('[data-action=daily]:enabled').click();
+  await page.getByRole('heading',{level:1,name:'Ежедневное интервью',exact:true}).waitFor();
   await page.locator('[data-action=session-next]').waitFor();const original=await state(),url=page.url();
   assert.equal(daily(original).questionIds.length,11);
   // Eleven main answers complete the daily interview without a single followup or skip.

@@ -102,7 +102,7 @@ watch(() => route.fullPath, refreshDate);
         }}
         · 20–40 минут
       </div>
-      <h2>Сегодняшнее интервью</h2>
+      <h2>Ежедневное интервью</h2>
       <p>
         11–12 вопросов по Vue, TypeScript, JavaScript, инженерным темам и вашим
         проектам или рабочему опыту. В течение дня вопросы остаются теми же.
@@ -199,7 +199,7 @@ watch(() => route.fullPath, refreshDate);
   </template>
   <template v-else-if="!session"
     ><PageHeading title="Интервью не найдено" /><RouterLink to="/interview"
-      >К сегодняшнему интервью</RouterLink
+      >К интервью</RouterLink
     ></template
   >
   <template v-else-if="session.finished">
@@ -227,7 +227,7 @@ watch(() => route.fullPath, refreshDate);
   <template v-else-if="current">
     <PageHeading
       :title="
-        session.kind === 'daily' ? 'Сегодняшнее интервью' : 'Полное интервью'
+        session.kind === 'daily' ? 'Ежедневное интервью' : 'Полное интервью'
       "
     />
     <div class="platform-session-bar">

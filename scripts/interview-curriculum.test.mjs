@@ -16,13 +16,13 @@ test('real curriculum keeps Vue, project and experience coverage across 90 days,
     for(const kind of ['daily','full']){
       const q=selectInterview(bank,kind,date,history,progress);
       assert.equal(new Set(q.map(q=>q.id)).size,q.length);
-      assert(q.length>=(kind==='daily'?10:16)&&q.length<=(kind==='daily'?12:20));
-      assert(q.filter(q=>q.kind==='theory'&&q.category==='Vue').length>=2);
+      assert(q.length>=(kind==='daily'?11:20)&&q.length<=(kind==='daily'?12:20));
+      assert(q.filter(q=>q.kind==='theory'&&q.category==='Vue').length>=(kind==='daily'?2:3));
       assert(q.filter(q=>q.kind==='theory'&&q.category==='TypeScript').length>=2);
       assert(q.some(q=>q.category==='Браузер, HTML и CSS'));
       assert(q.some(q=>q.category==='Сети и безопасность'));
       assert(q.some(q=>['Тестирование','Инженерные вопросы','Архитектура, производительность и тестирование'].includes(q.category)));
-      assert(q.filter(q=>q.kind==='project').length>=(kind==='daily'?1:3));
+      assert(q.filter(q=>q.kind==='project').length>=(kind==='daily'?2:5));
       assert(q.some(q=>q.project==='lanit'));
       assert(q.every(q=>q.source==='projects'||q.curriculumTier==='core'));
       if(kind==='full'){

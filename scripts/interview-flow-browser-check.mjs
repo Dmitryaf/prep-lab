@@ -34,7 +34,7 @@ try{
   await page.getByRole('link',{name:'Проект и реализация в коде',exact:true}).click();
   assert.equal(await page.locator('iframe').count(),0);
   const frame=page;
-  await frame.getByRole('button',{name:'Закрыть разбор'}).waitFor();
+  await frame.locator('[data-action=back-to-topics]').waitFor();
   assert((await frame.locator('body').innerText()).includes('Реализация'));
   const code=frame.locator('.code-step a').first();
   await code.scrollIntoViewIfNeeded();assert(await code.isVisible());
