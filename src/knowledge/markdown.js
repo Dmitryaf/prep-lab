@@ -7,18 +7,19 @@ export function renderMarkdown(text, { resolveLink } = {}) {
   function inline(value) {
     const tokens = [];
     const token = html => { tokens.push(html); return '\u0000' + (tokens.length - 1) + '\u0000'; };
+    const unavailable = label => `<span class="unavailable-link" title="Материал или раздел не найден в доступном учебном каталоге">${escapeHtml(label)}<small> — недоступно в учебном каталоге</small></span>`;
     let s = String(value).replace(/\u0000/g, '');
     s = s.replace(/`([^`]+)`/g, (_, v) => token(`<code>${escapeHtml(v)}</code>`));
     s = s.replace(/!?\[\[([^\]]+)\]\]/g, (_, raw) => {
       const [target, label] = raw.replace(/\\\|/g, '|').split('|');
       const title = label || target.split('#').at(-1).split('/').at(-1);
-      const href = safeHref(resolveLink?.(target, title) ?? (target.startsWith('#') ? '#' + headingId(target.slice(1)) : null));
-      return token(href ? `<a href="${escapeHtml(href)}">${escapeHtml(title)}</a>` : `<span class="unavailable-link" title="Материал недоступен в приложении">${escapeHtml(title)}</span>`);
+      const href = safeHref(resolveLink ? resolveLink(target, title) : (target.startsWith('#') ? '#' + headingId(target.slice(1)) : null));
+      return token(href ? `<a href="${escapeHtml(href)}">${escapeHtml(title)}</a>` : unavailable(title));
     });
     s = s.replace(/!?\[([^\]]+)\]\((<[^>]+>|[^)]+)\)/g, (_, label, raw) => {
       const target = raw.trim().replace(/^<|>$/g, '').replace(/\s+["'][^"']*["']$/, '');
-      const href = safeHref(/^https?:/i.test(target) ? target : resolveLink?.(target, label) ?? (target.startsWith('#') ? '#' + headingId(target.slice(1)) : null));
-      return token(href ? `<a href="${escapeHtml(href)}"${/^https?:/.test(href) ? ' target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(label)}</a>` : escapeHtml(label));
+      const href = safeHref(/^https?:/i.test(target) ? target : resolveLink ? resolveLink(target, label) : (target.startsWith('#') ? '#' + headingId(target.slice(1)) : null));
+      return token(href ? `<a href="${escapeHtml(href)}"${/^https?:/.test(href) ? ' target="_blank" rel="noopener noreferrer"' : ''}>${escapeHtml(label)}</a>` : unavailable(label));
     });
     return escapeHtml(s).replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, '<em>$1</em>').replace(/\u0000(\d+)\u0000/g, (_, n) => tokens[Number(n)]);
   }

@@ -2,7 +2,7 @@
 import { computed, nextTick, watch } from "vue";
 import { useRoute } from "vue-router";
 import { renderMarkdown, headingId } from "./markdown.js";
-import { canonicalNotePath } from "./path.js";
+import { resolveKnowledgeLink } from "./links.js";
 import { noteFor } from "../app/store";
 import { router, link } from "../app/router";
 const props = withDefaults(defineProps<{ text: string; sourceId?: string }>(), {
@@ -10,31 +10,9 @@ const props = withDefaults(defineProps<{ text: string; sourceId?: string }>(), {
 });
 const route = useRoute();
 function resolveTarget(raw: string) {
-  if (/^(https?:|mailto:)/i.test(raw)) return raw;
-  if (/^[a-z][a-z0-9+.-]*:/i.test(raw) || raw.startsWith("//")) return null;
-  let target: string;
-  try {
-    target = decodeURIComponent(raw);
-  } catch {
-    return null;
-  }
-  const [path, ...fragments] = target.split("#");
-  let id = canonicalNotePath(path || props.sourceId);
-  if (!noteFor(id) && path) {
-    const parts = props.sourceId.split("/").slice(0, -1);
-    for (const part of path.split("/")) {
-      if (part === "..") parts.pop();
-      else if (part !== ".") parts.push(part);
-    }
-    const relative = canonicalNotePath(parts.join("/"));
-    if (noteFor(relative)) id = relative;
-  }
-  return router.resolve(
-    link("themes", {
-      note: id,
-      ...(fragments.length ? { heading: fragments.join("#") } : {}),
-    }),
-  ).href;
+  return resolveKnowledgeLink(raw, props.sourceId, noteFor, (id: string, heading: string) =>
+    router.resolve(link("themes", { note: id, ...(heading ? { heading } : {}) })).href,
+  );
 }
 const html = computed(() =>
   renderMarkdown(props.text, { resolveLink: resolveTarget }),

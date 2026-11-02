@@ -150,6 +150,8 @@ nav[aria-label='Карта проектов'] {gap:22px}
 .platform details[open]>summary {margin-bottom:14px}
 .platform details.interview-question {border-bottom:1px solid var(--line);padding-bottom:12px}
 .platform-markdown {overflow-wrap:anywhere}
+.unavailable-link {color:var(--muted)}
+.unavailable-link small {font-size:.85em}
 .platform-markdown>p,.platform-markdown>ul,.platform-markdown>ol {max-width:76ch}
 .platform pre {overflow:auto;max-width:100%;padding:20px;background:#182538;color:#e0eaff;border-radius:3px;font-size:13px;line-height:1.65}
 .platform code {font-family:Consolas,monospace}
