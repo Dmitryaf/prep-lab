@@ -3,5 +3,8 @@ lab/data/
 lab/.data/
 node_modules/
 dist/
+.nuxt/
+.output/
+.local/
 *.sqlite-wal
 *.sqlite-shm

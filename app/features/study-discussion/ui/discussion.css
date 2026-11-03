@@ -1,0 +1,48 @@
+.study-chat {
+  margin-block: 1rem;
+}
+.study-chat-panel {
+  margin-top: 1rem;
+  border: 1px solid var(--border, #c6ccd5);
+  border-radius: 12px;
+  padding: clamp(12px, 2vw, 24px);
+  max-width: 100%;
+  min-width: 0;
+}
+.study-chat-panel h3 {
+  overflow-wrap: anywhere;
+}
+.study-chat-panel pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  max-height: 32rem;
+  overflow: auto;
+}
+.study-chat-panel details pre {
+  font-size: 0.85rem;
+}
+.study-chat-panel textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin-block: 0.5rem;
+  resize: vertical;
+}
+.study-message {
+  border-left: 3px solid #7d899b;
+  padding: 0.7rem 1rem;
+  margin-block: 0.8rem;
+  background: var(--surface, #f5f7fa);
+  color: var(--text, #172033);
+  border-radius: 6px;
+}
+.study-message.user {
+  border-color: #476cba;
+}
+.study-message pre {
+  margin: 0.5rem 0;
+}
+.study-chat-panel form {
+  margin-top: 1rem;
+}

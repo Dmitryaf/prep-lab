@@ -3,27 +3,52 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22.17.0"
+    "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
   },
   "scripts": {
-    "dev": "node scripts/dev.mjs",
-    "build": "vue-tsc --noEmit && vite build",
-    "start": "node scripts/serve.mjs",
-    "test": "node --test tests/*.test.mjs",
-    "test:browser": "npm run build && node scripts/check-browser.mjs",
-    "validate": "node scripts/validate.mjs && node scripts/validate-links.mjs && node scripts/validate-knowledge.mjs",
-    "check": "npm test && npm run build && npm run validate",
-    "check:all": "npm run check && node scripts/check-browser.mjs"
+    "dev": "node --experimental-strip-types scripts/dev.ts",
+    "build": "nuxt prepare && vue-tsc --noEmit && nuxt build",
+    "start": "node --experimental-strip-types scripts/start.ts",
+    "test": "node --experimental-strip-types --test --test-concurrency=1 tests/*.test.ts",
+    "test:integration": "node --experimental-strip-types --test --test-concurrency=1 tests/integration/*.test.ts",
+    "test:browser": "npm run build && playwright test",
+    "test:browser:list": "playwright test --list",
+    "test:browser:report": "playwright show-report artifacts/playwright/report",
+    "typecheck": "nuxt prepare && vue-tsc --noEmit",
+    "lint": "eslint . --max-warnings=0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "validate": "node --experimental-strip-types scripts/validate.ts && node --experimental-strip-types scripts/validate-links.ts && node --experimental-strip-types scripts/validate-knowledge.ts",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm run build && npm test && npm run test:integration && npm run validate",
+    "check:all": "npm run check && playwright test"
   },
   "dependencies": {
+    "@pinia/nuxt": "1.0.3",
+    "better-sqlite3": "13.0.3",
+    "h3": "1.15.11",
+    "jose": "6.2.15",
+    "nuxt": "4.6.4",
+    "pinia": "4.1.0",
     "vue": "^3.5.44",
-    "vue-router": "^4.6.4"
+    "vue-router": "5.4.0",
+    "zod": "4.6.7"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "@playwright/test": "1.64.1",
+    "@types/better-sqlite3": "9.6.0",
     "@types/node": "^22.20.5",
-    "@vitejs/plugin-vue": "^6.0.10",
+    "eslint": "10.14.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-vue": "10.12.0",
+    "globals": "16.5.0",
+    "jiti": "2.7.0",
+    "prettier": "3.9.10",
     "typescript": "~5.9.3",
+    "typescript-eslint": "8.72.1",
     "vite": "^8.3.5",
+    "vue-eslint-parser": "10.3.0",
     "vue-tsc": "^3.3.13"
   }
 }

@@ -4,7 +4,7 @@ Set shell = CreateObject("WScript.Shell")
 Set files = CreateObject("Scripting.FileSystemObject")
 root = files.GetParentFolderName(WScript.ScriptFullName)
 shell.CurrentDirectory = root
-command = "node.exe """ & root & "\scripts\launch.mjs"""
+command = "node.exe --experimental-strip-types """ & root & "\scripts\launch.ts"""
 On Error Resume Next
 shell.Run command, 0, False
 If Err.Number <> 0 Then

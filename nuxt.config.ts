@@ -1,0 +1,87 @@
+import { defineNuxtConfig } from "nuxt/config";
+import { resolve } from "node:path";
+
+export default defineNuxtConfig({
+  ssr: false,
+  devtools: { enabled: false },
+  telemetry: false,
+  imports: { autoImport: false },
+  modules: ["@pinia/nuxt"],
+  css: [
+    "~/shared/styles/base.css",
+    "~/shared/styles/layout.css",
+    "~/shared/styles/cards.css",
+    "~/features/review-project/ui/projects.css",
+    "~/entities/material/ui/materials.css",
+    "~/shared/styles/responsive.css",
+  ],
+  app: {
+    head: {
+      title: "Frontend Lab",
+      htmlAttrs: { lang: "ru" },
+      bodyAttrs: { class: "platform" },
+      link: [
+        { rel: "icon", type: "image/svg+xml", href: "/favicon.svg" },
+        { rel: "icon", type: "image/x-icon", href: "/favicon.ico" },
+      ],
+    },
+  },
+  nitro: {
+    preset: "node-server",
+    storage: { cache: { driver: "memory" } },
+    prerender: { routes: ["/"] },
+    externals: { external: ["better-sqlite3"] },
+    serverAssets: [{ baseName: "knowledge", dir: resolve("content/common") }],
+  },
+  typescript: { strict: true },
+  vite: {
+    server: {
+      fs: {
+        strict: true,
+        allow: [resolve(".")],
+        deny: [
+          "**/.env",
+          "**/.env.*",
+          "**/*.{crt,pem}",
+          "**/.git/**",
+          "**/artifacts/**",
+          "**/.local/**",
+          "**/lab/**",
+          "**/.agents/**",
+          "**/.codex/**",
+          "**/server/**",
+          "**/docs/**",
+          "**/openspec/**",
+          "**/AGENTS*.md",
+        ],
+      },
+    },
+  },
+  hooks: {
+    "vite:serverCreated"(server) {
+      server.middlewares.use((req, res, next) => {
+        let path: string;
+        try {
+          path = decodeURIComponent(
+            new URL(req.url || "/", "http://localhost").pathname,
+          );
+        } catch {
+          res.statusCode = 400;
+          res.end();
+          return;
+        }
+        if (
+          /^\/(?:artifacts|lab|server|docs|openspec|\.git|\.agents|\.codex|\.local)(?:\/|$)/i.test(
+            path,
+          ) ||
+          /^\/AGENTS.*\.md$/i.test(path)
+        ) {
+          res.statusCode = 403;
+          res.end("Доступ запрещён");
+          return;
+        }
+        next();
+      });
+    },
+  },
+});

@@ -1,0 +1,134 @@
+.platform .platform-note {
+  max-width: 950px;
+  padding: 30px 40px;
+}
+.platform-note h1 {
+  font-size: 36px;
+}
+.platform-note h2 {
+  margin-top: 36px;
+  scroll-margin-top: 160px;
+}
+.platform-note-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
+  gap: 0 26px;
+  margin-top: 20px;
+}
+.platform-note-list a {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+}
+.platform-note-list a:hover {
+  color: var(--accent);
+}
+.knowledge-categories {
+  margin-top: 18px;
+}
+.platform .knowledge-group {
+  margin: 0;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+.platform .knowledge-subgroup {
+  border-top: 1px solid var(--line);
+  margin: 0;
+  padding: 8px 0;
+}
+.knowledge-subgroup > summary small {
+  margin-left: 14px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.platform details {
+  margin: 18px 0;
+}
+.platform details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  min-height: 36px;
+  padding: 8px 0;
+  line-height: 1.5;
+}
+.platform details[open] > summary {
+  margin-bottom: 14px;
+}
+.platform details.interview-question {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 12px;
+}
+.platform-markdown {
+  overflow-wrap: anywhere;
+}
+.unavailable-link {
+  color: var(--muted);
+}
+.unavailable-link small {
+  font-size: 0.85em;
+}
+.platform-markdown > p,
+.platform-markdown > ul,
+.platform-markdown > ol {
+  max-width: 76ch;
+}
+.platform pre {
+  overflow: auto;
+  max-width: 100%;
+  padding: 20px;
+  background: #182538;
+  color: #e0eaff;
+  border-radius: 3px;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.platform code {
+  font-family: Consolas, monospace;
+}
+.platform :not(pre) > code {
+  font-size: 0.9em;
+  background: #eef2f8;
+  padding: 2px 5px;
+  border-radius: 2px;
+}
+.platform table {
+  display: block;
+  border-collapse: collapse;
+  max-width: 100%;
+  overflow: auto;
+  margin: 20px 0;
+  font-size: 14px;
+}
+.platform td,
+.platform th {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  text-align: left;
+  min-width: 100px;
+}
+.platform th {
+  background: #edf2fa;
+}
+.platform blockquote {
+  border-left: 3px solid #9db8e5;
+  color: #4b5b72;
+  padding: 5px 18px;
+  margin: 20px 0;
+}
+.platform input:not([type="search"]),
+.platform textarea {
+  max-width: 100%;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.platform .local-settings input,
+.platform textarea {
+  display: block;
+  width: 100%;
+}

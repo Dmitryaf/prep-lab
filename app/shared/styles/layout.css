@@ -1,0 +1,129 @@
+.platform-shell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 208px minmax(0, 1fr);
+}
+.platform-header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 34px;
+  padding: 30px 18px 20px;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: auto;
+  z-index: 20;
+  background: #f1f4f9;
+  border-right: 1px solid var(--line);
+}
+.platform-brand {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-weight: 700;
+  font-size: 15px;
+  text-decoration: none;
+  color: var(--ink) !important;
+  line-height: 1.2;
+  padding: 0 4px;
+}
+.platform-logo {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.platform-brand-sub {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 400;
+  margin-top: 6px;
+}
+.platform-header nav {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.platform-header nav a {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 10px 14px;
+  color: #4b5b72;
+  font-size: 14px;
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: 7px;
+}
+.platform-header nav a[aria-current="page"] {
+  color: #204ca5;
+  font-weight: 650;
+  background: #e0eaff;
+  border-color: #cadbfb;
+}
+.platform-header nav a:hover {
+  background: #e7edf6;
+  color: var(--accent);
+}
+.platform-header nav a span {
+  font-size: 11px;
+  background: #d9e3f4;
+  padding: 0 6px;
+  border-radius: 4px;
+  margin-left: auto;
+}
+.platform-tools {
+  margin-top: auto;
+}
+.platform-profile {
+  display: grid;
+  gap: 7px;
+}
+.platform-profile label {
+  font-size: 12px;
+  color: var(--muted);
+}
+.platform-profile select {
+  width: 100%;
+  min-height: 40px;
+}
+.platform-search-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+.platform input[type="search"] {
+  min-width: 0;
+  width: 100%;
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: white;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+.platform-workspace {
+  max-width: 1300px;
+  width: 100%;
+  min-width: 0;
+  padding: 40px 44px 24px;
+  margin: 0 auto;
+}
+.platform #platformMain {
+  outline: none;
+  min-height: 68vh;
+}
+.page-heading {
+  max-width: 880px;
+  margin-bottom: 32px;
+}
+.platform-lead {
+  color: var(--muted);
+  max-width: 68ch;
+  font-size: 17px;
+}

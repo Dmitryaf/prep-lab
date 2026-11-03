@@ -1,0 +1,104 @@
+/* Study workspace: quiet navigation chrome and a separate reading surface. */
+body.platform {
+  --paper: #ffffff;
+  --surface: #f6f8fc;
+  --ink: #202c40;
+  --muted: #606f84;
+  --line: #dfe5ee;
+  --accent: #2458c6;
+  --text: var(--ink);
+  --border: var(--line);
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font:
+    16px/1.7 "Segoe UI",
+    Arial,
+    sans-serif;
+}
+.platform * {
+  box-sizing: border-box;
+}
+.platform a {
+  color: var(--accent);
+  text-underline-offset: 4px;
+}
+.platform button,
+.platform input,
+.platform select,
+.platform textarea {
+  font: inherit;
+}
+.platform button,
+.platform-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 17px;
+  border: 1px solid #c7d2e2;
+  border-radius: 7px;
+  background: white;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  line-height: 1.4;
+  cursor: pointer;
+}
+.platform button:hover,
+.platform-button:hover {
+  background: #edf3ff;
+  border-color: #819cce;
+}
+.platform button.primary,
+.platform-button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+}
+.platform button.primary:hover {
+  background: #1946a4;
+}
+.platform button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.platform :focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+.platform h1 {
+  font:
+    650 clamp(28px, 3vw, 38px)/1.2 "Segoe UI",
+    Arial,
+    sans-serif;
+  letter-spacing: -0.025em;
+  margin: 0 0 16px;
+}
+.platform h2 {
+  font-size: 23px;
+  line-height: 1.35;
+  letter-spacing: -0.025em;
+  margin: 0 0 14px;
+}
+.platform h3 {
+  font-size: 19px;
+  line-height: 1.4;
+  margin: 24px 0 12px;
+}
+.platform h4 {
+  font-size: 16px;
+  margin: 20px 0 8px;
+}
+.platform p {
+  margin: 10px 0 18px;
+}
+.platform ul,
+.platform ol {
+  padding-left: 24px;
+}
+.platform li {
+  margin: 7px 0;
+}

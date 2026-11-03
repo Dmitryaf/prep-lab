@@ -1,0 +1,10 @@
+node_modules/
+dist/
+artifacts/
+lab/
+openspec/
+.agents/
+.codex/
+AGENTS.override.md
+package-lock.json
+content/common/**/*.md

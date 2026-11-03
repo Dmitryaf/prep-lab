@@ -1,0 +1,261 @@
+.project-switch {
+  gap: 8px;
+  align-items: stretch;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 5px;
+}
+.platform .project-switch button {
+  flex: 1 1 220px;
+  padding: 18px 20px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  justify-content: flex-start;
+}
+.platform .project-switch button[aria-pressed="true"] {
+  border-color: #b8ccee;
+  color: #204ca5;
+  background: white;
+  box-shadow: 0 1px 3px #203c6b12;
+}
+nav[aria-label="Карта проектов"] {
+  gap: 22px;
+}
+.platform nav[aria-label="Карта проектов"] button {
+  border: 0;
+  border-radius: 0;
+  border-bottom: 2px solid transparent;
+  padding: 8px 0;
+  background: transparent;
+  color: var(--muted);
+}
+.platform nav[aria-label="Карта проектов"] button[aria-pressed="true"] {
+  border-bottom-color: var(--accent);
+  color: var(--accent);
+}
+.platform .topic-row {
+  padding: 20px 12px;
+}
+.platform .topic-row:hover {
+  box-shadow: inset 3px 0 var(--accent);
+}
+.catalog-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 28px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+.catalog-heading .page-heading {
+  margin: 0;
+}
+.catalog-heading .platform-actions {
+  margin: 0;
+  flex-shrink: 0;
+}
+.catalog-heading .platform-button {
+  font-size: 12px;
+}
+.catalog-heading h1 {
+  font-size: 34px;
+}
+.catalog-heading .platform-lead {
+  font-size: 15px;
+  margin-bottom: 0;
+}
+.platform .project-switch {
+  margin: 12px 0;
+}
+.platform .project-switch button {
+  padding: 12px 18px;
+}
+.project-switch button small {
+  margin-left: auto;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--muted);
+}
+.route-topics {
+  max-width: 980px;
+}
+.reading-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.reading-toolbar .platform-back {
+  margin: 0;
+}
+.reading-location {
+  flex: 1;
+}
+.reading-location > span {
+  color: #94a0b3;
+  margin-inline: 8px;
+}
+.reading-position {
+  font-variant-numeric: tabular-nums;
+}
+.reading-neighbours {
+  display: flex;
+  justify-content: space-between;
+  gap: 36px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 22px;
+  margin-bottom: 32px;
+}
+.reading-neighbours > * {
+  max-width: 44%;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.reading-neighbours a {
+  text-decoration: none;
+}
+.reading-neighbours > :last-child {
+  text-align: right;
+}
+.neighbour-label {
+  display: none;
+}
+.platform .project-detail {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  margin: 0;
+}
+.topic-intro {
+  max-width: 920px;
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.topic-intro > p:first-of-type {
+  max-width: 66ch;
+  font-size: 18px;
+  color: var(--muted);
+}
+.platform .topic-title {
+  outline: none;
+  font-size: clamp(28px, 3vw, 36px);
+  max-width: 28em;
+}
+.topic-reading-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 176px;
+  gap: 36px;
+  align-items: start;
+}
+.topic-outline {
+  grid-column: 2;
+  grid-row: 1;
+  position: sticky;
+  top: 32px;
+  display: grid;
+  padding-left: 20px;
+  border-left: 1px solid var(--line);
+}
+.topic-outline > span {
+  color: var(--muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 16px;
+}
+.platform .topic-outline button {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  padding: 10px 0;
+  justify-content: flex-start;
+  text-align: left;
+  font-weight: 400;
+  font-size: 13px;
+  line-height: 1.5;
+  gap: 12px;
+}
+.platform .topic-outline button:hover {
+  background: transparent;
+  color: var(--accent);
+}
+.topic-outline button span {
+  font-size: 11px;
+  color: var(--accent);
+}
+.topic-sections {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  counter-reset: chapters;
+}
+.topic-sections > section {
+  padding: 8px 0 36px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+.topic-sections > section > p,
+.explanation-steps {
+  max-width: 76ch;
+}
+.topic-sections > section > h3 {
+  scroll-margin-top: 24px;
+  font-size: 24px;
+  margin: 4px 0 24px;
+}
+.topic-sections > section > h3::before {
+  counter-increment: chapters;
+  content: "0" counter(chapters);
+  display: inline-block;
+  color: var(--accent);
+  font:
+    12px/1.4 Consolas,
+    monospace;
+  margin-right: 20px;
+  vertical-align: middle;
+}
+.explanation-steps {
+  padding-left: 26px;
+}
+.explanation-steps li {
+  padding-left: 8px;
+}
+.explanation-steps h4 {
+  margin-bottom: 6px;
+}
+.platform .code-step {
+  list-style: none;
+  padding: 16px 18px;
+  margin: 18px 0;
+  border: 0;
+  border-left: 2px solid #9db8e5;
+  background: var(--surface);
+}
+.platform .code-path,
+.platform .code-symbol {
+  overflow-wrap: anywhere;
+  font-family: Consolas, monospace;
+  font-size: 13px;
+}
+.platform .code-symbol {
+  margin: 10px 0;
+  font-weight: 600;
+}
+.platform .code-steps {
+  padding: 0;
+}
+.platform .source-context,
+.section-hint {
+  font-size: 13px;
+  color: var(--muted);
+}
+.route-navigation {
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+}
