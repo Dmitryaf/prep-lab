@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {createServer} from 'node:http';import {createDevelopmentServer} from './dev.mjs';
+import {createServer} from 'node:http';import {createDevelopmentServer} from '../scripts/dev.mjs';
 import {resolve} from 'node:path';
 import {loadKnowledge} from '../server/knowledge.mjs';
 test('Vue development entry serves app and readonly API without exposing private workspace files',async()=>{

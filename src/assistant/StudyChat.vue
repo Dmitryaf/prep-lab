@@ -41,7 +41,7 @@ onBeforeUnmount(()=>{generation++;controller?.abort();});
     <button :aria-expanded="opened" @click="toggle">{{opened?'Свернуть обсуждение':'Разобраться с Codex'}}</button>
     <div v-if="opened" class="study-chat-panel">
       <h3>Codex · {{title}}</h3>
-      <p class="platform-muted">Вопросы по этому материалу и вашему ответу. Сообщения и материал отправляются в Codex через вход ChatGPT; действуют лимиты подписки. История хранится на этом компьютере отдельно от экспорта прогресса.</p>
+      <p class="platform-muted">Сообщения и материал отправляются в Codex через ваш аккаунт ChatGPT; действуют лимиты подписки. История хранится на этом компьютере.</p>
       <details><summary>Какой контекст получит Codex</summary><pre>{{context}}</pre></details>
       <p v-if="loading" role="status">Загружаем обсуждение…</p>
       <p v-else-if="loaded&&!messages.length">Обсуждения пока нет. Задайте вопрос или выберите действие ниже.</p>

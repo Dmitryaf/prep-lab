@@ -41,8 +41,6 @@ body.platform {
 .platform-tools {margin-top:auto}
 .platform-search-label {position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 .platform input[type='search'] {min-width:0;width:100%;color:var(--ink);border:1px solid var(--line);border-radius:7px;background:white;padding:10px 12px;font-size:14px}
-.platform-backup {display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-top:16px;padding-left:3px}
-.platform-backup button {border:0;background:transparent;padding:0;color:var(--muted);font-size:11px;min-height:24px;text-decoration:underline;font-weight:400}
 .platform-workspace {max-width:1300px;width:100%;min-width:0;padding:40px 44px 24px;margin:0 auto}
 .platform #platformMain {outline:none;min-height:68vh}
 .page-heading {max-width:880px;margin-bottom:32px}
@@ -62,8 +60,7 @@ body.platform {
 .platform-actions,.platform-ratings {display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:22px 0}
 .platform-ratings {gap:8px;margin:18px 0}
 .platform [aria-pressed='true'] {background:#e0eaff;border-color:#98b6ec;color:#204ca5}
-.platform-muted,.platform-footer {color:var(--muted);font-size:13px}
-.platform-footer {margin-top:56px;padding-top:18px;border-top:1px solid var(--line)}
+.platform-muted {color:var(--muted);font-size:13px}
 .platform-notice {background:#fff5df;border-left:3px solid #a16a12;padding:12px 16px;color:#755115;font-size:14px;overflow-wrap:anywhere}
 .platform-notice:empty {display:none}
 .platform-filters {display:flex;flex-wrap:wrap;gap:18px;margin:24px 0;padding-bottom:20px;border-bottom:1px solid var(--line)}
@@ -187,7 +184,6 @@ nav[aria-label='Карта проектов'] {gap:22px}
   .platform-header nav a span {margin:0}
   .platform-tools {display:flex;align-items:center;gap:18px}
   .platform-tools input {max-width:380px}
-  .platform-backup {flex-shrink:0;gap:2px;margin:0;padding:0}
   .platform-workspace {padding:28px 22px 20px}
   .neighbour-title {display:none}
   .neighbour-label {display:inline}
@@ -203,7 +199,6 @@ nav[aria-label='Карта проектов'] {gap:22px}
   .platform-header nav a {font-size:12px;padding:7px}
   .platform-tools {display:block}
   .platform-tools input {max-width:none}
-  .platform-backup {flex-direction:row;justify-content:flex-end;gap:16px;margin-top:6px}
   .platform-workspace {padding:26px 18px 20px}
   .platform-card,.platform .question-card,.platform .daily-card,.platform .platform-note {padding:22px 18px}
   .platform .project-detail {padding:0}

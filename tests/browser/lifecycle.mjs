@@ -1,16 +1,15 @@
+import {launchBrowser} from '../helpers/browser.mjs';
 import assert from 'node:assert/strict';
 import {fork} from 'node:child_process';
 import {once} from 'node:events';
-import {createRequire} from 'node:module';
 import {mkdtempSync,rmSync} from 'node:fs';import {join} from 'node:path';import {tmpdir} from 'node:os';
-const {chromium}=createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE||'playwright');
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 async function worker(env={}){
- const process=fork(new URL('./fixtures/lifecycle-server.mjs',import.meta.url),[],{windowsHide:true,stdio:['ignore','pipe','pipe','ipc'],env:{...globalThis.process.env,...env}});
+ const process=fork(new URL('../fixtures/lifecycle-server.mjs',import.meta.url),[],{windowsHide:true,stdio:['ignore','pipe','pipe','ipc'],env:{...globalThis.process.env,...env}});
  const exit=once(process,'exit');const [{base}]=await once(process,'message');return {process,exit,base};
 }
 async function exited(worker){let timeout;try{const [code]=await Promise.race([worker.exit,new Promise((_,reject)=>{timeout=setTimeout(()=>reject(Error('Server process did not exit')),10000);})]);assert.equal(code,0);}finally{clearTimeout(timeout);}}
-const browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{})});
+const browser=await launchBrowser();
 const directory=mkdtempSync(join(tmpdir(),'map-lifecycle-browser-'));
 const live=await worker({TEST_CHAT_DIR:directory});
 try{

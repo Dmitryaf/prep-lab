@@ -21,5 +21,5 @@ export function categoryLabel(q: Question) {
     ? projects[
         q.project || topics.find((t) => t.id === q.topicId)?.project || ""
       ]?.name || kindLabel(q)
-    : q.category || "Frontend";
+    : q.category || "Фронтенд";
 }

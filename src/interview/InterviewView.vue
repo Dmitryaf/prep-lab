@@ -16,6 +16,7 @@ import {
   availableFollowups,
   openFollowup,
   advanceQuestion,
+  previousQuestion,
 } from "../progress/engine.js";
 import { kindLabel } from "../shared/presentation";
 import { link } from "../app/router";
@@ -55,12 +56,14 @@ function start(kind: "daily" | "full") {
   const id = kind === "daily" ? startDaily() : startFull();
   if (id) void router.push(link("interview", { session: id }));
 }
-function move(action: "next" | "skip" | "followup") {
+function move(action: "next" | "skip" | "followup" | "previous") {
   if (!session.value) return;
   const next =
-    action === "followup"
-      ? openFollowup(session.value)
-      : advanceQuestion(session.value, action === "skip");
+    action === "previous"
+      ? previousQuestion(session.value)
+      : action === "followup"
+        ? openFollowup(session.value)
+        : advanceQuestion(session.value, action === "skip");
   if (next !== session.value && setSession(next))
     document.getElementById("platformMain")?.focus();
 }
@@ -254,6 +257,13 @@ watch(() => route.fullPath, refreshDate);
       </button></template
     >
     <div class="platform-actions">
+      <button
+        data-action="session-previous"
+        :disabled="session.index === 0 && !session.followupIndex"
+        @click="move('previous')"
+      >
+        {{ session.followupIndex ? "К основному вопросу" : "Предыдущий вопрос" }}
+      </button>
       <button class="primary" data-action="session-next" @click="move('next')">
         {{
           session.index === session.questionIds.length - 1
@@ -270,16 +280,5 @@ watch(() => route.fullPath, refreshDate);
         Пропустить вопрос</button
       ><RouterLink to="/interview">Продолжить позже</RouterLink>
     </div>
-    <p class="platform-muted">
-      Уточнения необязательны:
-      {{ session.kind === "daily" ? "не больше одного" : "не больше двух" }} к
-      основной теме.
-      {{
-        session.kind === "daily"
-          ? "После самостоятельной попытки можно проверить ответ и открыть материал."
-          : "Ответы доступны после завершения."
-      }}
-      Положение в интервью сохраняется после каждого шага.
-    </p>
   </template>
 </template>

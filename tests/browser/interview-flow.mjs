@@ -1,13 +1,8 @@
+import {startBrowserScenario} from '../helpers/browser.mjs';
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
-import {createRequire} from 'node:module';
-import {createServer} from './serve.mjs';
-const {chromium}=createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE||'playwright');
-const server=createServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));
-const base=`http://127.0.0.1:${server.address().port}`;
-const browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{})});
-const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[];
-page.on('pageerror',e=>errors.push(e.message));
+const {server,base,browser,context,page,errors,close}=await startBrowserScenario();
+
 const state=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('project-map-platform-v3')));
 const current=s=>s.daily[Object.keys(s.daily).at(-1)];
 await mkdir('artifacts/interview-fixes',{recursive:true});
@@ -88,4 +83,4 @@ try{
   await page.locator('#platformSearch').fill('IndexedDB');await page.keyboard.press('Escape');assert.equal(await page.locator('.question-card h2').innerText(),practiceTitle);
   assert.deepEqual(errors,[]);
   console.log('PASS daily review/study/return/reload, project code and repeat, legacy paths, full20 without required followups and persisted ratings, mobile');
-}finally{await browser.close();await new Promise(r=>server.close(r));}
+}finally{await close();}

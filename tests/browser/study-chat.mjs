@@ -1,9 +1,8 @@
+import {launchBrowser} from '../helpers/browser.mjs';
 import assert from 'node:assert/strict';
-import {createRequire} from 'node:module';
 import {mkdtempSync,mkdirSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';import {join} from 'node:path';
-import {createServer} from './serve.mjs';
-const {chromium}=createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE||'playwright');
+import {createServer} from '../../scripts/serve.mjs';
 const live=process.argv.includes('--live'),directory=mkdtempSync(join(tmpdir(),'study-ui-'));
 const server=createServer({studyChatOptions:{directory,...(!live?{answer:async({messages,onDelta,signal})=>{
   if(messages.at(-1).text==='Ошибка')throw Error('Проверочная ошибка Codex');
@@ -11,7 +10,7 @@ const server=createServer({studyChatOptions:{directory,...(!live?{answer:async({
   const text=messages.length>1?'Продолжение обсуждения: предыдущий ответ сохранён.':'Promise представляет результат асинхронной операции. '.repeat(30);onDelta(text);return text;
 }}:{})}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}`;
-const browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{})});
+const browser=await launchBrowser();
 const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
 mkdirSync('artifacts/study-chat',{recursive:true});
 try{

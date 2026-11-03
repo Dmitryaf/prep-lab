@@ -1,14 +1,10 @@
+import {startBrowserScenario} from '../helpers/browser.mjs';
 import assert from 'node:assert/strict';
-import {mkdir,readFile} from 'node:fs/promises';
-import {createRequire} from 'node:module';
-import {topics,projects} from '../src/projects/catalog/data.js';
-import {createServer} from './serve.mjs';
-const {chromium}=createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE||'playwright');
-const server=createServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));
-const base=`http://127.0.0.1:${server.address().port}`;
-const browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{})});
-const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[];
-page.on('pageerror',e=>errors.push(e.message));
+import {mkdir} from 'node:fs/promises';
+import {restoreProgressFixture} from '../helpers/browser-progress.mjs';
+import {topics,projects} from '../../src/projects/catalog/data.js';
+const {server,base,browser,context,page,errors,close}=await startBrowserScenario();
+
 const state=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('project-map-platform-v3')));
 const open=id=>page.goto(base+'/#/projects?projectTopic='+id);
 await mkdir('artifacts/vue-migration',{recursive:true});
@@ -19,12 +15,9 @@ try{
   await page.getByRole('button',{name:/Inbox Point.*тем/}).click();await page.locator('#inlineSearch').fill('React');assert(await page.locator('.topic-row').count()>0);
   await page.locator('.topic-row').first().click();await page.getByRole('button',{name:'✓ Могу объяснить',exact:true}).click();
   assert.deepEqual((await state()).progress['tr-purpose'],v1['tr-purpose']);assert.deepEqual((await state()).questionProgress,{});
-  const downloadEvent=page.waitForEvent('download');await page.locator('[data-action=export]').click();const payload=await readFile(await (await downloadEvent).path(),'utf8');
-  const before=await state();await page.locator('#platformImport').setInputFiles({name:'bad.json',mimeType:'application/json',buffer:Buffer.from('{"version":3}')});
-  await page.getByRole('status').filter({hasText:'Импорт отклонён'}).waitFor();assert.deepEqual(await state(),before);
+  const before=await state();await assert.rejects(restoreProgressFixture(page,'{"version":3}'));assert.deepEqual(await state(),before);
   await page.evaluate(()=>localStorage.removeItem('project-map-platform-v3'));await page.reload();
-  await page.locator('#platformImport').setInputFiles({name:'progress.json',mimeType:'application/json',buffer:Buffer.from(payload)});
-  await page.getByRole('status').filter({hasText:'Прогресс восстановлен'}).waitFor();assert.deepEqual(await state(),before);
+  await restoreProgressFixture(page,before);assert.deepEqual(await state(),before);
   // Every topic renders all four native blocks; answers and full code remain collapsed.
   for(const topic of topics){
     await open(topic.id);await page.locator('#details').waitFor();
@@ -58,5 +51,5 @@ try{
   await page.screenshot({path:'artifacts/vue-migration/native-map-desktop.png',fullPage:true});
   await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));await page.screenshot({path:'artifacts/vue-migration/native-map-mobile.png',fullPage:true});
   await page.goto(base+'/#topic=tr-local');await page.locator('#details').waitFor();assert((await page.locator('#details .topic-title').innerText()).includes('IndexedDB'));
-  assert.deepEqual(errors,[]);console.log('PASS native Vue map: 50 four-block topics, 177 review questions, quick50, routes17, v1/import/export, clipboard/fallback, old links, desktop/mobile, no iframe');
-}finally{await browser.close();await new Promise(r=>server.close(r));}
+  assert.deepEqual(errors,[]);console.log('PASS native Vue map: 50 four-block topics, 177 review questions, quick50, routes17, v1/validated fixtures, clipboard/fallback, old links, desktop/mobile, no iframe');
+}finally{await close();}

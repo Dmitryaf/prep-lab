@@ -8,7 +8,7 @@ import { canonicalNotePath } from "./path.js";
 import PageHeading from "../shared/PageHeading.vue";
 import MarkdownContent from "./MarkdownContent.vue";
 import QuestionList from "../shared/QuestionList.vue";
-import StudyChat from '../assistant/StudyChat.vue';
+import StudyChat from "../assistant/StudyChat.vue";
 const route = useRoute(),
   router = useRouter(),
   note = computed(() =>
@@ -33,13 +33,24 @@ const groups = computed(() => {
   }
   return [...groups];
 });
-function subgroups(notes:typeof knowledge.value.notes){
-  const result=new Map<string,typeof notes>();
-  for(const n of notes){const name=n.path.split('/').length>2?n.path.split('/')[1]!:'Обзор';if(!result.has(name))result.set(name,[]);result.get(name)!.push(n);}
+function subgroups(notes: typeof knowledge.value.notes) {
+  const result = new Map<string, typeof notes>();
+  for (const n of notes) {
+    const name = n.path.split("/").length > 2 ? n.path.split("/")[1]! : "Обзор";
+    if (!result.has(name)) result.set(name, []);
+    result.get(name)!.push(n);
+  }
   return [...result];
 }
-const materialPlural=new Intl.PluralRules('ru');
-const materialWord=(count:number)=>{const form=materialPlural.select(count);return form==='one'?'материал':form==='few'?'материала':'материалов';};
+const materialPlural = new Intl.PluralRules("ru");
+const materialWord = (count: number) => {
+  const form = materialPlural.select(count);
+  return form === "one"
+    ? "материал"
+    : form === "few"
+      ? "материала"
+      : "материалов";
+};
 function back() {
   if (window.history.state.back) router.back();
   else void router.push("/themes");
@@ -58,7 +69,12 @@ function back() {
           :source-id="note.id"
         />
       </article>
-      <StudyChat :key="note.id" :material-key="'note:'+note.id" :title="note.title" :context="note.markdown" />
+      <StudyChat
+        :key="note.id"
+        :material-key="'note:' + note.id"
+        :title="note.title"
+        :context="note.markdown"
+      />
       <details v-if="noteQuestions.length" class="platform-card">
         <summary>
           Вопросы по этому материалу ({{ noteQuestions.length }})
@@ -100,10 +116,27 @@ function back() {
       :open="title === 'Фронтенд'"
     >
       <summary>{{ title }} · {{ notes.length }}</summary>
-      <div v-if="title==='Фронтенд'" class="knowledge-categories">
-        <details v-for="[category,items] in subgroups(notes)" :key="category" class="knowledge-subgroup">
-          <summary>{{category}} <small>{{items.length}} {{materialWord(items.length)}}</small></summary>
-          <div class="platform-note-list"><RouterLink v-for="n in items" :key="n.id" :to="link('themes',{note:n.id})">{{n.title}}<small>{{n.path.split('/').slice(2,-1).join(' / ')}}</small></RouterLink></div>
+      <div v-if="title === 'Фронтенд'" class="knowledge-categories">
+        <details
+          v-for="[category, items] in subgroups(notes)"
+          :key="category"
+          class="knowledge-subgroup"
+        >
+          <summary>
+            {{ category }}
+            <small>{{ items.length }} {{ materialWord(items.length) }}</small>
+          </summary>
+          <div class="platform-note-list">
+            <RouterLink
+              v-for="n in items"
+              :key="n.id"
+              :to="link('themes', { note: n.id })"
+              >{{ n.title
+              }}<small>{{
+                n.path.split("/").slice(2, -1).join(" / ")
+              }}</small></RouterLink
+            >
+          </div>
         </details>
       </div>
       <div v-else class="platform-note-list">

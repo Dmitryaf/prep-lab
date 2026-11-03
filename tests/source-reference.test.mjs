@@ -30,7 +30,7 @@ test('editorial highlights resolve real steps and preserve original copy indices
     assert.equal(selection.length,symbols.length,'Unresolved or repeated symbol: '+id);
     for(const {step,index} of selection)assert.equal(pilot.code.steps[index],step);
     // Native Vue rendering, collapsed full lists and clipboard indices are exercised
-    // by browser-check.mjs across all 50 actual topics.
+    // by tests/browser/projects.mjs across all 50 actual topics.
   }
   assert.equal(sourceContext({project:'trajectory'}),'');
   assert.equal(sourceContext({project:'cokr',path:'src/app/application/services/medo.service.ts'}),'Прикладной сервис Landocs');

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, symlinkSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { allowedKnowledgePath, extractQuestions, loadKnowledge } from './knowledge.mjs';
+import { allowedKnowledgePath, extractQuestions, loadKnowledge } from '../server/knowledge.mjs';
 import { renderMarkdown, headingId } from '../src/knowledge/markdown.js';
 
 test('allowlist excludes private and service documents, traversal and executable labs', () => {

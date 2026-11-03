@@ -1,15 +1,9 @@
+import {startBrowserScenario} from '../helpers/browser.mjs';
 // Readiness check for the reviewed curriculum, using the real knowledge API and UI.
 import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
-import {createRequire} from 'node:module';
-import {createServer} from './serve.mjs';
-const require=createRequire(import.meta.url);
-const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
-const server=createServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));
-const base=`http://127.0.0.1:${server.address().port}`;
-const browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{})});
-const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[];
-page.on('pageerror',e=>errors.push(e.message));
+const {server,base,browser,context,page,errors,close}=await startBrowserScenario();
+
 const destination=q=>base+'/#'+new URLSearchParams({view:'practice',question:q.id});
 const state=()=>page.evaluate(()=>localStorage.getItem('project-map-platform-v3'));
 await mkdir('artifacts/core-review-20261028',{recursive:true});
@@ -57,4 +51,4 @@ try{
   await writeFile('artifacts/core-review-20261028/browser-evidence.json',JSON.stringify({cards:checked,links,errors,repeatAndReload:true},null,2));
   console.log(`PASS core curriculum: 66 hidden/revealed answers, criteria, ${links} live study links, 5 narrow layouts, repeat/reload, no reading-side progress changes`);
 }catch(error){await page.screenshot({path:'artifacts/core-review-20261028/failure.png',fullPage:true});throw error;}
-finally{await browser.close();await new Promise(r=>server.close(r));}
+finally{await close();}

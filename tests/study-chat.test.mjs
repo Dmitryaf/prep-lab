@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {mkdtempSync,readFileSync,writeFileSync,readdirSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {createServer} from './serve.mjs';
+import {createServer} from '../scripts/serve.mjs';
 
 async function fixture(answer,run){
  const directory=mkdtempSync(join(tmpdir(),'study-chat-'));

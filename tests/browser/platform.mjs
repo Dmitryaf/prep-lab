@@ -1,16 +1,9 @@
+import {startBrowserScenario} from '../helpers/browser.mjs';
 import assert from 'node:assert/strict';
-import {mkdir, readFile} from 'node:fs/promises';
-import {createRequire} from 'node:module';
-import {createServer} from './serve.mjs';
-const require=createRequire(import.meta.url);
-const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
-const server=createServer();
-await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-const base=`http://127.0.0.1:${server.address().port}`;
-const browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{})});
-const context=await browser.newContext({viewport:{width:1440,height:1000},timezoneId:'Asia/Yekaterinburg'});
-const page=await context.newPage(),errors=[];
-page.on('pageerror',e=>errors.push(e.message));
+import {mkdir} from 'node:fs/promises';
+import {restoreProgressFixture} from '../helpers/browser-progress.mjs';
+const {server,base,browser,context,page,errors,close}=await startBrowserScenario({contextOptions:{timezoneId:'Asia/Yekaterinburg'}});
+
 const state=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('project-map-platform-v3')));
 const go=async view=>{await page.locator(`#platformNav a[href="#/${view}"]`).click();await page.locator('#platformMain h1').filter({hasText:({interview:'Пробное интервью',practice:'Практика',themes:'Темы',projects:'Проекты',repeat:'Повторить'})[view]}).waitFor();};
 await mkdir('artifacts',{recursive:true});
@@ -112,14 +105,9 @@ try{
   await page.locator('.platform-note').waitFor();
   assert(new URLSearchParams(new URL(page.url()).hash.split('?')[1]||'').get('heading')==='TDZ и затенение age');
   assert.deepEqual(await state(),before);
-  const downloadEvent=page.waitForEvent('download');await page.locator('[data-action=export]').click();
-  const download=await downloadEvent;const payload=await readFile(await download.path(),'utf8');
-  assert.deepEqual(JSON.parse(payload),before);
-  await page.locator('#platformImport').setInputFiles({name:'invalid.json',mimeType:'application/json',buffer:Buffer.from('{"version":3}')});
-  await page.getByRole('status').filter({hasText:'Импорт отклонён'}).waitFor();assert.deepEqual(await state(),before);
+  await assert.rejects(restoreProgressFixture(page,'{"version":3}'));assert.deepEqual(await state(),before);
   await page.evaluate(()=>localStorage.removeItem('project-map-platform-v3'));await page.reload();
-  await page.locator('#platformImport').setInputFiles({name:'restore.json',mimeType:'application/json',buffer:Buffer.from(payload)});
-  await page.getByRole('status').filter({hasText:'Прогресс восстановлен'}).waitFor();assert.deepEqual(await state(),before);
+  await restoreProgressFixture(page,before);assert.deepEqual(await state(),before);
   await go('interview');await page.locator('[data-action=full]:enabled').click();
   const full=Object.values((await state()).sessions).at(-1);
   assert(Object.values(full.snapshots).some(q=>q.kind==='design'));
@@ -144,5 +132,5 @@ try{
   assert((await page.locator('#platformMain').innerText()).includes('1 из 177'));
   assert.equal(Object.keys((await state()).daily).length,2);
   assert.deepEqual(errors,[]);
-  console.log('PASS platform browser: daily/full, optional followups, reload, local midnight, ratings, route66, project177, internal links, shared progress, export/import, keyboard, desktop/mobile, missing knowledge');
-}catch(error){await page.screenshot({path:'artifacts/platform-failure.png',fullPage:true});console.error(await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>innerWidth+1).slice(0,15).map(e=>({tag:e.tagName,class:e.className,width:e.getBoundingClientRect().width,text:e.textContent.slice(0,80)}))));throw error;}finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
+  console.log('PASS platform browser: daily/full, optional followups, reload, local midnight, ratings, route66, project177, internal links, shared progress, validated fixtures, keyboard, desktop/mobile, missing knowledge');
+}catch(error){await page.screenshot({path:'artifacts/platform-failure.png',fullPage:true});console.error(await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>e.getBoundingClientRect().right>innerWidth+1).slice(0,15).map(e=>({tag:e.tagName,class:e.className,width:e.getBoundingClientRect().width,text:e.textContent.slice(0,80)}))));throw error;}finally{await close();}

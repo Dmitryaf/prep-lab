@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createServer} from './serve.mjs';
+import {createServer} from '../scripts/serve.mjs';
 test('static server serves only the map, never old data, code repositories or mutations',async()=>{
   const server=createServer();
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));

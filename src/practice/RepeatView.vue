@@ -24,6 +24,6 @@ const absent = computed(
   </section>
   <p v-if="absent" class="platform-notice">
     Ещё {{ absent }} отметок относятся к временно недоступным материалам. Они
-    сохранены и входят в экспорт.
+    сохранены.
   </p>
 </template>

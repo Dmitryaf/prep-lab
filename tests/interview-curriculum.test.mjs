@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {resolve} from 'node:path';
 import {topics} from '../src/projects/catalog/data.js';
 import {projectQuestions} from '../src/projects/questions.js';
-import {loadKnowledge} from './knowledge.mjs';
+import {loadKnowledge} from '../server/knowledge.mjs';
 import {selectInterview,dailySession,loadState,saveState,exportState,importState,rateQuestion} from '../src/progress/engine.js';
 const knowledge=loadKnowledge(resolve(process.env.CAREER_KNOWLEDGE_ROOT||'../career-knowledge'));
 const projects=projectQuestions(topics),bank=[...knowledge.questions,...projects];

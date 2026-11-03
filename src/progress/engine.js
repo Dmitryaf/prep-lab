@@ -73,7 +73,20 @@ export function advanceQuestion(session,skip=false){
   if(session.finished)return session;
   const next=structuredClone(session),id=next.questionIds[next.index];
   if(skip&&!next.skipped.includes(id))next.skipped.push(id);
-  next.index++;next.followupIndex=0;next.finished=next.index>=next.questionIds.length;
+  closeFollowup(next);next.index++;next.finished=next.index>=next.questionIds.length;
+  return next;
+}
+function closeFollowup(session){
+  const id=session.questionIds[session.index];
+  if(session.followupIndex&&!session.followupChoices?.[id])
+    session.followupChoices={...session.followupChoices,[id]:usedFollowups(session)};
+  session.followupIndex=0;
+}
+export function previousQuestion(session){
+  if(session.finished||(!session.index&&!session.followupIndex))return session;
+  const next=structuredClone(session);
+  closeFollowup(next);
+  if(!session.followupIndex)next.index--;
   return next;
 }
 export function selectInterview(questions,kind,date,history=[],progress={}){

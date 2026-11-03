@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {get} from 'node:http';
 import {mkdtempSync,readFileSync,readdirSync,rmSync} from 'node:fs';
 import {tmpdir} from 'node:os';import {join} from 'node:path';
-import {createServer} from './serve.mjs';
+import {createServer} from '../scripts/serve.mjs';
 const delay=ms=>new Promise(r=>setTimeout(r,ms));
 async function lease(base){return new Promise((accept,reject)=>{const request=get(base+'/api/lifecycle',res=>{res.once('data',()=>accept({request,res}));});request.on('error',reject);});}
 

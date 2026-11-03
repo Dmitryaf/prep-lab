@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import type { Question } from "./types";
+import { answerContent } from "./answer-content.js";
 import MarkdownContent from "../knowledge/MarkdownContent.vue";
-withDefaults(defineProps<{ question: Question; forFollowup?: boolean }>(), {
+const props = withDefaults(defineProps<{ question: Question; forFollowup?: boolean }>(), {
   forFollowup: false,
 });
+const content = computed(() => answerContent(props.question));
 </script>
 <template>
   <section class="platform-answer">
@@ -17,8 +20,8 @@ withDefaults(defineProps<{ question: Question; forFollowup?: boolean }>(), {
       }}
     </h3>
     <MarkdownContent
-      v-if="question.shortAnswer || question.answer"
-      :text="question.shortAnswer || question.answer"
+      v-if="content.main"
+      :text="content.main"
       :source-id="question.noteId"
     />
     <p v-else>
@@ -29,15 +32,13 @@ withDefaults(defineProps<{ question: Question; forFollowup?: boolean }>(), {
       ><h4>Проверьте себя</h4>
       <MarkdownContent :text="question.criteria" :source-id="question.noteId"
     /></template>
-    <details
-      v-if="question.shortAnswer && question.answer !== question.shortAnswer"
-    >
-      <summary>Подробности из карточки</summary>
-      <MarkdownContent :text="question.answer" :source-id="question.noteId" />
+    <details v-if="content.additional">
+      <summary>Дополнительно</summary>
+      <MarkdownContent :text="content.additional" :source-id="question.noteId" />
     </details>
-    <details v-if="question.details">
+    <details v-if="content.details">
       <summary>Подробности и пример</summary>
-      <MarkdownContent :text="question.details" :source-id="question.noteId" />
+      <MarkdownContent :text="content.details" :source-id="question.noteId" />
     </details>
   </section>
   <details v-if="question.followups?.length" class="platform-card">

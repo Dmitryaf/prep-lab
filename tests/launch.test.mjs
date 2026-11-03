@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer as httpServer} from 'node:http';
-import {createDevelopmentServer} from './dev.mjs';
-import {ensureRunning} from './launch.mjs';
+import {createDevelopmentServer} from '../scripts/dev.mjs';
+import {ensureRunning} from '../scripts/launch.mjs';
 
 test('launcher cold start and repeated click use one ready server and keep the same origin',async()=>{
   const probe=httpServer();await new Promise(r=>probe.listen(0,'127.0.0.1',r));const port=probe.address().port;await new Promise(r=>probe.close(r));

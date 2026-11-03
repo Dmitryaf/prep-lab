@@ -11,9 +11,6 @@ import {
   knowledge,
   sessions,
   fetchKnowledge,
-  restore,
-  download,
-  notify,
 } from "./store";
 import { topics, projects } from "../projects/catalog";
 import { link } from "./router";
@@ -21,8 +18,7 @@ import QuestionList from "../shared/QuestionList.vue";
 import PageHeading from "../shared/PageHeading.vue";
 const route = useRoute(),
   search = ref(""),
-  searchInput = ref<HTMLInputElement>(),
-  fileInput = ref<HTMLInputElement>();
+  searchInput = ref<HTMLInputElement>();
 const active = computed(
   () =>
     route.path === "/interview" &&
@@ -60,22 +56,6 @@ const nav = [
   ["projects", "Проекты"],
   ["repeat", "Повторить"],
 ];
-async function importFile(event: Event) {
-  const input = event.target as HTMLInputElement,
-    file = input.files?.[0];
-  if (!file) return;
-  try {
-    if (file.size > 20 * 1024 * 1024) throw Error("Файл слишком большой.");
-    restore(await file.text());
-  } catch (error) {
-    notify(
-      "Импорт отклонён. Текущие отметки сохранены. " +
-        (error instanceof Error ? error.message : ""),
-    );
-  } finally {
-    input.value = "";
-  }
-}
 function keydown(event: KeyboardEvent) {
   if (
     event.key === "/" &&
@@ -138,13 +118,6 @@ onUnmounted(() => document.removeEventListener("keydown", keydown));
           placeholder="Найти материал…"
           autocomplete="off"
         />
-        <div class="platform-backup">
-          <button data-action="export" @click="download">
-            Скачать прогресс</button
-          ><button data-action="import" @click="fileInput?.click()">
-            Восстановить
-          </button>
-        </div>
       </div>
     </header>
     <div class="platform-workspace">
@@ -196,18 +169,6 @@ onUnmounted(() => document.removeEventListener("keydown", keydown));
         >
         <div v-show="!term || active"><RouterView /></div>
       </main>
-      <footer class="platform-footer">
-        Отметки и интервью сохраняются в этом браузере. Экспорт позволяет
-        перенести их на другое устройство.
-      </footer>
     </div>
   </div>
-  <input
-    id="platformImport"
-    ref="fileInput"
-    type="file"
-    accept="application/json,.json"
-    hidden
-    @change="importFile"
-  />
 </template>

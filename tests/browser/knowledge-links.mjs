@@ -1,10 +1,9 @@
+import {launchBrowser} from '../helpers/browser.mjs';
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
-import {createRequire} from 'node:module';
-import {createServer} from './serve.mjs';
-import {headingId} from '../src/knowledge/markdown.js';
+import {createServer} from '../../scripts/serve.mjs';
+import {headingId} from '../../src/knowledge/markdown.js';
 
-const {chromium}=createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE||'playwright');
 const sourceId='Фронтенд/JavaScript/Навигация';
 const targetId='Фронтенд/JavaScript/Материал с пробелами';
 const sourceText=`# Проверка учебной навигации
@@ -27,7 +26,7 @@ const bank={notes:[
 const server=createServer();
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const base=`http://127.0.0.1:${server.address().port}`;
-const browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{})});
+const browser=await launchBrowser();
 await mkdir('artifacts/final-check',{recursive:true});
 try{
   for(const width of [1440,390]){

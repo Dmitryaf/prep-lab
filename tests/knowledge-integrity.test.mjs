@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {validateKnowledge} from './validate-knowledge.mjs';
+import {validateKnowledge} from '../scripts/validate-knowledge.mjs';
 import {canonicalNotePath} from '../src/knowledge/path.js';
 test('integrity rejects wrong case and missing study links even on Windows',()=>{
   const id='Фронтенд/JavaScript/Topic';

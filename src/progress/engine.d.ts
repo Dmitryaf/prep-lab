@@ -23,6 +23,7 @@ export function localDate(date?: Date): string;
 export function availableFollowups(session: Interview): number[];
 export function openFollowup(session: Interview): Interview;
 export function advanceQuestion(session: Interview, skip?: boolean): Interview;
+export function previousQuestion(session: Interview): Interview;
 export function selectInterview(
   questions: Question[],
   kind: "daily" | "full",

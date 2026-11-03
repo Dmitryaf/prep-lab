@@ -1,19 +1,12 @@
+import {startBrowserScenario} from '../helpers/browser.mjs';
 import assert from 'node:assert/strict';
-import {mkdir,readFile} from 'node:fs/promises';
-import {createRequire} from 'node:module';
-import {createServer} from './serve.mjs';
-const {chromium}=createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE||'playwright');
-const server=createServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));
-const base=`http://127.0.0.1:${server.address().port}`;
-const browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{})});
-const context=await browser.newContext({viewport:{width:1440,height:1000}}),page=await context.newPage(),errors=[];
-page.on('pageerror',e=>errors.push(e.message));
+import {mkdir} from 'node:fs/promises';
+import {restoreProgressFixture} from '../helpers/browser-progress.mjs';
+const {server,base,browser,context,page,errors,close}=await startBrowserScenario();
+
 const state=()=>page.evaluate(()=>JSON.parse(localStorage.getItem('project-map-platform-v3')));
 const daily=s=>s.daily['2026-10-28'];
-const restore=async value=>{
-  await page.locator('#platformImport').setInputFiles({name:'progress.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(value))});
-  await page.getByRole('status').filter({hasText:'Прогресс восстановлен'}).waitFor();
-};
+const restore=value=>restoreProgressFixture(page,value);
 await mkdir('artifacts/optional-followups',{recursive:true});
 try{
   await page.clock.install({time:new Date('2026-10-28T12:00:00+05:00')});
@@ -42,12 +35,9 @@ try{
   await page.getByRole('link',{name:/^Изучить тему:/}).first().click();await page.locator('.platform-note').waitFor();
   await page.locator('[data-action=back]').click();await page.waitForURL(url);await page.reload();
   await page.locator('.platform-answer').waitFor();assert.equal(await page.locator('.question-card h2').innerText(),prompt);
-  const saved=await state();const downloadEvent=page.waitForEvent('download');await page.locator('[data-action=export]').click();
-  const download=await downloadEvent,exported=JSON.parse(await readFile(await download.path(),'utf8'));
-  assert.deepEqual(exported,saved);await restore(exported);assert.deepEqual(await state(),saved);
+  const saved=await state();await restore(saved);assert.deepEqual(await state(),saved);
   const malformed=structuredClone(saved);daily(malformed).followupChoices={missing:[0]};
-  await page.locator('#platformImport').setInputFiles({name:'bad.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(malformed))});
-  await page.getByRole('status').filter({hasText:'Импорт отклонён'}).waitFor();assert.deepEqual(await state(),saved);
+  await assert.rejects(restore(malformed));assert.deepEqual(await state(),saved);
   await page.setViewportSize({width:390,height:844});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
   await page.screenshot({path:'artifacts/optional-followups/daily-mobile.png',fullPage:true});
   await page.getByRole('button',{name:'Следующий вопрос',exact:true}).click();
@@ -88,5 +78,5 @@ try{
     assert((await page.locator('#practiceCategory option:checked').innerText()).trim().startsWith('Проекты и рабочий опыт'));
   }
   assert.deepEqual(errors,[]);
-  console.log('PASS daily11, optional daily1/full2, review/rating/study return, reload/export/import, legacy third followups, project labels and mobile');
-}finally{await browser.close();await new Promise(r=>server.close(r));}
+  console.log('PASS daily11, optional daily1/full2, review/rating/study return, reload/validated fixtures, legacy third followups, project labels and mobile');
+}finally{await close();}

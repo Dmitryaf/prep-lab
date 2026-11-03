@@ -1,11 +1,8 @@
+import {startBrowserScenario} from '../helpers/browser.mjs';
 import assert from 'node:assert/strict';
 import {mkdirSync} from 'node:fs';
-import {createRequire} from 'node:module';
-import {createServer} from './serve.mjs';
-const {chromium}=createRequire(import.meta.url)(process.env.PLAYWRIGHT_MODULE||'playwright');
-const server=createServer();await new Promise(r=>server.listen(0,'127.0.0.1',r));const base=`http://127.0.0.1:${server.address().port}`;
-const browser=await chromium.launch({headless:true,...(process.env.BROWSER_PATH?{executablePath:process.env.BROWSER_PATH}:{})});
-const page=await browser.newPage({viewport:{width:1440,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+const {server,base,browser,context,page,errors,close}=await startBrowserScenario();
+
 mkdirSync('artifacts/ui-refresh',{recursive:true});
 async function visibleTitle(){
  await page.locator('.topic-title').waitFor();
@@ -44,4 +41,4 @@ try{
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),`Interview overflow at ${width}px`);
  }
  assert.deepEqual(errors,[]);console.log('PASS UI workflow: immediate reader, reload, return context/focus, keyboard, outline, invalid link, compact library, five screens, mobile/tablet/desktop');
-}finally{await browser.close();server.closeAllConnections();await new Promise(r=>server.close(r));}
+}finally{await close();}
