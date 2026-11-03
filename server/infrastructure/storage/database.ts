@@ -18,25 +18,32 @@ export function openDatabase(path: string) {
     if (id !== applicationId && (id !== 0 || count !== 0))
       throw new Error("Файл данных принадлежит другому приложению.");
     const version = database.pragma("user_version", { simple: true });
-    if (typeof version !== "number" || version > 1)
+    if (typeof version !== "number" || version > 2)
       throw new Error("Версия файла данных не поддерживается.");
-    if (version === 1) {
+    if (version >= 1) {
       const tables = new Set(
         database
           .prepare("SELECT name FROM sqlite_master WHERE type='table'")
           .pluck()
           .all(),
       );
-      if (
-        [
-          "instance_meta",
-          "question_marks",
-          "topic_marks",
-          "interview_sessions",
-          "applied_migrations",
-          "discussion_histories",
-        ].some((name) => !tables.has(name))
-      )
+      const expected = [
+        "instance_meta",
+        "question_marks",
+        "topic_marks",
+        "interview_sessions",
+        "applied_migrations",
+        "discussion_histories",
+      ];
+      if (version >= 2)
+        expected.push(
+          "sources",
+          "source_documents",
+          "source_previews",
+          "source_versions",
+          "source_roots",
+        );
+      if (expected.some((name) => !tables.has(name)))
         throw new Error(
           "Структура файла данных повреждена. Исходный файл сохранён.",
         );
@@ -55,8 +62,27 @@ export function openDatabase(path: string) {
         CREATE TABLE IF NOT EXISTS interview_sessions (namespace TEXT NOT NULL, id TEXT NOT NULL, body TEXT NOT NULL, PRIMARY KEY(namespace,id));
         CREATE TABLE IF NOT EXISTS applied_migrations (id TEXT PRIMARY KEY, applied_at TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS discussion_histories (key TEXT PRIMARY KEY, body TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS sources (
+          id TEXT PRIMARY KEY, name TEXT NOT NULL, kind TEXT NOT NULL,
+          root_id TEXT, revision INTEGER NOT NULL, include_interviews INTEGER NOT NULL, applied_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS source_documents (
+          id TEXT PRIMARY KEY, source_id TEXT NOT NULL REFERENCES sources(id), path TEXT NOT NULL, body TEXT NOT NULL,
+          UNIQUE(source_id,path COLLATE NOCASE)
+        );
+        CREATE TABLE IF NOT EXISTS source_previews (
+          id TEXT PRIMARY KEY, source_id TEXT NOT NULL, body TEXT NOT NULL, status TEXT NOT NULL, created_at TEXT NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS source_versions (
+          source_id TEXT NOT NULL REFERENCES sources(id), revision INTEGER NOT NULL, body TEXT NOT NULL, applied_at TEXT NOT NULL,
+          PRIMARY KEY(source_id,revision)
+        );
+        CREATE TABLE IF NOT EXISTS source_roots (
+          id TEXT PRIMARY KEY, name TEXT NOT NULL, path TEXT NOT NULL, kind TEXT NOT NULL
+        );
+        INSERT OR IGNORE INTO instance_meta VALUES ('content_revision','0');
       `);
-      database.pragma("user_version = 1");
+      database.pragma("user_version = 2");
     })();
     return database;
   } catch (error) {
