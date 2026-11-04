@@ -6,5 +6,8 @@ dist/
 .nuxt/
 .output/
 .local/
+.env
+.env.*
+!.env.example
 *.sqlite-wal
 *.sqlite-shm

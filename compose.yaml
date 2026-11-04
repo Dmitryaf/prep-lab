@@ -1,0 +1,35 @@
+services:
+  frontend-lab:
+    build: .
+    image: frontend-lab:local
+    init: true
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${FRONTEND_LAB_PORT:-4173}:4173"
+    environment:
+      FRONTEND_LAB_DATA_DIR: /data
+      FRONTEND_LAB_LOCAL_LOGIN: "0"
+      FRONTEND_LAB_ORIGIN: "${FRONTEND_LAB_ORIGIN:-http://127.0.0.1:4173}"
+    volumes:
+      - instance-data:/data
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    stop_grace_period: 40s
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "const http = require('node:http'); const origin = process.env.FRONTEND_LAB_ORIGIN || 'http://127.0.0.1:4173'; const request = http.get({ host: '127.0.0.1', port: 4173, path: '/api/health', headers: { Host: new URL(origin).host } }, response => { let body = ''; response.setEncoding('utf8'); response.on('data', chunk => { body += chunk; }); response.on('end', () => { try { if (response.statusCode !== 200 || JSON.parse(body).autoClose !== false) process.exitCode = 1; } catch { process.exitCode = 1; } }); response.on('error', () => { process.exitCode = 1; }); }); request.setTimeout(3000, () => request.destroy(new Error('Health timeout'))); request.on('error', () => { process.exitCode = 1; });"
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+volumes:
+  instance-data:
