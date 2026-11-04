@@ -40,6 +40,44 @@ test("a source-relative path cannot choose a same-named material from another so
   assert.equal(findMaterial(notes, "Docs/Second", "source-b")?.id, "m-003");
   assert.equal(findMaterial(notes, "Docs/Second"), undefined);
 });
+
+test("a scoped path prefers its own material over a legacy path-shaped global ID", () => {
+  const legacy: Note = {
+    id: "Docs/Second",
+    path: "Docs/Second.md",
+    title: "Общая заметка",
+    markdown: "# Общая заметка",
+    category: "JavaScript",
+  };
+  assert.equal(
+    findMaterial([legacy, ...notes], "Docs/Second", "source-a")?.id,
+    "m-002",
+  );
+  assert.equal(
+    findMaterial([legacy, ...notes], "Docs/Second")?.id,
+    "Docs/Second",
+  );
+});
+
+test("ordinary headings matching object property names are not treated as aliases", () => {
+  const note: Note = {
+    id: "reserved-heading",
+    path: "Note.md",
+    title: "Тема",
+    markdown: "# Тема\n## constructor\nТекст",
+    category: "JavaScript",
+    headingAliases: {},
+  };
+  assert.equal(
+    resolveKnowledgeLink(
+      "#constructor",
+      note.id,
+      (id) => (id === note.id ? note : undefined),
+      href,
+    ),
+    "reserved-heading#constructor",
+  );
+});
 test("relative Markdown links use the material path rather than its opaque stable ID", () => {
   assert.equal(
     resolveKnowledgeLink("Second.md#Новый", "m-001", lookup, href),

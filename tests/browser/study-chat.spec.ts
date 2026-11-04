@@ -60,7 +60,18 @@ test("study chat", async ({ app: { base }, page, pageErrors: errors }) => {
   await input.fill(
     "Объясни Promise одним предложением. Запомни учебное слово «маяк».",
   );
-  await page.getByRole("button", { name: "Отправить", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Отправить в ChatGPT", exact: true }),
+  ).toBeDisabled();
+  await page
+    .getByRole("button", { name: "Просмотреть задание", exact: true })
+    .click();
+  await expect(
+    page.getByRole("region", { name: "Задание обсуждения", exact: true }),
+  ).toContainText("Объясни Promise одним предложением");
+  await page
+    .getByRole("button", { name: "Отправить в ChatGPT", exact: true })
+    .click();
   await page.waitForFunction(
     () =>
       document
@@ -70,7 +81,7 @@ test("study chat", async ({ app: { base }, page, pageErrors: errors }) => {
     { timeout: 120000 },
   );
   await page
-    .getByRole("button", { name: "Отправить", exact: true })
+    .getByRole("button", { name: "Отправить в ChatGPT", exact: true })
     .waitFor({ state: "visible" });
   await page.waitForFunction(
     () =>
@@ -96,7 +107,12 @@ test("study chat", async ({ app: { base }, page, pageErrors: errors }) => {
   await input.fill(
     "Какое учебное слово я попросил запомнить? Ответь одним словом.",
   );
-  await page.getByRole("button", { name: "Отправить", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Просмотреть задание", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Отправить в ChatGPT", exact: true })
+    .click();
   await page.waitForFunction(
     () =>
       document.querySelectorAll(".study-message.assistant").length === 2 &&
@@ -108,13 +124,23 @@ test("study chat", async ({ app: { base }, page, pageErrors: errors }) => {
   );
   {
     await input.fill("Ошибка");
-    await page.getByRole("button", { name: "Отправить", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Просмотреть задание", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Отправить в ChatGPT", exact: true })
+      .click();
     await page
       .getByRole("alert")
       .filter({ hasText: "Проверочная ошибка" })
       .waitFor();
     await input.fill("Останови");
-    await page.getByRole("button", { name: "Отправить", exact: true }).click();
+    await page
+      .getByRole("button", { name: "Просмотреть задание", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "Отправить в ChatGPT", exact: true })
+      .click();
     await page.getByRole("button", { name: "Остановить", exact: true }).click();
     await page
       .getByRole("alert")

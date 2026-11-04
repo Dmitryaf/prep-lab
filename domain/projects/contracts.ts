@@ -26,6 +26,7 @@ const pilot = z.looseObject({
       id: z.string(),
       question: z.string(),
       short: z.string(),
+      criteria: z.string().optional(),
       detailed: z.array(z.string()),
       example: z.string(),
     }),

@@ -4,6 +4,7 @@ import { computed, nextTick, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { renderMarkdown, headingId } from "../lib/markdown.ts";
 import { resolveKnowledgeLink } from "../lib/links.ts";
+import { materialHeading } from "../../../../domain/knowledge/links.ts";
 import { useMaterials } from "../model/store.ts";
 const { noteFor } = useMaterials();
 
@@ -49,7 +50,12 @@ watch(
   async () => {
     await nextTick();
     if (typeof route.query.heading === "string") {
-      const el = document.getElementById(headingId(route.query.heading));
+      const heading = materialHeading(
+        noteFor(props.sourceId) || {},
+        route.query.heading,
+      );
+      const el =
+        heading === null ? null : document.getElementById(headingId(heading));
       if (el) {
         for (let p = el.parentElement; p; p = p.parentElement)
           if (p instanceof HTMLDetailsElement) p.open = true;

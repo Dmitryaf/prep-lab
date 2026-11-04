@@ -7,6 +7,8 @@ import {
   getDiscussion,
   sendDiscussion,
   cancelDiscussion,
+  previewDiscussion,
+  DiscussionRequestError,
 } from "../api/discussion.ts";
 
 export function useDiscussion(material: DiscussionMaterial) {
@@ -17,14 +19,18 @@ export function useDiscussion(material: DiscussionMaterial) {
     busy = ref(false),
     loading = ref(false),
     loaded = ref(false),
+    preparedPrompt = ref(""),
+    previewing = ref(false),
     field = ref<HTMLTextAreaElement>();
   const controller = shallowRef<AbortController>();
   let generation = 0;
   async function load() {
     const version = ++generation;
     loading.value = true;
+    previewing.value = false;
     loaded.value = false;
     error.value = "";
+    preparedPrompt.value = "";
     try {
       const data = await getDiscussion(material.materialKey);
       if (version !== generation) return;
@@ -50,10 +56,18 @@ export function useDiscussion(material: DiscussionMaterial) {
     }
   }
   async function send() {
-    if (busy.value || !loaded.value || !draft.value.trim()) return;
+    if (
+      busy.value ||
+      previewing.value ||
+      !loaded.value ||
+      !draft.value.trim() ||
+      !preparedPrompt.value
+    )
+      return;
     const text = draft.value,
       version = generation,
-      key = material.materialKey;
+      key = material.materialKey,
+      expectedPrompt = preparedPrompt.value;
     const abort = new AbortController();
     controller.value = abort;
     busy.value = true;
@@ -73,11 +87,16 @@ export function useDiscussion(material: DiscussionMaterial) {
         (delta) => {
           if (version === generation) messages.value[index]!.text += delta;
         },
+        expectedPrompt,
       );
       if (version === generation) messages.value[index]!.status = "completed";
     } catch (cause) {
       if (version === generation) {
-        messages.value[index]!.status = "interrupted";
+        if (cause instanceof DiscussionRequestError && cause.status === 409) {
+          messages.value.splice(index - 1, 2);
+          draft.value = text;
+          preparedPrompt.value = "";
+        } else messages.value[index]!.status = "interrupted";
         error.value =
           cause instanceof Error ? cause.message : "Не удалось получить ответ.";
       }
@@ -86,6 +105,34 @@ export function useDiscussion(material: DiscussionMaterial) {
         busy.value = false;
         controller.value = undefined;
       }
+    }
+  }
+  async function preview() {
+    if (busy.value || previewing.value || !loaded.value || !draft.value.trim())
+      return;
+    const version = generation,
+      text = draft.value,
+      context = material.context,
+      key = material.materialKey;
+    previewing.value = true;
+    error.value = "";
+    preparedPrompt.value = "";
+    try {
+      const prompt = await previewDiscussion(key, text, context);
+      if (
+        version === generation &&
+        text === draft.value &&
+        context === material.context
+      )
+        preparedPrompt.value = prompt;
+    } catch (cause) {
+      if (version === generation)
+        error.value =
+          cause instanceof Error
+            ? cause.message
+            : "Не удалось показать задание.";
+    } finally {
+      if (version === generation) previewing.value = false;
     }
   }
   async function stop() {
@@ -107,8 +154,13 @@ export function useDiscussion(material: DiscussionMaterial) {
       draft.value = "";
       busy.value = false;
       loaded.value = false;
+      preparedPrompt.value = "";
+      previewing.value = false;
     },
   );
+  watch([draft, () => material.context], () => {
+    preparedPrompt.value = "";
+  });
   onBeforeUnmount(() => {
     generation++;
     controller.value?.abort();
@@ -121,11 +173,14 @@ export function useDiscussion(material: DiscussionMaterial) {
     busy,
     loading,
     loaded,
+    preparedPrompt,
+    previewing,
     field,
     controller,
     load,
     toggle,
     send,
+    preview,
     stop,
   };
 }

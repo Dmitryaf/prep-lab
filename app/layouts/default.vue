@@ -72,7 +72,9 @@ const nav = [
   ["practice", "Практика"],
   ["themes", "Темы"],
   ["projects", "Проекты"],
+  ["sources", "Свои материалы"],
   ["repeat", "Повторить"],
+  ["prompts", "Промпты"],
 ];
 function keydown(event: KeyboardEvent) {
   interaction++;

@@ -20,6 +20,7 @@ export interface Pilot {
     id: string;
     question: string;
     short: string;
+    criteria?: string;
     detailed: string[];
     example: string;
   }[];

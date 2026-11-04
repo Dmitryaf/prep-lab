@@ -21,6 +21,7 @@ export function createStudyChat({
   directory = resolve("artifacts/study-chats"),
   answer,
   history,
+  preparePrompt,
 }: StudyChatOptions = {}) {
   const active = new Map<string, AbortController>(),
     idleWaiters = new Set<() => void>();
@@ -70,7 +71,11 @@ export function createStudyChat({
     if (
       !key ||
       key.length > 500 ||
-      !["/api/study-chat", "/api/study-chat/cancel"].includes(url.pathname)
+      ![
+        "/api/study-chat",
+        "/api/study-chat/cancel",
+        "/api/study-chat/preview",
+      ].includes(url.pathname)
     ) {
       json(res, 400, { error: "Некорректная тема обсуждения." });
       return true;
@@ -94,7 +99,8 @@ export function createStudyChat({
         return true;
       }
       if (
-        req.headers.origin !== `http://${req.headers.host}` ||
+        req.headers.origin !==
+          (process.env.FRONTEND_LAB_ORIGIN || `http://${req.headers.host}`) ||
         !req.headers["content-type"]?.startsWith("application/json")
       ) {
         json(res, 403, { error: "Запрос не разрешён." });
@@ -105,7 +111,7 @@ export function createStudyChat({
         json(res, 200, { ok: true });
         return true;
       }
-      if (active.size) {
+      if (active.size && !url.pathname.endsWith("/preview")) {
         json(res, 409, {
           error:
             "Codex уже отвечает. Дождитесь ответа или остановите текущий запрос.",
@@ -130,6 +136,23 @@ export function createStudyChat({
         input.context.length > 80000
       ) {
         json(res, 400, { error: "Проверьте сообщение и материал." });
+        return true;
+      }
+      const preparedTask = preparePrompt
+        ? await preparePrompt(input.context, input.message.trim())
+        : input.context;
+      if (url.pathname.endsWith("/preview")) {
+        json(res, 200, { prompt: preparedTask });
+        return true;
+      }
+      if (
+        input.expectedPrompt !== undefined &&
+        (typeof input.expectedPrompt !== "string" ||
+          input.expectedPrompt !== preparedTask)
+      ) {
+        json(res, 409, {
+          error: "Промпт изменился. Снова просмотрите задание перед отправкой.",
+        });
         return true;
       }
       // Recheck after asynchronous body reading: two tabs cannot start concurrent turns.
@@ -184,12 +207,14 @@ export function createStudyChat({
           });
         reply.text = await generate({
           context: input.context,
+          ...(preparePrompt ? { trustedTask: preparedTask } : {}),
           messages: data.messages.filter(
             (m) => m !== reply && m.status === "completed",
           ),
           signal: controller.signal,
           onDelta: (delta) => {
             reply.text += delta;
+            save(data);
             emit({ delta });
           },
         });

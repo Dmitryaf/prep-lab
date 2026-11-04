@@ -37,6 +37,7 @@ export function projectQuestions(
         .filter(Boolean)
         .join("\n\n"),
       criteria:
+        q.criteria ||
         "Объясняю задачу, свою часть работы, решение и альтернативу, сложность и способ проверки результата. Разделяю подтверждённые факты и учебные предположения.",
       topicId: card.topicId,
       project: card.project,

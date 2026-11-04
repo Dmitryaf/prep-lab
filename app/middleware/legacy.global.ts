@@ -20,9 +20,16 @@ export default defineNuxtRouteMiddleware((to) => {
   }
   if (to.path === "/") return navigateTo("/interview", { replace: true });
   if (
-    !["/interview", "/practice", "/repeat", "/themes", "/projects"].includes(
-      to.path,
-    )
+    ![
+      "/interview",
+      "/practice",
+      "/repeat",
+      "/themes",
+      "/projects",
+      "/sources",
+      "/prompts",
+      "/generate",
+    ].includes(to.path)
   )
     return navigateTo("/interview", { replace: true });
 });

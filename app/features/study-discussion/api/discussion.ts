@@ -4,17 +4,25 @@ import {
   streamEventSchema,
 } from "../../../../domain/discussion/contracts.ts";
 
-const endpoint = (key: string, cancel = false) =>
+const endpoint = (key: string, operation?: "cancel" | "preview") =>
   "/api/study-chat" +
-  (cancel ? "/cancel" : "") +
+  (operation ? "/" + operation : "") +
   "?key=" +
   encodeURIComponent(key);
+export class DiscussionRequestError extends Error {
+  readonly status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
 async function requireSuccess(response: Response) {
   if (!response.ok) {
     const data = z
       .object({ error: z.string() })
       .safeParse(await response.json());
-    throw new Error(
+    throw new DiscussionRequestError(
+      response.status,
       data.success
         ? data.data.error
         : "Не удалось выполнить запрос обсуждения.",
@@ -27,12 +35,25 @@ export async function getDiscussion(key: string) {
   return discussionSchema.parse(await response.json());
 }
 export async function cancelDiscussion(key: string) {
-  const response = await fetch(endpoint(key, true), {
+  const response = await fetch(endpoint(key, "cancel"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: "{}",
   });
   await requireSuccess(response);
+}
+export async function previewDiscussion(
+  key: string,
+  message: string,
+  context: string,
+) {
+  const response = await fetch(endpoint(key, "preview"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message, context }),
+  });
+  await requireSuccess(response);
+  return z.object({ prompt: z.string() }).parse(await response.json()).prompt;
 }
 export async function sendDiscussion(
   key: string,
@@ -40,11 +61,16 @@ export async function sendDiscussion(
   context: string,
   signal: AbortSignal,
   onDelta: (delta: string) => void,
+  expectedPrompt?: string,
 ) {
   const response = await fetch(endpoint(key), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, context }),
+    body: JSON.stringify({
+      message,
+      context,
+      ...(expectedPrompt === undefined ? {} : { expectedPrompt }),
+    }),
     signal,
   });
   await requireSuccess(response);

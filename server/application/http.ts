@@ -14,12 +14,30 @@ import { PreparationRepository } from "../infrastructure/storage/preparation.ts"
 import { handlePreparation } from "../infrastructure/http/preparation.ts";
 import { DiscussionRepository } from "../infrastructure/storage/discussions.ts";
 import { SettingsRepository } from "../infrastructure/storage/settings.ts";
+import { SourceRepository } from "../infrastructure/storage/sources.ts";
+import { sourceKnowledge } from "../../domain/source/knowledge.ts";
+import { handleSources } from "../infrastructure/http/sources.ts";
+import { PromptRepository } from "../infrastructure/storage/prompts.ts";
+import { handlePrompts } from "../infrastructure/http/prompts.ts";
+import { readPromptTemplates } from "../infrastructure/prompts/templates.ts";
+import { GenerationService } from "./generations.ts";
+import { GenerationRepository } from "../infrastructure/storage/generations.ts";
+import { ProjectRepository } from "../infrastructure/storage/reviewed-projects.ts";
+import { SourceService } from "./sources.ts";
+import { handleGenerations } from "../infrastructure/http/generations.ts";
+import { answerWithCodex } from "../codex.ts";
+import type { Answer } from "../types.ts";
+import { discussionPrompt } from "./discussion-prompt.ts";
+import { handleConnection } from "../infrastructure/http/connection.ts";
+import { CredentialStore } from "../infrastructure/codex/credentials.ts";
 import { handleSettings } from "../infrastructure/http/settings.ts";
 import {
   readProjectCatalog,
   ownerPackagePath,
 } from "../infrastructure/projects/catalog.ts";
 export interface ServerOptions {
+  credentialDirectory?: string;
+  generationAnswer?: Answer;
   knowledgeRoot?: string;
   studyChatOptions?: StudyChatOptions;
   lifecycle?: LifecycleOptions;
@@ -35,6 +53,8 @@ const types: Record<string, string> = {
   ".ico": "image/x-icon",
 };
 export function createHttpService({
+  credentialDirectory,
+  generationAnswer = answerWithCodex,
   knowledgeRoot = process.env.CAREER_KNOWLEDGE_ROOT,
   studyChatOptions,
   lifecycle: lifecycleOptions,
@@ -47,11 +67,29 @@ export function createHttpService({
       ? undefined
       : new DiscussionRepository(database, resolve("artifacts/study-chats"));
   const chat = createStudyChat({
+    preparePrompt: discussionPrompt(
+      async () => readPromptTemplates(),
+      () => prompts,
+      () => settings.read().settings.profile,
+    ),
     ...studyChatOptions,
     ...(history ? { history } : {}),
   });
   const preparation = new PreparationRepository(database);
   const settings = new SettingsRepository(database);
+  const sources = new SourceRepository(database);
+  const prompts = new PromptRepository(database);
+  const reviewedProjects = new ProjectRepository(database);
+  const generations = new GenerationService({
+    repository: new GenerationRepository(database),
+    projects: reviewedProjects,
+    prompts,
+    templates: async () => readPromptTemplates(),
+    sources: new SourceService(sources, () =>
+      readKnowledge({ knowledgeRoot, projectPackageRoot }),
+    ),
+    answer: generationAnswer,
+  });
   let lifecycle: ReturnType<typeof createLifecycle> | null = null;
   const handle = async (req: IncomingMessage, res: ServerResponse) => {
     const reject = (status: number) => {
@@ -74,6 +112,29 @@ export function createHttpService({
     }
     if (await handlePreparation(req, res, preparation)) return;
     if (await handleSettings(req, res, settings)) return;
+    if (
+      await handleSources(req, res, sources, () =>
+        readKnowledge({ knowledgeRoot, projectPackageRoot }),
+      )
+    )
+      return;
+    if (await handlePrompts(req, res, prompts, readPromptTemplates)) return;
+    if (
+      await handleConnection(
+        req,
+        res,
+        credentialDirectory
+          ? { store: new CredentialStore(credentialDirectory) }
+          : {},
+      )
+    )
+      return;
+    if (
+      await handleGenerations(req, res, generations, () =>
+        reviewedProjects.revision(),
+      )
+    )
+      return;
     if (await chat.handle(req, res)) return;
     if (req.method !== "GET" && req.method !== "HEAD") return reject(405);
     try {
@@ -106,7 +167,10 @@ export function createHttpService({
         let body;
         let status = 200;
         try {
-          body = await readKnowledge({ knowledgeRoot, projectPackageRoot });
+          body = sourceKnowledge(
+            await readKnowledge({ knowledgeRoot, projectPackageRoot }),
+            sources.snapshot().sources,
+          );
         } catch {
           status = 503;
           body = {
@@ -125,7 +189,9 @@ export function createHttpService({
       }
       if (pathname === "/api/projects") {
         try {
-          const catalog = readProjectCatalog(projectPackageRoot);
+          const catalog = reviewedProjects.catalog(
+            readProjectCatalog(projectPackageRoot),
+          );
           res.writeHead(200, {
             "Content-Type": "application/json; charset=utf-8",
             "Cache-Control": "no-store",
@@ -184,6 +250,7 @@ export function createHttpService({
     close: async () => {
       lifecycle?.dispose();
       await chat.close();
+      await generations.close();
       if (database.open) database.close();
     },
   };

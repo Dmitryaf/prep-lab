@@ -31,7 +31,10 @@ export default defineNuxtConfig({
     storage: { cache: { driver: "memory" } },
     prerender: { routes: ["/"] },
     externals: { external: ["better-sqlite3"] },
-    serverAssets: [{ baseName: "knowledge", dir: resolve("content/common") }],
+    serverAssets: [
+      { baseName: "knowledge", dir: resolve("content/common") },
+      { baseName: "prompts", dir: resolve("content/prompts") },
+    ],
   },
   typescript: { strict: true },
   vite: {

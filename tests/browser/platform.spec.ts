@@ -41,7 +41,17 @@ test("platform", async ({ app: { base }, page, pageErrors: errors }) => {
     await page.clock.install({ time: new Date("2026-10-28T12:00:00+05:00") });
     await page.goto(base);
     await page.locator("[data-action=daily]:enabled").waitFor();
-    await expect(page.locator("#platformNav a")).toHaveCount(5);
+    for (const view of [
+      "interview",
+      "practice",
+      "themes",
+      "projects",
+      "repeat",
+      "sources",
+    ])
+      await expect(
+        page.locator(`#platformNav a[href="#/${view}"]`),
+      ).toBeVisible();
     expect(
       await page.evaluate(
         () => getComputedStyle(document.body).backgroundColor,

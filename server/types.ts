@@ -9,6 +9,7 @@ export interface ChatHistory {
   messages: ChatMessage[];
 }
 export interface AnswerOptions {
+  trustedTask?: string;
   context: string;
   messages: ChatMessage[];
   signal: AbortSignal;
@@ -16,6 +17,7 @@ export interface AnswerOptions {
 }
 export type Answer = (options: AnswerOptions) => Promise<string>;
 export interface StudyChatOptions {
+  preparePrompt?: (context: string, message: string) => Promise<string>;
   directory?: string;
   answer?: Answer;
   history?: {

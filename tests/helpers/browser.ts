@@ -15,6 +15,7 @@ export const test = baseTest.extend<{
     const directory = await mkdtemp(join(tmpdir(), "frontend-lab-browser-"));
     const server = createServer({
       ...appOptions,
+      credentialDirectory: join(directory, "assistant"),
       studyChatOptions: {
         directory,
         answer: async () => {

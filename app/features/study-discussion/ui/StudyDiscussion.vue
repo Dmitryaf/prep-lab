@@ -10,11 +10,14 @@ const {
   busy,
   loading,
   loaded,
+  preparedPrompt,
+  previewing,
   field,
   controller,
   load,
   toggle,
   send,
+  preview,
   stop,
 } = useDiscussion(props);
 </script>
@@ -30,10 +33,6 @@ const {
         действуют лимиты подписки. История хранится в вашем экземпляре Frontend
         Lab.
       </p>
-      <details>
-        <summary>Какой контекст получит Codex</summary>
-        <pre>{{ context }}</pre>
-      </details>
       <p v-if="loading" role="status">Загружаем обсуждение…</p>
       <p v-else-if="loaded && !messages.length">
         Обсуждения пока нет. Задайте вопрос или выберите действие ниже.
@@ -105,11 +104,20 @@ const {
         </label>
         <div class="platform-actions">
           <button
+            type="button"
+            :disabled="busy || previewing || !loaded || !draft.trim()"
+            @click="preview"
+          >
+            Просмотреть задание
+          </button>
+          <button
             class="primary"
-            :disabled="busy || !loaded || !draft.trim()"
+            :disabled="
+              busy || previewing || !loaded || !draft.trim() || !preparedPrompt
+            "
             type="submit"
           >
-            Отправить</button
+            Отправить в ChatGPT</button
           ><button v-if="busy" type="button" @click="stop">Остановить</button
           ><button
             type="button"
@@ -119,7 +127,19 @@ const {
             Обновить обсуждение
           </button>
         </div>
-        <p role="status">{{ busy ? "Codex отвечает…" : "" }}</p>
+        <section v-if="preparedPrompt" aria-label="Задание обсуждения">
+          <h4>Задание для ChatGPT</h4>
+          <pre>{{ preparedPrompt }}</pre>
+        </section>
+        <p role="status">
+          {{
+            previewing
+              ? "Подготавливаем задание…"
+              : busy
+                ? "Codex отвечает…"
+                : ""
+          }}
+        </p>
       </form>
     </div>
   </section>

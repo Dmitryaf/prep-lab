@@ -100,6 +100,9 @@ const {
     />
     <section class="platform-card">
       <h2>Добавьте свой проект</h2>
+      <RouterLink :to="{ path: '/generate', query: { scenario: 'project' } }"
+        >Подготовить разбор проекта</RouterLink
+      >
       <p>
         Для подготовки к общим вопросам проекты не обязательны. Для личного
         разбора понадобятся описание задачи, ваша роль и выбранные материалы.
@@ -115,6 +118,11 @@ const {
         description="Карта проектов, маршруты, объяснения и ссылки на реализацию."
       />
       <div class="platform-actions">
+        <RouterLink
+          class="platform-button secondary"
+          :to="{ path: '/generate', query: { scenario: 'project' } }"
+          >Добавить разбор проекта</RouterLink
+        >
         <RouterLink
           class="platform-button secondary"
           data-action="project-practice"

@@ -5,11 +5,19 @@ import { openDatabase } from "./database.ts";
 import { PreparationRepository } from "./preparation.ts";
 import { DiscussionRepository } from "./discussions.ts";
 import { SettingsRepository } from "./settings.ts";
+import { SourceRepository } from "./sources.ts";
+import { PromptRepository } from "./prompts.ts";
+import { GenerationRepository } from "./generations.ts";
+import { ProjectRepository } from "./reviewed-projects.ts";
 
 let database: ReturnType<typeof openDatabase> | undefined;
 let preparation: PreparationRepository | undefined;
 let discussions: DiscussionRepository | undefined;
 let settings: SettingsRepository | undefined;
+let sources: SourceRepository | undefined;
+let prompts: PromptRepository | undefined;
+let generations: GenerationRepository | undefined;
+let projects: ProjectRepository | undefined;
 export function privateDataDirectory() {
   const directory = resolve(
     process.env.FRONTEND_LAB_DATA_DIR || ".local",
@@ -41,6 +49,18 @@ export function getPreparation() {
 export function getSettings() {
   return (settings ??= new SettingsRepository(getDatabase()));
 }
+export function getSources() {
+  return (sources ??= new SourceRepository(getDatabase()));
+}
+export function getPrompts() {
+  return (prompts ??= new PromptRepository(getDatabase()));
+}
+export function getGenerationRepository() {
+  return (generations ??= new GenerationRepository(getDatabase()));
+}
+export function getReviewedProjects() {
+  return (projects ??= new ProjectRepository(getDatabase()));
+}
 export function getDiscussions() {
   return (discussions ??= new DiscussionRepository(
     getDatabase(),
@@ -55,4 +75,8 @@ export function closeDatabase() {
   preparation = undefined;
   discussions = undefined;
   settings = undefined;
+  sources = undefined;
+  prompts = undefined;
+  generations = undefined;
+  projects = undefined;
 }

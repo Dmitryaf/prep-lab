@@ -2,7 +2,7 @@ import { getKnowledge } from "../api/knowledge.ts";
 import { defineStore } from "pinia";
 import { shallowRef, ref, computed } from "vue";
 import type { Knowledge } from "../../../../domain/knowledge/material.ts";
-import { canonicalNotePath } from "../../../../domain/knowledge/path.ts";
+import { findMaterial } from "../../../../domain/knowledge/lookup.ts";
 import { useNotices } from "../../../shared/model/notices.ts";
 import { useSettings } from "../../preparation/model/settings.ts";
 import { knowledgeForProfile } from "../../../../domain/knowledge/profile.ts";
@@ -21,12 +21,10 @@ export const useMaterials = defineStore("materials", () => {
   const loading = ref(true),
     unavailable = ref("");
   const notices = useNotices();
-  function noteFor(id = "") {
+  function noteFor(id = "", scope?: string) {
     return (
-      knowledge.value.notes.find((note) => note.id === canonicalNotePath(id)) ||
-      baseKnowledge.value.notes.find(
-        (note) => note.id === canonicalNotePath(id),
-      )
+      findMaterial(knowledge.value.notes, id, scope) ||
+      findMaterial(baseKnowledge.value.notes, id, scope)
     );
   }
   async function fetchKnowledge() {

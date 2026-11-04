@@ -7,8 +7,8 @@ export function findMaterial(
 ): Note | undefined {
   const canonical = canonicalNotePath(id),
     exact = notes.filter((note) => note.id === canonical);
-  if (exact.length) return exact.length === 1 ? exact[0] : undefined;
-  if (!sourceId) return;
+  if (exact.some((note) => note.sourceId === sourceId) || !sourceId)
+    return exact.length === 1 ? exact[0] : undefined;
   const scoped = notes.filter((note) => note.sourceId === sourceId);
   const paths = scoped.filter(
     (note) => canonicalNotePath(note.path) === canonical,
@@ -17,5 +17,6 @@ export function findMaterial(
   const aliases = scoped.filter((note) =>
     note.aliases?.some((alias) => canonicalNotePath(alias) === canonical),
   );
-  return aliases.length === 1 ? aliases[0] : undefined;
+  if (aliases.length) return aliases.length === 1 ? aliases[0] : undefined;
+  return exact.length === 1 ? exact[0] : undefined;
 }
