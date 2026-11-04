@@ -9,5 +9,8 @@ dist/
 .env
 .env.*
 !.env.example
+*.sqlite
 *.sqlite-wal
 *.sqlite-shm
+**/credentials.json
+compose.override.yaml

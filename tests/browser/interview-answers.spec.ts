@@ -4,23 +4,28 @@ import { required } from "../helpers/values.ts";
 import { readProgress } from "../helpers/browser-progress.ts";
 import { test, expect } from "../helpers/browser.ts";
 import { mkdir } from "node:fs/promises";
-import { loadKnowledge } from "../../server/knowledge.ts";
+import { loadCommonKnowledge } from "../../server/infrastructure/knowledge/common.ts";
+import { resolve } from "node:path";
 import {
   loadState,
   createSession,
   storageKey,
 } from "../../domain/interview/engine.ts";
 
-test.use({ viewport: { width: 1440, height: 1100 } });
+test.use({
+  viewport: { width: 1440, height: 1100 },
+  appOptions: {
+    projectPackageRoot: null,
+    knowledgeRoot: resolve("content/common"),
+  },
+});
 test("interview answers", async ({
   app: { base },
   context,
   page,
   pageErrors: errors,
 }) => {
-  const bank = loadKnowledge(
-    process.env.CAREER_KNOWLEDGE_ROOT || "../career-knowledge",
-  );
+  const bank = loadCommonKnowledge();
   const id =
     "ck:Собеседования/Темы/JavaScript#Как работает цикл событий в браузере?";
   const current = bank.questions.find((q) => q.id === id);
