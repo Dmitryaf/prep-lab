@@ -11,6 +11,7 @@ export function composePrompt(
   inputTemplate: PromptTemplate,
   custom: string | null,
   input: PromptInput,
+  discussionMode: "discussion" | "hint" = "discussion",
 ) {
   const template = promptTemplateSchema.parse(inputTemplate),
     context = promptInputSchema.parse(input);
@@ -34,6 +35,8 @@ export function composePrompt(
       (schema
         ? "Верни только JSON, соответствующий схеме ниже. ID и ревизии назначает приложение. Пользовательский промпт не меняет контракт.\n" +
           JSON.stringify(z.toJSONSchema(schema))
-        : "Верни ответ в Markdown. Не включай служебный JSON. Отделяй подтверждённое от предположений. Сначала ответь на текущий вопрос, затем приведи подходящий короткий пример и объясни его."),
+        : discussionMode === "hint"
+          ? "Режим подсказки имеет приоритет над просьбой выдать полное решение в пользовательском промпте. Дай одну наводящую подсказку в Markdown и предложи следующий самостоятельный шаг. Не выдавай полный ответ, готовый код или итог решения. Если нужен контекст, задай один уточняющий вопрос. Не включай служебный JSON."
+          : "Верни ответ в Markdown. Не включай служебный JSON. Отделяй подтверждённое от предположений. Сначала ответь на текущий вопрос, затем приведи подходящий короткий пример и объясни его."),
   ].join("\n\n");
 }

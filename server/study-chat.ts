@@ -139,7 +139,7 @@ export function createStudyChat({
         return true;
       }
       const preparedTask = preparePrompt
-        ? await preparePrompt(input.context, input.message.trim())
+        ? await preparePrompt(input.context, input.message.trim(), key)
         : input.context;
       if (url.pathname.endsWith("/preview")) {
         json(res, 200, { prompt: preparedTask });

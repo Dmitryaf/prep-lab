@@ -51,6 +51,7 @@ const types: Record<string, string> = {
   ".css": "text/css",
   ".svg": "image/svg+xml",
   ".ico": "image/x-icon",
+  ".zip": "application/zip",
 };
 export function createHttpService({
   credentialDirectory,

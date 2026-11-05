@@ -12,24 +12,49 @@ export function availableFollowups(session: Interview) {
   if (session.finished) return [];
   const id = session.questionIds[session.index],
     used = usedFollowups(session);
-  if (used.length >= (session.kind === "daily" ? 1 : 2)) return [];
+  const question = session.snapshots[id],
+    attempt = session.attempts?.[id];
+  const stagedCoding =
+    question?.roundFormat === "coding" && question.codingRole;
+  if (stagedCoding && !attempt?.text.trim() && !attempt?.solutionUrl.trim())
+    return [];
+  if (!stagedCoding && used.length >= (session.kind === "daily" ? 1 : 2))
+    return [];
   return (session.snapshots[id]?.followups || [])
     .map((text, index) => ({
       index,
-      rank: hash(`${session.id}|${id}|${text}`),
+      rank:
+        session.format && session.format !== "mixed"
+          ? index
+          : hash(`${session.id}|${id}|${text}`),
     }))
     .filter(({ index }) => !used.includes(index))
     .sort((a, b) => a.rank - b.rank || a.index - b.index)
     .map(({ index }) => index);
 }
-export function openFollowup(session: Interview) {
-  const index = availableFollowups(session)[0];
+export function openFollowup(session: Interview, selectedIndex?: number) {
+  const id = session.questionIds[session.index],
+    question = session.snapshots[id],
+    attempt = session.attempts?.[id];
+  const selectable =
+    question?.roundFormat === "coding" &&
+    question.codingRole &&
+    (attempt?.text.trim() || attempt?.solutionUrl.trim()) &&
+    !session.finished;
+  const index =
+    selectedIndex === undefined
+      ? availableFollowups(session)[0]
+      : selectable &&
+          Number.isInteger(selectedIndex) &&
+          selectedIndex >= 0 &&
+          selectedIndex < (question.followups?.length || 0)
+        ? selectedIndex
+        : undefined;
   if (index === undefined) return session;
-  const next = structuredClone(session),
-    id = next.questionIds[next.index];
+  const next = structuredClone(session);
   next.followupChoices = {
     ...next.followupChoices,
-    [id]: [...usedFollowups(session), index],
+    [id]: [...new Set([...usedFollowups(session), index])],
   };
   next.followupIndex = index + 1;
   return next;
@@ -38,10 +63,23 @@ export function advanceQuestion(session: Interview, skip = false) {
   if (session.finished) return session;
   const next = structuredClone(session),
     id = next.questionIds[next.index];
-  if (skip && !next.skipped.includes(id)) next.skipped.push(id);
+  const skippingExtension =
+    next.followupIndex &&
+    next.snapshots[id]?.roundFormat === "coding" &&
+    next.snapshots[id]?.codingRole;
+  if (skip && !skippingExtension && !next.skipped.includes(id))
+    next.skipped.push(id);
   closeFollowup(next);
   next.index++;
   next.finished = next.index >= next.questionIds.length;
+  return next;
+}
+export function finishInterview(session: Interview) {
+  if (session.finished) return session;
+  const next = structuredClone(session);
+  closeFollowup(next);
+  next.index = next.questionIds.length;
+  next.finished = true;
   return next;
 }
 function closeFollowup(session: Interview) {

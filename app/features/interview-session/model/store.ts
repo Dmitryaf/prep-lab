@@ -9,11 +9,14 @@ import {
 import { usePreparation } from "../../../entities/preparation/model/store.ts";
 import { useQuestions } from "../../../entities/question/model/store.ts";
 import { useSettings } from "../../../entities/preparation/model/settings.ts";
+import type { InterviewFormat } from "../../../../domain/interview/formats.ts";
+import { useNotices } from "../../../shared/model/notices.ts";
 
 export const useInterview = defineStore("interview", () => {
   const preparation = usePreparation(),
     catalog = useQuestions();
   const settings = useSettings();
+  const { notify } = useNotices();
   async function setSession(session: Interview) {
     const next = structuredClone(preparation.progress);
     if (session.kind === "daily")
@@ -34,13 +37,26 @@ export const useInterview = defineStore("interview", () => {
       ? next.daily[dailyKey(localDate(), profile)]?.id
       : undefined;
   }
-  async function startFull() {
+  async function startFull(format: InterviewFormat = "mixed") {
     const session = createSession(
       catalog.questions,
       "full",
       preparation.progress.questionProgress,
       settings.settings.profile,
+      format,
+      Object.values(preparation.progress.sessions)
+        .filter(
+          (session) =>
+            (session.profile || "vue") === settings.settings.profile &&
+            (session.format || "mixed") === format,
+        )
+        .slice(-3)
+        .reverse(),
     );
+    if (!session.questionIds.length) {
+      notify("Для этого формата пока нет готовых задач в выбранном профиле.");
+      return;
+    }
     return (await setSession(session)) ? session.id : undefined;
   }
   return { setSession, startDaily, startFull };

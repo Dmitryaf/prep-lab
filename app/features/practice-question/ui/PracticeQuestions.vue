@@ -11,6 +11,7 @@ const { questions, projectCards } = storeToRefs(useQuestions());
 const { questionById } = useQuestions();
 import PageHeading from "../../../shared/ui/PageHeading.vue";
 import QuestionCard from "../../study-discussion/index.ts";
+import AnswerAttempt from "../../answer-attempt/index.ts";
 import RatingButtons from "../../manage-repeat/index.ts";
 import StudyLinks from "../../../entities/question/ui/StudyLinks.vue";
 const route = useRoute(),
@@ -124,7 +125,9 @@ function next(random = false) {
           : `${(index % list.length) + 1} из ${list.length}`
       }}
     </div>
-    <QuestionCard :key="current.id" :question="current" :revealed="revealed" />
+    <QuestionCard :key="current.id" :question="current" :revealed="revealed">
+      <AnswerAttempt :key="current.id + ':attempt'" :question-id="current.id" />
+    </QuestionCard>
     <div class="platform-actions">
       <button
         v-if="!revealed"

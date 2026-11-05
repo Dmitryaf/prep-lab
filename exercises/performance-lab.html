@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Практикум диагностики производительности</title>
+  <style>
+    :root { color-scheme: light dark; font: 16px/1.55 system-ui, sans-serif; }
+    body { max-width: 1000px; margin: auto; padding: 24px; }
+    h1 { font-size: 1.8rem; } h2 { font-size: 1.2rem; }
+    section { border: 1px solid #8887; padding: 20px; margin: 20px 0; border-radius: 10px; }
+    button, input { font: inherit; padding: 7px 10px; margin: 4px; }
+    button { cursor: pointer; } :focus-visible { outline: 3px solid #597eed; outline-offset: 2px; }
+    .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .scroll { max-height: 320px; overflow: auto; margin-top: 12px; }
+    table { border-collapse: collapse; width: 100%; } td, th { padding: 4px 10px; border-bottom: 1px solid #8885; text-align: left; }
+    output { display: block; margin-top: 10px; } .hint { color: light-dark(#505662, #bbc1ca); }
+  </style>
+</head>
+<body>
+  <h1>Найти причину, затем измерить изменение</h1>
+  <p>Локальный учебный стенд. Данные искусственные; сеть и внешние библиотеки не используются.</p>
+  <label><input id="fixed" type="checkbox"> Исправленный режим</label>
+  <p class="hint">Начните запись в DevTools Performance или Memory, выполните одно действие, затем повторите в другом режиме. Для независимого опыта откройте новую вкладку. Отметки времени измеряют синхронный JS, а не INP и не появление кадра.</p>
+  <section aria-labelledby="table-title">
+    <h2 id="table-title">1. Таблица: 5000 строк или страница из 80</h2>
+    <p>Исправление меняет способ показа: используйте страницы, чтобы просмотреть весь набор. Это не виртуальный скролл.</p>
+    <div class="controls">
+      <button id="render" type="button">Показать таблицу</button>
+      <button id="prev" type="button" disabled>Предыдущая</button>
+      <button id="next" type="button" disabled>Следующая</button>
+    </div>
+    <output id="table-result" aria-live="polite">Таблица ещё не построена.</output>
+    <div class="scroll" tabindex="0" aria-label="Прокрутка таблицы">
+      <table><thead><tr><th>ID</th><th>Название</th><th>Статус</th></tr></thead><tbody id="rows"></tbody></table>
+    </div>
+  </section>
+  <section aria-labelledby="input-title">
+    <h2 id="input-title">2. Дорогой обработчик ввода</h2>
+    <p>В исходном режиме каждый input намеренно занимает примерно 80 мс. В исправленном лишняя работа удалена.</p>
+    <label for="query">Введите несколько символов подряд</label>
+    <input id="query" autocomplete="off">
+    <output id="input-result" aria-live="polite">Ввод ещё не обработан.</output>
+  </section>
+  <section aria-labelledby="memory-title">
+    <h2 id="memory-title">3. Подписка удерживает закрытую панель</h2>
+    <p>Повторите открытие и закрытие. Исходный вариант забывает удалить resize-подписку. Режим запоминается при открытии панели.</p>
+    <div class="controls">
+      <button id="open-panel" type="button">Открыть панель</button>
+      <button id="close-panel" type="button" disabled>Закрыть панель</button>
+      <button id="clear" type="button">Очистить подписки</button>
+    </div>
+    <div id="panel-host"></div>
+    <output id="memory-result" aria-live="polite">Активных подписок: 0</output>
+    <p class="hint">Это счётчик подписок, не измеритель heap. Ищите удерживаемый DOM и путь к нему в Heap Snapshot. Очистка подписок освобождает ссылки, но время сборки мусора определяет браузер.</p>
+  </section>
+  <script>
+    'use strict';
+    const byId = id => document.getElementById(id);
+    const fixed = byId('fixed');
+    const data = Array.from({ length: 5000 }, (_, index) => ({
+      id: index + 1, name: `Учебная запись ${index + 1}`, status: index % 2 ? 'Открыта' : 'Закрыта',
+    }));
+    let page = 0;
+    let tablePaginated = false;
+    function measure(name, action) {
+      performance.mark(`${name}-start`);
+      const start = performance.now();
+      action();
+      const duration = performance.now() - start;
+      performance.mark(`${name}-end`);
+      performance.measure(name, `${name}-start`, `${name}-end`);
+      return duration;
+    }
+    function renderTable() {
+      const start = tablePaginated ? page * 80 : 0;
+      const visible = tablePaginated ? data.slice(start, start + 80) : data;
+      const duration = measure('table', () => {
+        const fragment = document.createDocumentFragment();
+        for (const item of visible) {
+          const row = document.createElement('tr');
+          for (const value of [item.id, item.name, item.status]) {
+            const cell = document.createElement('td'); cell.textContent = String(value); row.append(cell);
+          }
+          fragment.append(row);
+        }
+        byId('rows').replaceChildren(fragment);
+      });
+      byId('table-result').textContent = `Строк в DOM: ${visible.length}. Диапазон: ${start + 1}–${start + visible.length}. JS: ${duration.toFixed(1)} мс.`;
+      byId('prev').disabled = !tablePaginated || page === 0;
+      byId('next').disabled = !tablePaginated || (page + 1) * 80 >= data.length;
+    }
+    byId('render').addEventListener('click', () => { tablePaginated = fixed.checked; page = 0; renderTable(); });
+    byId('prev').addEventListener('click', () => { page--; renderTable(); });
+    byId('next').addEventListener('click', () => { page++; renderTable(); });
+    byId('query').addEventListener('input', event => {
+      const duration = measure('input-handler', () => {
+        if (!fixed.checked) {
+          const until = performance.now() + 80;
+          while (performance.now() < until) { /* intentional main-thread work */ }
+        }
+      });
+      byId('input-result').textContent = `Текст: ${event.target.value}. Обработчик: ${duration.toFixed(1)} мс.`;
+    });
+    let registrations = 0;
+    let abortAll = new AbortController();
+    let closeCurrent = null;
+    const showCount = () => { byId('memory-result').textContent = `Активных подписок: ${registrations}`; };
+    byId('open-panel').addEventListener('click', () => {
+      const panel = document.createElement('div'); panel.textContent = 'Панель с учебными данными';
+      const payload = Array.from({ length: 20000 }, (_, i) => i);
+      const handler = () => { panel.dataset.sample = String(payload[0]); };
+      const cleanup = fixed.checked;
+      window.addEventListener('resize', handler, { signal: abortAll.signal });
+      registrations++;
+      byId('panel-host').append(panel);
+      closeCurrent = () => {
+        panel.remove();
+        if (cleanup) { window.removeEventListener('resize', handler); registrations--; }
+        byId('open-panel').disabled = false; byId('close-panel').disabled = true;
+        showCount();
+      };
+      byId('open-panel').disabled = true; byId('close-panel').disabled = false; showCount();
+    });
+    function closePanel() {
+      if (closeCurrent) { closeCurrent(); closeCurrent = null; }
+    }
+    byId('close-panel').addEventListener('click', closePanel);
+    byId('clear').addEventListener('click', () => {
+      closePanel(); abortAll.abort(); abortAll = new AbortController(); registrations = 0; showCount();
+    });
+  </script>
+</body>
+</html>

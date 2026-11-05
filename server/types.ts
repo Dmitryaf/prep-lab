@@ -17,7 +17,11 @@ export interface AnswerOptions {
 }
 export type Answer = (options: AnswerOptions) => Promise<string>;
 export interface StudyChatOptions {
-  preparePrompt?: (context: string, message: string) => Promise<string>;
+  preparePrompt?: (
+    context: string,
+    message: string,
+    materialKey?: string,
+  ) => Promise<string>;
   directory?: string;
   answer?: Answer;
   history?: {

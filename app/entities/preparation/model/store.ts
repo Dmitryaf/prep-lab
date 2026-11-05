@@ -18,7 +18,8 @@ export const usePreparation = defineStore("preparation", () => {
   const revision = ref(0),
     ready = ref(false),
     saving = ref(false),
-    loadError = ref("");
+    loadError = ref(""),
+    saveError = ref("");
   const notices = useNotices();
   const sessions = computed(() => [
     ...Object.values(progress.value.daily),
@@ -67,8 +68,10 @@ export const usePreparation = defineStore("preparation", () => {
     return initializing;
   }
   async function persist(next: Progress) {
+    saveError.value = "";
     if (!ready.value || loadError.value || saving.value) {
-      notices.notify(loadError.value || "Подождите завершения сохранения.");
+      saveError.value = loadError.value || "Подождите завершения сохранения.";
+      notices.notify(saveError.value);
       return false;
     }
     saving.value = true;
@@ -84,11 +87,11 @@ export const usePreparation = defineStore("preparation", () => {
           /* Keep the last accepted state. */
         }
       }
-      notices.notify(
+      saveError.value =
         cause instanceof Error
           ? cause.message
-          : "Изменение не сохранено. Прежняя запись сохранена.",
-      );
+          : "Изменение не сохранено. Прежняя запись сохранена.";
+      notices.notify(saveError.value);
       return false;
     } finally {
       saving.value = false;
@@ -108,6 +111,7 @@ export const usePreparation = defineStore("preparation", () => {
     progress,
     revision,
     loadError,
+    saveError,
     sessions,
     ready,
     saving,

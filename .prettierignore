@@ -1,6 +1,7 @@
 node_modules/
 dist/
 artifacts/
+.publication-check/
 lab/
 openspec/
 .agents/
@@ -8,3 +9,5 @@ openspec/
 AGENTS.override.md
 package-lock.json
 content/common/**/*.md
+exercises/
+public/labs/

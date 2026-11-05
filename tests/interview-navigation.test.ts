@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   previousQuestion,
   advanceQuestion,
+  finishInterview,
   openFollowup,
   availableFollowups,
   loadState,
@@ -116,5 +117,66 @@ test("backward navigation survives validation and storage reload in both intervi
     };
     saveState(state, storage);
     assert.deepEqual(loadState(storage), state);
+  }
+});
+
+test("finish ends any active step without guessing skipped or unanswered questions", () => {
+  for (const kind of ["daily", "full"] as const) {
+    for (const index of [0, 1, 2]) {
+      const original: Interview = {
+        ...session(kind),
+        index,
+        format: "review",
+        attempts: {
+          one: {
+            text: "Мой ответ",
+            solutionUrl: "",
+            updatedAt: "2026-11-05T10:00:00Z",
+          },
+        },
+        followupChoices: { one: [0] },
+      };
+      const before = structuredClone(original);
+      const finished = finishInterview(original);
+      assert.deepEqual(finished, {
+        ...before,
+        finished: true,
+        index: 3,
+        followupIndex: 0,
+      });
+      assert.deepEqual(original, before);
+      assert.notEqual(finished, original);
+      assert.notEqual(finished.snapshots, original.snapshots);
+      assert.notEqual(finished.attempts, original.attempts);
+      assert.deepEqual(finished.skipped, ["two"]);
+      assert.deepEqual(availableFollowups(finished), []);
+      assert.equal(finishInterview(finished), finished);
+    }
+  }
+});
+
+test("finishing a legacy followup preserves its allowance and survives reload", () => {
+  for (const kind of ["daily", "full"] as const) {
+    const original = { ...session(kind), index: 1, followupIndex: 3 };
+    original.snapshots.two.followups = ["a", "b", "c", "d"];
+    const before = structuredClone(original);
+    const finished = finishInterview(original);
+    assert.deepEqual(original, before);
+    assert.deepEqual(finished.followupChoices, { two: [0, 1, 2] });
+    assert.equal(finished.followupIndex, 0);
+    const state = loadState({ getItem: () => null });
+    if (kind === "daily") state.daily[finished.date] = finished;
+    else state.sessions[finished.id] = finished;
+    state.activeSession = finished.id;
+    let stored = "";
+    saveState(state, {
+      setItem: (_key, value) => {
+        stored = value;
+      },
+    });
+    assert.deepEqual(
+      loadState({ getItem: (key) => (key === storageKey ? stored : null) }),
+      state,
+    );
   }
 });

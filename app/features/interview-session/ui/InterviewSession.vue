@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 
-import { computed, ref, watch, onMounted, onUnmounted } from "vue";
+import { computed, ref, watch, onMounted, onUnmounted, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { usePreparation } from "../../../entities/preparation/model/store.ts";
 import { useSettings } from "../../../entities/preparation/model/settings.ts";
@@ -21,16 +21,34 @@ import {
   openFollowup,
   advanceQuestion,
   previousQuestion,
+  finishInterview,
 } from "../../../../domain/interview/engine.ts";
+import { useNotices } from "../../../shared/model/notices.ts";
 import { kindLabel } from "../../../entities/question/lib/presentation.ts";
 import { link } from "../../../shared/lib/navigation.ts";
 import PageHeading from "../../../shared/ui/PageHeading.vue";
 import QuestionCard from "../../study-discussion/index.ts";
+import AnswerAttempt from "../../answer-attempt/index.ts";
+import {
+  interviewFormats,
+  formatInfo,
+  type InterviewFormat,
+} from "../../../../domain/interview/formats.ts";
+import type { Interview } from "../../../../domain/interview/state.ts";
 import RatingButtons from "../../manage-repeat/index.ts";
 import StudyLinks from "../../../entities/question/ui/StudyLinks.vue";
 const route = useRoute(),
   router = useRouter(),
   date = ref(localDate());
+const format = ref<InterviewFormat>("mixed");
+const { notify } = useNotices();
+function sessionTitle(value: Interview) {
+  return value.kind === "daily"
+    ? "Ежедневное интервью"
+    : !value.format || value.format === "mixed"
+      ? "Полное интервью"
+      : formatInfo(value.format).title;
+}
 const today = computed(
   () =>
     progress.value.daily[
@@ -44,6 +62,17 @@ const current = computed(
   () =>
     session.value?.snapshots[session.value.questionIds[session.value.index]],
 );
+const needsBaseAttempt = computed(() => {
+  const question = current.value,
+    attempt = question && session.value?.attempts?.[question.id];
+  return (
+    question?.roundFormat === "coding" &&
+    question.codingRole &&
+    question.followups?.length &&
+    !attempt?.text.trim() &&
+    !attempt?.solutionUrl.trim()
+  );
+});
 const reviewed = computed(
   () =>
     !!(
@@ -56,22 +85,35 @@ const reviewed = computed(
 const pending = computed(() =>
   sessions.value.filter((s) => !s.finished && s.id !== today.value?.id),
 );
-const completed = computed(() =>
-  sessions.value
-    .filter((s) => s.finished && s.id !== today.value?.id)
-    .sort((a, b) => b.date.localeCompare(a.date)),
-);
 async function start(kind: "daily" | "full") {
-  const id = await (kind === "daily" ? startDaily() : startFull());
+  const id = await (kind === "daily" ? startDaily() : startFull(format.value));
   if (id) void router.push(link("interview", { session: id }));
 }
-async function move(action: "next" | "skip" | "followup" | "previous") {
+async function finish(value: Interview, fromList = false) {
+  if (!(await setSession(finishInterview(value)))) return;
+  if (fromList) {
+    notify("Интервью завершено.");
+    await nextTick();
+    document
+      .getElementById(
+        pending.value.length ? "pendingInterviews" : "platformMain",
+      )
+      ?.focus();
+  } else {
+    await nextTick();
+    document.getElementById("platformMain")?.focus();
+  }
+}
+async function move(
+  action: "next" | "skip" | "followup" | "previous",
+  stageIndex?: number,
+) {
   if (!session.value) return;
   const next =
     action === "previous"
       ? previousQuestion(session.value)
       : action === "followup"
-        ? openFollowup(session.value)
+        ? openFollowup(session.value, stageIndex)
         : advanceQuestion(session.value, action === "skip");
   if (next !== session.value && (await setSession(next)))
     document.getElementById("platformMain")?.focus();
@@ -145,22 +187,50 @@ watch(() => route.fullPath, refreshDate);
         }}
       </button>
     </section>
-    <div class="platform-grid">
-      <section class="platform-card">
-        <div class="platform-meta">60–90 минут</div>
-        <h2>Полное интервью</h2>
-        <p>
-          До 20 вопросов: выбранный стек, задачи, проектирование и поведенческие
-          вопросы. Добавленные проекты и опыт дополняют подборку.
-        </p>
+    <section class="interview-setup" aria-labelledby="fullInterviewHeading">
+      <h2 id="fullInterviewHeading">Полное интервью</h2>
+      <p class="interview-setup-intro">
+        Выберите, что хотите потренировать. Разбор откроется после завершения.
+      </p>
+      <fieldset class="interview-formats">
+        <legend class="platform-search-label">Формат интервью</legend>
+        <label
+          v-for="item in interviewFormats"
+          :key="item.id"
+          class="interview-format"
+          :class="{ 'is-selected': format === item.id }"
+        >
+          <input
+            v-model="format"
+            type="radio"
+            name="interview-format"
+            :value="item.id"
+            :aria-labelledby="'format-title-' + item.id"
+            :aria-describedby="'format-description-' + item.id"
+          />
+          <span class="interview-format-content">
+            <strong :id="'format-title-' + item.id">{{ item.title }}</strong>
+            <span class="interview-format-duration">{{ item.duration }}</span>
+            <span
+              :id="'format-description-' + item.id"
+              class="interview-format-description"
+              >{{ item.description }}</span
+            >
+          </span>
+        </label>
+      </fieldset>
+      <div class="interview-start">
         <button
+          class="primary"
           data-action="full"
           :disabled="saving || loading || !knowledge.questions.length"
           @click="start('full')"
         >
-          Начать полное интервью
+          {{ format === "mixed" ? "Начать полное интервью" : "Начать раунд" }}
         </button>
-      </section>
+      </div>
+    </section>
+    <div class="platform-grid">
       <section class="platform-card">
         <h2>Свободная практика</h2>
         <p>
@@ -186,33 +256,22 @@ watch(() => route.fullPath, refreshDate);
       </section>
     </div>
     <section v-if="pending.length">
-      <h2>Незавершённые интервью</h2>
-      <RouterLink
-        v-for="s in pending"
-        :key="s.id"
-        class="platform-list-row"
-        :to="link('interview', { session: s.id })"
-        ><span
-          ><strong
-            >{{ s.kind === "daily" ? "Ежедневное" : "Полное" }} интервью ·
-            {{ s.date }}</strong
+      <h2 id="pendingInterviews" tabindex="-1">Незавершённые интервью</h2>
+      <div v-for="s in pending" :key="s.id" class="interview-pending-row">
+        <span
+          ><strong>{{ sessionTitle(s) }} · {{ s.date }}</strong
           ><small
             >Вопрос {{ s.index + 1 }} из {{ s.questionIds.length }}</small
           ></span
-        ><span>Продолжить →</span></RouterLink
-      >
+        >
+        <div class="interview-pending-actions">
+          <RouterLink :to="link('interview', { session: s.id })"
+            >Продолжить →</RouterLink
+          >
+          <button :disabled="saving" @click="finish(s, true)">Завершить</button>
+        </div>
+      </div>
     </section>
-    <details v-if="completed.length" class="platform-card">
-      <summary>Завершённые интервью · {{ completed.length }}</summary>
-      <RouterLink
-        v-for="s in completed"
-        :key="s.id"
-        class="platform-list-row"
-        :to="link('interview', { session: s.id })"
-        >{{ s.kind === "daily" ? "Ежедневное" : "Полное" }} интервью ·
-        {{ s.date }}<span>Разбор →</span></RouterLink
-      >
-    </details>
   </template>
   <template v-else-if="!session"
     ><PageHeading title="Интервью не найдено" /><RouterLink to="/interview"
@@ -235,22 +294,40 @@ watch(() => route.fullPath, refreshDate);
         {{ i + 1 }} из {{ session.questionIds.length
         }}{{ session.skipped.includes(id) ? " · Пропущен" : "" }}
       </div>
-      <QuestionCard :question="session.snapshots[id]" revealed /><RatingButtons
-        :id="id"
+      <QuestionCard
+        :question="session.snapshots[id]"
         :session-id="session.id"
-      /><StudyLinks :question="session.snapshots[id]" />
+        revealed
+      >
+        <AnswerAttempt :question-id="id" :session-id="session.id" readonly />
+      </QuestionCard>
+      <RatingButtons :id="id" :session-id="session.id" /><StudyLinks
+        :question="session.snapshots[id]"
+      />
     </section>
   </template>
   <template v-else-if="current">
-    <PageHeading
-      :title="
-        session.kind === 'daily' ? 'Ежедневное интервью' : 'Полное интервью'
-      "
-    />
+    <div class="interview-session-heading">
+      <PageHeading :title="sessionTitle(session)" />
+      <button
+        v-if="session.index < session.questionIds.length - 1"
+        :disabled="saving"
+        data-action="session-finish"
+        @click="finish(session)"
+      >
+        Завершить интервью
+      </button>
+    </div>
     <div class="platform-session-bar">
       <span
-        >{{ kindLabel(current) }} · {{ session.index + 1 }} из
-        {{ session.questionIds.length }}</span
+        >{{
+          current.codingRole === "short"
+            ? "Короткая задача"
+            : current.codingRole === "main"
+              ? "Основная задача"
+              : kindLabel(current)
+        }}
+        · {{ session.index + 1 }} из {{ session.questionIds.length }}</span
       ><span
         >После этого осталось
         {{ session.questionIds.length - session.index - 1 }}</span
@@ -259,9 +336,43 @@ watch(() => route.fullPath, refreshDate);
     <QuestionCard
       :key="current.id + ':' + (session.followupIndex || 0)"
       :question="current"
+      :session-id="session.id"
       :followup="session.followupIndex"
       :revealed="reviewed"
-    />
+    >
+      <AnswerAttempt
+        :key="session.id + ':' + current.id"
+        :question-id="current.id"
+        :session-id="session.id"
+      />
+    </QuestionCard>
+    <p v-if="needsBaseAttempt" class="platform-muted">
+      Сохраните попытку, чтобы открыть необязательное усложнение.
+    </p>
+    <div
+      v-else-if="
+        current.roundFormat === 'coding' &&
+        current.codingRole &&
+        current.followups?.length
+      "
+      class="coding-stages"
+    >
+      <p class="platform-muted">
+        Дополнительные этапы — по желанию. Можно вернуться к любому из них.
+      </p>
+      <div class="platform-actions">
+        <button
+          v-for="(title, index) in current.followups"
+          :key="title"
+          data-action="session-followup"
+          :aria-pressed="session.followupIndex === index + 1"
+          :disabled="saving || session.followupIndex === index + 1"
+          @click="move('followup', index)"
+        >
+          Усложнение {{ index + 1 }}: {{ title }}
+        </button>
+      </div>
+    </div>
     <template v-if="session.kind === 'daily'"
       ><template v-if="reviewed"
         ><RatingButtons :id="current.id" :session-id="session.id" /><StudyLinks
@@ -297,7 +408,10 @@ watch(() => route.fullPath, refreshDate);
             : "Следующий вопрос"
         }}</button
       ><button
-        v-if="availableFollowups(session).length"
+        v-if="
+          !(current.roundFormat === 'coding' && current.codingRole) &&
+          availableFollowups(session).length
+        "
         data-action="session-followup"
         :disabled="saving"
         @click="move('followup')"
@@ -308,8 +422,154 @@ watch(() => route.fullPath, refreshDate);
         :disabled="saving"
         @click="move('skip')"
       >
-        Пропустить вопрос</button
+        {{
+          current.roundFormat === "coding" &&
+          current.codingRole &&
+          session.followupIndex
+            ? "Пропустить усложнение"
+            : "Пропустить вопрос"
+        }}</button
       ><RouterLink to="/interview">Продолжить позже</RouterLink>
     </div>
   </template>
 </template>
+<style scoped>
+.interview-setup {
+  padding-block: 30px;
+  border-top: 1px solid var(--line);
+  margin-top: 32px;
+}
+.interview-setup h2 {
+  margin-bottom: 8px;
+}
+.interview-setup-intro {
+  color: var(--muted);
+  margin: 0 0 22px;
+}
+.interview-formats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.interview-format {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 18px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: white;
+  cursor: pointer;
+  min-width: 0;
+}
+.interview-format:hover {
+  border-color: #819cce;
+}
+.interview-format.is-selected {
+  border-color: var(--accent);
+  background: #edf3ff;
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.interview-format:focus-within {
+  outline: 3px solid #98b6ec;
+  outline-offset: 3px;
+}
+.interview-format input {
+  accent-color: var(--accent);
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  margin: 4px 0 0;
+}
+.interview-format-content {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.interview-format strong {
+  font-size: 16px;
+  line-height: 1.4;
+}
+.interview-format-duration {
+  color: var(--accent);
+  font-size: 12px;
+  margin-block: 8px 12px;
+}
+.interview-format-description {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.interview-start {
+  margin-top: 20px;
+}
+.interview-pending-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--line);
+}
+.interview-pending-row strong {
+  font-size: 15px;
+}
+.interview-pending-row small {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 6px;
+}
+.interview-pending-actions {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-shrink: 0;
+}
+.interview-pending-actions a {
+  font-size: 14px;
+  text-decoration: none;
+}
+.interview-session-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+.interview-session-heading :deep(.page-heading) {
+  margin-bottom: 0;
+}
+.interview-session-heading > button {
+  flex-shrink: 0;
+}
+@media (max-width: 1200px) {
+  .interview-formats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .interview-formats {
+    grid-template-columns: 1fr;
+  }
+  .interview-format {
+    padding: 16px;
+  }
+  .interview-pending-row,
+  .interview-session-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .interview-pending-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .interview-start button {
+    width: 100%;
+  }
+}
+</style>

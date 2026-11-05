@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { ownerPackagePath } from "../infrastructure/projects/catalog.ts";
 import type { Knowledge } from "../../domain/knowledge/material.ts";
 import { loadCommonKnowledge } from "../infrastructure/knowledge/common.ts";
+import { withBundledRounds } from "../../domain/knowledge/bundled-rounds.ts";
+import { refreshLegacyHr } from "../infrastructure/knowledge/hr-presentation.ts";
 
 export async function readKnowledge({
   knowledgeRoot = process.env.CAREER_KNOWLEDGE_ROOT,
@@ -15,10 +17,8 @@ export async function readKnowledge({
   common?: () => Knowledge | Promise<Knowledge>;
 } = {}) {
   const shared = await common();
-  const withProfiles = (knowledge: Knowledge) => ({
-    ...knowledge,
-    profiles: shared.profiles,
-  });
+  const withProfiles = (knowledge: Knowledge) =>
+    withBundledRounds(refreshLegacyHr(knowledge, shared), shared);
   if (knowledgeRoot) return withProfiles(loadKnowledge(knowledgeRoot));
   if (projectPackageRoot !== null) {
     let present = false;

@@ -27,6 +27,9 @@ const studyLink = z.object({
   label: z.string(),
 });
 export const preparedQuestionSchema = z.looseObject({
+  interviewEligible: z.boolean().optional(),
+  roundFormat: z.enum(["coding", "review", "design"]).optional(),
+  codingRole: z.enum(["short", "main", "advanced"]).optional(),
   profiles: z.array(z.enum(["vue", "react"])).optional(),
   id: z.string(),
   title: z.string(),
@@ -48,7 +51,14 @@ export const preparedQuestionSchema = z.looseObject({
   curriculumTier: z.enum(["core", "extended", "vacancy"]).optional(),
   followups: z.array(z.string()),
   followupAnswers: z
-    .array(z.object({ title: z.string(), answer: z.string() }))
+    .array(
+      z.object({
+        title: z.string(),
+        answer: z.string(),
+        prompt: z.string().optional(),
+        criteria: z.string().optional(),
+      }),
+    )
     .optional(),
   learningLinks: z.array(studyLink),
 });

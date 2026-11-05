@@ -163,11 +163,9 @@ test("projects", async ({
   });
   await page.goto(base + "/#topic=tr-local");
   await page.locator("#details").waitFor();
-  expect(
-    (await page.locator("#details .topic-title").innerText()).includes(
-      "IndexedDB",
-    ),
-  ).toBeTruthy();
+  await expect(page.locator("#details .topic-title")).toContainText(
+    "IndexedDB",
+  );
   expect(errors).toEqual([]);
   console.log(
     "PASS native Vue map: 50 four-block topics, 177 review questions, quick50, routes17, v1/validated fixtures, clipboard/fallback, old links, desktop/mobile, no iframe",

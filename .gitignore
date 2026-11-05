@@ -14,3 +14,5 @@ dist/
 *.sqlite-shm
 **/credentials.json
 compose.override.yaml
+public/labs/
+exercises/**/.vitest-cache/

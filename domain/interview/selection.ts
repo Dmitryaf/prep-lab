@@ -3,6 +3,7 @@ import type { Question } from "../knowledge/question.ts";
 import type { Mark } from "./rating.ts";
 import { hash } from "./deterministic.ts";
 import { supportsQuestion, type StackProfile } from "../knowledge/profile.ts";
+import type { InterviewFormat } from "./formats.ts";
 export function localDate(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
@@ -13,14 +14,23 @@ export function selectInterview(
   history: Pick<Interview, "questionIds">[] = [],
   progress: Record<string, Mark> = {},
   profile: StackProfile = "vue",
+  format: InterviewFormat = "mixed",
 ) {
   const hasCurriculum = questions.some((q) => q.curriculumTier === "core");
   const eligible = questions.filter(
     (q) =>
-      (q.source === "projects" ||
+      ((kind === "full" &&
+        (format !== "mixed" ||
+          (q.kind === "design" &&
+            q.roundFormat === "design" &&
+            q.answer.trim() &&
+            q.criteria?.trim()))) ||
+        q.source === "projects" ||
         !hasCurriculum ||
         q.curriculumTier === "core") &&
       q.availableAnswer !== false &&
+      q.interviewEligible !== false &&
+      q.codingRole !== "advanced" &&
       !q.parentId &&
       supportsQuestion(q, profile),
   );
@@ -52,6 +62,48 @@ export function selectInterview(
       .forEach(add);
   const full = kind === "full",
     theory = eligible.filter((q) => q.kind === "theory");
+  if (full && format !== "mixed") {
+    const pool = eligible.filter(
+      (q) =>
+        q.roundFormat === format &&
+        q.kind === (format === "design" ? "design" : "practice") &&
+        q.answer.trim() &&
+        q.criteria?.trim(),
+    );
+    if (format === "coding") {
+      const canonical = (id: string) => id.replace(/^bundled-rounds:/, "");
+      const recentRounds = history.map(
+        (s) => new Set(s.questionIds.map(canonical)),
+      );
+      const age = (q: Question) => {
+        const index = recentRounds.findIndex((ids) => ids.has(canonical(q.id)));
+        return index < 0 ? recentRounds.length : index;
+      };
+      const categoryCount = (q: Question) =>
+        chosen.filter((item) => item.category === q.category).length;
+      const codingOrder = (a: Question, b: Question) =>
+        age(b) - age(a) || categoryCount(a) - categoryCount(b) || order(a, b);
+      for (let index = 0; index < 3; index++)
+        add(
+          pool
+            .filter((q) => q.codingRole === "short" && !seen.has(q.id))
+            .sort(codingOrder)[0],
+        );
+      // Unlabelled personal tasks retain their original role as a main exercise.
+      add(pool.filter((q) => q.codingRole !== "short").sort(codingOrder)[0]);
+      return chosen;
+    }
+    // Include a task in the selected stack when one is available, then vary the rest.
+    if (format !== "design")
+      take(
+        pool.filter(
+          (q) => q.category === (profile === "react" ? "React" : "Vue"),
+        ),
+        1,
+      );
+    take(pool, (format === "design" ? 1 : 3) - chosen.length);
+    return chosen;
+  }
   // Reserve each common area and the selected framework before filling optional places.
   for (const [category, count] of [
     ["JavaScript", full ? 2 : 1],
@@ -118,12 +170,14 @@ function makeSession(
   date: string,
   id: string,
   profile: StackProfile,
+  format: InterviewFormat = "mixed",
 ): Interview {
   return {
     id,
     kind,
     date,
     profile,
+    ...(kind === "full" && format !== "mixed" ? { format } : {}),
     questionIds: chosen.map((q) => q.id),
     index: 0,
     finished: false,
@@ -139,16 +193,27 @@ export function createSession(
   kind: Interview["kind"] = "full",
   progress: Record<string, Mark> = {},
   profile: StackProfile = "vue",
+  format: InterviewFormat = "mixed",
+  history: Pick<Interview, "questionIds">[] = [],
 ) {
   const date = localDate();
   const id =
     globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random()}`;
   return makeSession(
-    selectInterview(questions, kind, date + id, [], progress, profile),
+    selectInterview(
+      questions,
+      kind,
+      date + id,
+      history,
+      progress,
+      profile,
+      format,
+    ),
     kind,
     date,
     id,
     profile,
+    format,
   );
 }
 export function dailySession(

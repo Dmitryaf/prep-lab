@@ -65,6 +65,10 @@ export class PreparationRepository {
       );
     const state = validateState({
       version: 3,
+      ...(values.practice_attempts !== undefined &&
+      values.practice_attempts !== "null"
+        ? { practiceAttempts: JSON.parse(values.practice_attempts) }
+        : {}),
       progress: readMarks("topic_marks"),
       questionProgress: readMarks("question_marks"),
       sessions,
@@ -98,6 +102,11 @@ export class PreparationRepository {
     this.database
       .prepare("UPDATE instance_meta SET value=? WHERE key='active_session'")
       .run(JSON.stringify(state.activeSession));
+    this.database
+      .prepare(
+        "INSERT INTO instance_meta (key,value) VALUES ('practice_attempts',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+      )
+      .run(JSON.stringify(state.practiceAttempts ?? null));
     this.database
       .prepare(
         "UPDATE instance_meta SET value=CAST(value AS INTEGER)+1 WHERE key='preparation_revision'",

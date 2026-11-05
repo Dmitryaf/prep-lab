@@ -10,6 +10,20 @@ const props = withDefaults(
   },
 );
 const content = computed(() => answerContent(props.question));
+const followups = computed(() =>
+  (props.question.followups || []).map((title) => {
+    const item = props.question.followupAnswers?.find((f) => f.title === title);
+    const prompt = item?.prompt || "";
+    return {
+      title,
+      answer: item?.answer,
+      criteria: item?.criteria,
+      prompt: prompt.startsWith(title + "\n\n")
+        ? prompt.slice(title.length + 2)
+        : prompt,
+    };
+  }),
+);
 </script>
 <template>
   <section class="platform-answer">
@@ -28,8 +42,8 @@ const content = computed(() => answerContent(props.question));
       :source-id="question.noteId"
     />
     <p v-else>
-      В исходном материале пока нет готового разбора. Можно изучить связанную
-      тему и самостоятельно проверить решение.
+      Готового разбора пока нет. Можно изучить связанную тему и самостоятельно
+      проверить решение.
     </p>
     <template v-if="question.criteria"
       ><h4>Проверьте себя</h4>
@@ -48,20 +62,31 @@ const content = computed(() => answerContent(props.question));
     </details>
   </section>
   <details v-if="question.followups?.length" class="platform-card">
-    <summary>Уточнения и разбор</summary>
+    <summary>
+      {{
+        question.codingRole
+          ? "Дополнительные этапы и разбор"
+          : "Уточнения и разбор"
+      }}
+    </summary>
     <ul>
-      <li v-for="title in question.followups" :key="title">
-        <strong>{{ title }}</strong
-        ><MarkdownContent
-          v-if="
-            question.followupAnswers?.find((f) => f.title === title)?.answer
-          "
-          :text="
-            question.followupAnswers.find((f) => f.title === title)!.answer
-          "
+      <li v-for="item in followups" :key="item.title">
+        <strong>{{ item.title }}</strong>
+        <MarkdownContent
+          v-if="item.prompt"
+          :text="item.prompt"
+          :source-id="question.noteId"
+        />
+        <MarkdownContent
+          v-if="item.answer"
+          :text="item.answer"
           :source-id="question.noteId"
         />
         <p v-else>Ориентиры — в ответе на основной вопрос и связанной теме.</p>
+        <template v-if="item.criteria">
+          <h4>Критерии этапа</h4>
+          <MarkdownContent :text="item.criteria" :source-id="question.noteId" />
+        </template>
       </li>
     </ul>
   </details>

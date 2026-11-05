@@ -45,7 +45,7 @@ test("study chat", async ({ app: { base }, page, pageErrors: errors }) => {
   );
   await expect(
     page.getByRole("button", { name: "Разобраться с Codex", exact: true }),
-  ).toHaveCount(0);
+  ).toHaveCount(1);
   await page
     .getByRole("button", { name: "Показать ответ", exact: true })
     .click();
@@ -166,7 +166,8 @@ test("study chat", async ({ app: { base }, page, pageErrors: errors }) => {
   await page.locator(".question-card").waitFor();
   await expect(
     page.getByRole("button", { name: "Разобраться с Codex", exact: true }),
-  ).toHaveCount(0);
+  ).toHaveCount(1);
+  await expect(page.locator(".platform-answer")).toHaveCount(0);
   if (ownerAvailable) {
     await page.goto(base + "/#/projects?projectTopic=tr-local");
     await page

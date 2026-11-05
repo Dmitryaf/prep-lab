@@ -336,8 +336,8 @@ test("clean standalone bundles the full common base without a vault or owner pac
     const response = await fetch(server.base + "/api/knowledge");
     assert.equal(response.status, 200);
     const bank = await response.json();
-    assert.equal(bank.notes.length, 218);
-    assert.equal(bank.questions.length, 574);
+    assert.equal(bank.notes.length, 222);
+    assert.equal(bank.questions.length, 591);
     assert.equal(bank.route.length, 66);
     assert.deepEqual(bank.warnings, []);
     assert(

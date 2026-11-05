@@ -4,7 +4,7 @@ import { headings, stripFrontmatter } from "./markdown.ts";
 
 export type StackProfile = "vue" | "react";
 const vue =
-  /\bVue\b|\bVuex\b|\bPinia\b|\bNuxt\b|\.vue\b|```vue\b|from\s+["']vue["']|\bdefineProps\b/;
+  /\bVue\b|\bVuex\b|\bPinia\b|\bNuxt\b|\.vue\b|(?:`{3,}|~{3,})vue\b|from\s+["']vue["']|\bdefineProps\b/;
 const react =
   /\bReact\b|\bRedux\b|\bJSX\b|\buseState\b|\buseEffect\b|from\s+["']react(?:-dom)?(?:["'/])|\bNext\.js\b/;
 const other = (profile: StackProfile) => (profile === "react" ? vue : react);
@@ -21,22 +21,29 @@ function compatibleText(text: string, profile: StackProfile) {
       : "дополнительный разбор";
   });
 }
+function hasForeignCode(text: string, profile: StackProfile) {
+  // Markdown answers may quote fenced examples. Inspect code rather than
+  // treating an incidental framework name in the explanation as a requirement.
+  const source = text.replace(/^\s*> ?/gm, "");
+  return [...source.matchAll(/(`{3,}|~{3,})[^\n]*\n[\s\S]*?\1/g)].some(
+    (block) => other(profile).test(block[0]),
+  );
+}
 export function supportsQuestion(question: Question, profile: StackProfile) {
   return (
     (!question.profiles || question.profiles.includes(profile)) &&
     !foreignCategory(question.category, profile) &&
     !other(profile).test(
-      compatibleText(
-        [
-          question.title,
-          question.prompt,
-          question.answer,
-          question.shortAnswer || "",
-          question.details || "",
-          question.criteria || "",
-        ].join("\n"),
-        profile,
-      ),
+      compatibleText(question.title + "\n" + question.prompt, profile),
+    ) &&
+    !hasForeignCode(
+      [
+        question.answer,
+        question.shortAnswer,
+        question.details,
+        question.criteria,
+      ].join("\n"),
+      profile,
     )
   );
 }
@@ -71,6 +78,7 @@ export function questionForProfile<T extends Question>(
 function noteForProfile(note: Note, profile: StackProfile): Note | undefined {
   if (note.profiles && !note.profiles.includes(profile)) return;
   if (foreignCategory(note.category, profile)) return;
+  if (other(profile).test(note.title)) return;
   const source = stripFrontmatter(note.markdown);
   const blocked = other(profile),
     sections = headings(source),
@@ -85,7 +93,7 @@ function noteForProfile(note: Note, profile: StackProfile): Note | undefined {
       omit(heading.start, heading.end);
       continue;
     }
-    if (blocked.test(heading.body)) {
+    if (hasForeignCode(heading.body, profile)) {
       const children = sections.some(
         (child) => child.start > heading.start && child.start < heading.end,
       );
@@ -94,18 +102,21 @@ function noteForProfile(note: Note, profile: StackProfile): Note | undefined {
   }
   const firstSection =
     sections.find((heading) => heading.level >= 2)?.start ?? lines.length;
-  if (blocked.test(lines.slice(0, firstSection).join("\n"))) {
-    const title = sections.find((heading) => heading.level === 1);
-    omit(0, firstSection);
-    if (title) omitted.delete(title.start);
-  }
+  // A foreign executable introduction makes this a stack-specific lesson;
+  // shared introductions and navigation tables must never be deleted for prose.
+  if (hasForeignCode(lines.slice(0, firstSection).join("\n"), profile)) return;
   const markdown = lines
     .filter((_, index) => !omitted.has(index))
     .join("\n")
     .trim();
+  // A question list is useful study material even before answers are added.
+  const hasQuestionList =
+    headings(markdown).filter(
+      (heading) => heading.level > 1 && heading.title.endsWith("?"),
+    ).length >= 2;
   if (
-    blocked.test(markdown) ||
-    markdown.replace(/^#+.*$/gm, "").trim().length < 40
+    hasForeignCode(markdown, profile) ||
+    (!hasQuestionList && markdown.replace(/^#+.*$/gm, "").trim().length < 40)
   )
     return;
   return { ...note, markdown };

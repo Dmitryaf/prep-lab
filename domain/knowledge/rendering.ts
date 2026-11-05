@@ -1,3 +1,7 @@
+import { isPublicLabResource } from "./labs.ts";
+import { highlightCode } from "./highlighting.ts";
+import { cleanEditorialNotes } from "./editorial-notes.ts";
+
 // A deliberately non-executable Markdown subset for local study notes.
 export const escapeHtml = (value: unknown) =>
   String(value ?? "").replace(
@@ -16,17 +20,21 @@ export const escapeHtml = (value: unknown) =>
 export const headingId = (title: unknown) =>
   "h-" + encodeURIComponent(String(title).replace(/`/g, "").trim());
 const safeHref = (value: unknown) =>
-  typeof value === "string" && /^(?:https?:\/\/|#)/i.test(value) ? value : null;
+  typeof value === "string" &&
+  (/^(?:https?:\/\/|#)/i.test(value) || isPublicLabResource(value))
+    ? value
+    : null;
 export function renderMarkdown(
   text: unknown,
   {
     resolveLink,
   }: { resolveLink?: (target: string, label: string) => string | null } = {},
 ) {
-  const lines = String(text || "")
-    .replace(/^\uFEFF/, "")
-    .replace(/^---\r?\n[\s\S]*?\r?\n---\s*(?:\r?\n|$)/, "")
-    .split(/\r?\n/);
+  const lines = cleanEditorialNotes(
+    String(text || "")
+      .replace(/^\uFEFF/, "")
+      .replace(/^---\r?\n[\s\S]*?\r?\n---\s*(?:\r?\n|$)/, ""),
+  ).split(/\r?\n/);
   function inline(value: string) {
     const tokens: string[] = [];
     const token = (html: string) => {
@@ -112,7 +120,9 @@ export function renderMarkdown(
       )
         code.push(lines[i++]);
       if (i < lines.length) i++;
-      html += `<pre><code>${escapeHtml(code.join("\n"))}</code></pre>`;
+      const source = code.join("\n");
+      const highlighted = highlightCode(source, fence[2]);
+      html += `<pre tabindex="0" aria-label="Пример кода"><code>${highlighted ?? escapeHtml(source)}</code></pre>`;
       continue;
     }
     if (/^>/.test(line)) {
@@ -160,7 +170,11 @@ export function renderMarkdown(
       html += [...aliases]
         .map((a) => `<span id="${escapeHtml(headingId(a))}"></span>`)
         .join("");
-      html += `<h${h[1].length} id="${escapeHtml(headingId(h[2]))}">${inline(h[2])}</h${h[1].length}>`;
+      const displayTitle =
+        h[2] === "Вакансии и происхождение задач"
+          ? "Вакансии и практикумы"
+          : h[2];
+      html += `<h${h[1].length} id="${escapeHtml(headingId(h[2]))}">${inline(displayTitle)}</h${h[1].length}>`;
       i++;
       continue;
     }

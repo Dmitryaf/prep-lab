@@ -1,6 +1,7 @@
 import type { Note } from "./material.ts";
 import { canonicalNotePath } from "./path.ts";
 import { renderMarkdown, escapeHtml, headingId } from "./rendering.ts";
+import { isPublicLabResource } from "./labs.ts";
 
 export function materialHeading(note: Partial<Note>, heading: string) {
   const visited = new Set<string>();
@@ -29,6 +30,7 @@ export function resolveKnowledgeLink(
   // eslint-disable-next-line no-control-regex -- Deliberate control-character rejection or internal Markdown sentinel.
   if (typeof raw !== "string" || /[\u0000-\u001f\u007f]/.test(raw)) return null;
   if (/^https?:\/\//i.test(raw)) return raw;
+  if (isPublicLabResource(raw)) return raw;
   let target;
   try {
     target = decodeURIComponent(raw);

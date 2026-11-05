@@ -6,6 +6,9 @@ export interface StudyLink {
   profiles?: ("vue" | "react")[];
 }
 export interface Question {
+  interviewEligible?: boolean;
+  roundFormat?: "coding" | "review" | "design";
+  codingRole?: "short" | "main" | "advanced";
   profiles?: ("vue" | "react")[];
   id: string;
   title: string;
@@ -26,7 +29,12 @@ export interface Question {
   parentId?: string;
   curriculumTier?: "core" | "extended" | "vacancy";
   followups?: string[];
-  followupAnswers?: { title: string; answer: string }[];
+  followupAnswers?: {
+    title: string;
+    answer: string;
+    prompt?: string;
+    criteria?: string;
+  }[];
   learningLinks?: StudyLink[];
 }
 export type PreparedQuestion = Question & {

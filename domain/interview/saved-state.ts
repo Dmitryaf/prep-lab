@@ -1,4 +1,4 @@
-import type { Progress, Interview } from "./state.ts";
+import type { Progress, Interview, AnswerAttempt } from "./state.ts";
 import type { Rating, Mark } from "./rating.ts";
 export interface StoragePort {
   getItem(key: string): string | null;
@@ -17,6 +17,41 @@ const object = (x: unknown): x is Record<string, unknown> =>
   !!x && typeof x === "object" && !Array.isArray(x);
 const safeKey = (k: string) =>
   !["__proto__", "constructor", "prototype"].includes(k);
+function attempts(value: unknown): Record<string, AnswerAttempt> {
+  if (!object(value)) throw Error("Некорректные самостоятельные ответы");
+  const result: Record<string, AnswerAttempt> = {};
+  for (const [id, attempt] of Object.entries(value)) {
+    if (
+      !safeKey(id) ||
+      !object(attempt) ||
+      typeof attempt.text !== "string" ||
+      attempt.text.length > 20_000 ||
+      typeof attempt.solutionUrl !== "string" ||
+      attempt.solutionUrl.length > 2_000 ||
+      typeof attempt.updatedAt !== "string" ||
+      !Number.isFinite(Date.parse(attempt.updatedAt))
+    )
+      throw Error("Некорректная самостоятельная попытка");
+    if (attempt.solutionUrl) {
+      let url: URL;
+      try {
+        url = new URL(attempt.solutionUrl);
+      } catch {
+        throw Error("Укажите полную ссылку на решение: https:// или http://");
+      }
+      if (!["https:", "http:"].includes(url.protocol))
+        throw Error(
+          "Ссылка на решение должна начинаться с https:// или http://",
+        );
+    }
+    result[id] = {
+      text: attempt.text,
+      solutionUrl: attempt.solutionUrl,
+      updatedAt: attempt.updatedAt,
+    };
+  }
+  return result;
+}
 function marks(value: unknown): Record<string, Mark> {
   if (!object(value)) throw Error("Некорректные отметки");
   const out: Record<string, Mark> = {};
@@ -44,6 +79,8 @@ function sessionMap(value: unknown): Record<string, Interview> {
       typeof s.id !== "string" ||
       !["daily", "full"].includes(s.kind) ||
       (s.profile !== undefined && !["vue", "react"].includes(s.profile)) ||
+      (s.format !== undefined &&
+        !["mixed", "coding", "review", "design"].includes(s.format)) ||
       typeof s.date !== "string" ||
       !Array.isArray(s.questionIds) ||
       new Set(s.questionIds).size !== s.questionIds.length ||
@@ -58,6 +95,11 @@ function sessionMap(value: unknown): Record<string, Interview> {
       !object(s.snapshots)
     )
       throw Error("Некорректное интервью");
+    if (s.attempts !== undefined) {
+      const saved = attempts(s.attempts);
+      if (Object.keys(saved).some((id) => !s.questionIds.includes(id)))
+        throw Error("Попытка относится к другому интервью");
+    }
     for (const [id, rating] of Object.entries(s.ratings))
       if (
         !s.questionIds.includes(id) ||
@@ -120,14 +162,31 @@ function sessionMap(value: unknown): Record<string, Interview> {
               (f) =>
                 !object(f) ||
                 typeof f.title !== "string" ||
-                typeof f.answer !== "string",
+                typeof f.answer !== "string" ||
+                (f.prompt !== undefined && typeof f.prompt !== "string") ||
+                (f.criteria !== undefined && typeof f.criteria !== "string"),
             )),
       )
     )
       throw Error("Некорректные уточнения");
     for (const q of Object.values(s.snapshots)) {
+      if (
+        q.interviewEligible !== undefined &&
+        typeof q.interviewEligible !== "boolean"
+      )
+        throw Error("Некорректный допуск к интервью");
+      if (
+        q.roundFormat !== undefined &&
+        !["coding", "review", "design"].includes(q.roundFormat)
+      )
+        throw Error("Некорректный формат задания");
       if (q.criteria !== undefined && typeof q.criteria !== "string")
         throw Error("Некорректные критерии");
+      if (
+        q.codingRole !== undefined &&
+        !["short", "main", "advanced"].includes(q.codingRole)
+      )
+        throw Error("Некорректный этап кода");
       if (
         q.curriculumTier !== undefined &&
         !["core", "extended", "vacancy"].includes(q.curriculumTier)
@@ -169,6 +228,8 @@ export function validateState(input: unknown): Progress {
   s.progress = marks(value.progress);
   s.questionProgress = value.version === 1 ? {} : marks(value.questionProgress);
   if (value.version === 3) {
+    if (value.practiceAttempts !== undefined)
+      s.practiceAttempts = attempts(value.practiceAttempts);
     s.sessions = sessionMap(value.sessions);
     s.daily = sessionMap(value.daily);
     if (
@@ -222,6 +283,14 @@ export function importState(text: string, current: unknown) {
   const base = validateState(current);
   return {
     ...base,
+    ...(base.practiceAttempts || incoming.practiceAttempts
+      ? {
+          practiceAttempts: {
+            ...base.practiceAttempts,
+            ...incoming.practiceAttempts,
+          },
+        }
+      : {}),
     progress: { ...base.progress, ...incoming.progress },
     questionProgress: {
       ...base.questionProgress,

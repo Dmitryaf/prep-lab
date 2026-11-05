@@ -6,19 +6,29 @@ export function discussionPrompt(
   prompts: () => PromptRepository,
   profile: () => "vue" | "react",
 ) {
-  return async (context: string, message: string) => {
+  return async (context: string, message: string, materialKey = "") => {
     const template = (await templates()).find(
       (template) => template.id === "discussion",
     );
     if (!template) throw new Error("Шаблон обсуждения недоступен.");
-    return composePrompt(template, prompts().read(template).text, {
-      profile: profile(),
-      request: message,
-      context:
-        "История разговора передаётся отдельно. Она не является подтверждением фактов о пользователе.",
-      materials: [
-        { id: "current-material", path: "Текущий материал", text: context },
-      ],
-    });
+    const mode =
+      materialKey.startsWith("question-hint:") ||
+      materialKey.startsWith("interview-hint:")
+        ? "hint"
+        : "discussion";
+    return composePrompt(
+      template,
+      prompts().read(template).text,
+      {
+        profile: profile(),
+        request: message,
+        context:
+          "История разговора передаётся отдельно. Она не является подтверждением фактов о пользователе.",
+        materials: [
+          { id: "current-material", path: "Текущий материал", text: context },
+        ],
+      },
+      mode,
+    );
   };
 }

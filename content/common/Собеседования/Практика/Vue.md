@@ -312,19 +312,109 @@ friendId может меняться: не зафиксируйте случай
 
 ### useFetch: реактивный адрес и состояния запроса
 
-Вариант: компонент вызывает запрос из `watch(query)` и получает ответы в обратном порядке. Опиши очистку ресурсов и состояния интерфейса; старый catch/finally не должен изменять новый запрос.
+**Формат раунда:** Написание кода
+**Этап кода:** main
 
-Спроектируйте композиционную функцию Vue с данными, состоянием загрузки и ошибкой. Адрес может изменяться; старый ответ не должен затереть актуальный. Согласуйте принимаемые значения: строка, ref или функция чтения. Усложнения: отмена через AbortSignal, кэш, объединение одинаковых запросов, ограничение времени, повторные попытки и ручная повторная загрузка. Дайте интерфейс и реализуйте после согласования контракта; базовый подход и ссылка на реализацию приведены в разборе.
+Напиши `useFetch(url, request)` и компонент списка пользователей. В базовом варианте url — неизменяемая непустая строка; `request(url)` возвращает Promise массива `{ id: string, name: string }` с уникальными ID либо отклоняется. Composable возвращает `data`, `loading`, `error` и `load()`. Компонент вызывает load при подключении, показывает загрузку, ошибку с кнопкой повтора, пустой ответ либо имена. Пока запрос выполняется, повторный load ничего не запускает. При новой загрузке прежний результат скрывается.
 
-> [!example]- Разбор простыми словами
+Добавь локальное поле поиска: регистр не важен, пробелы по краям игнорируются, пустая строка показывает всех. Фильтрация не делает новый запрос. Пример ответа: Alice, Bob; ввод ` AL ` оставляет Alice. Ошибка → «Повторить» → успешный пустой ответ показывает «Ничего не найдено».
+
+**Критерии ответа:** Различаю загрузку, ошибку и пустой ответ; загрузка запускается явно; повтор после ошибки работает; параллельный повтор заблокирован; локальный фильтр не изменяет массив и не вызывает API. Реактивный адрес и отмена — отдельный этап.
+**Изучить:** [[Фронтенд/Vue/05. Composables и переиспользование логики|Composables]], [[Фронтенд/Vue/03. computed, watch и watchEffect|Производный список]], [[Фронтенд/Vue/06. Жизненный цикл, запросы и очистка ресурсов|Жизненный цикл и запросы]]
+
+> [!example]- Разбор: загрузчик и производный список
 >
-> Для первого варианта достаточно `{ data, loading, error }` и реактивного адреса. Наблюдатель watch следит только за адресом; каждый запуск создаёт свой контроллер отмены и флаг active. Обработчики успеха, ошибки и завершения меняют состояние только при active. Функция очистки снимает этот флаг и вызывает отмену запроса.
+> ```js
+> // checked-example: vue-fetch-base
+> import { ref } from 'vue';
+> function useFetch(url, request) {
+>   const data = ref([]);
+>   const loading = ref(false);
+>   const error = ref(null);
+>   async function load() {
+>     if (loading.value) return;
+>     loading.value = true;
+>     error.value = null;
+>     data.value = [];
+>     try {
+>       data.value = await request(url);
+>     } catch (cause) {
+>       error.value = cause instanceof Error ? cause : new Error(String(cause));
+>     } finally {
+>       loading.value = false;
+>     }
+>   }
+>   return { data, loading, error, load };
+> }
+> ```
 >
-> Готовый пример с пояснениями и проверкой обратного порядка ответов: [[Фронтенд/Инженерные основы/07. Тестирование/02. Проверка поиска с поздними ответами|стенд поиска]]. Кэш, повтор и общий лимит добавляй по одному, после работающего простого контракта.
+> Экспортируй useFetch из useFetch.js. В данном компоненте request — переданная функция с согласованным контрактом; HTTP-адаптер отдельно проверяет response.ok и форму JSON.
+>
+> ```vue
+> <script setup>
+> import { computed, onMounted, ref } from 'vue';
+> import { useFetch } from './useFetch.js';
+> const props = defineProps({ request: { type: Function, required: true } });
+> const { data, loading, error, load } = useFetch('/api/users', props.request);
+> const query = ref('');
+> const visible = computed(() => {
+>   const term = query.value.trim().toLowerCase();
+>   return data.value.filter(user => user.name.toLowerCase().includes(term));
+> });
+> onMounted(load);
+> </script>
+> <template>
+>   <label>Поиск <input v-model="query" type="search"></label>
+>   <p v-if="loading" role="status">Загрузка…</p>
+>   <div v-else-if="error" role="alert">
+>     Не удалось загрузить пользователей. <button @click="load">Повторить</button>
+>   </div>
+>   <template v-else>
+>     <p v-if="!visible.length" role="status">Ничего не найдено.</p>
+>     <ul><li v-for="user in visible" :key="user.id">{{ user.name }}</li></ul>
+>   </template>
+> </template>
+> ```
+>
+> Проверь отложенный Promise, отказ, повтор и пустой массив. В базовой модели одна операция изменяет один локальный набор refs, поэтому общий finally допустим. После unmount Promise может завершиться, но у него нет общей подписки или состояния другого компонента; отмену транспорта добавляет следующий этап.
+
+#### Реактивный адрес и поздние ответы
+
+Теперь useFetch принимает строку, ref или функцию чтения адреса и сам загружает данные при изменении адреса. Пустой адрес очищает результат без запроса. При смене A → B поздний успех или отказ A не должен менять data, error или loading B. `request(url, { signal })` может проигнорировать отмену. При смене адреса и unmount освободи ресурсы. Сначала согласуй этот контракт, затем реализуй его вместо базового useFetch.
+
+**Критерии ответа:** Наблюдаю значение адреса; очистка отменяет запрос и запрещает все поздние изменения; пустой адрес сбрасывает состояние; текущая ошибка не теряется; решение работает при игнорировании signal.
+**Изучить:** [[Фронтенд/Vue/03. computed, watch и watchEffect|watch и cleanup]], [[Фронтенд/API браузера/05. Fetch, CORS и сетевые запросы/03. AbortController и race condition в запросах|Отмена и гонки]]
+
+> [!example]- Разбор: каждое наблюдение владеет своей операцией
+>
+> ```js
+> import { ref, toValue, watch } from 'vue';
+> function useFetch(address, request) {
+>   const data = ref([]), loading = ref(false), error = ref(null);
+>   watch(() => toValue(address), (url, _, onCleanup) => {
+>     let active = true;
+>     const controller = new AbortController();
+>     onCleanup(() => { active = false; controller.abort(); });
+>     data.value = []; error.value = null; loading.value = Boolean(url);
+>     if (!url) return;
+>     Promise.resolve().then(() => request(url, { signal: controller.signal }))
+>       .then(value => { if (active) data.value = value; })
+>       .catch(cause => {
+>         if (active) error.value = cause instanceof Error ? cause : new Error(String(cause));
+>       })
+>       .finally(() => { if (active) loading.value = false; });
+>   }, { immediate: true, flush: 'sync' });
+>   return { data, loading, error };
+> }
+> ```
+>
+> Создавай composable синхронно в setup: Vue остановит watcher при unmount и вызовет cleanup. Для редких смен адреса flush: 'sync' сразу инвалидирует предыдущую операцию; это не режим для массово меняющихся коллекций. Проверь B → A, поздний reject A, пустой адрес во время ожидания и unmount. Готовый сценарий проверок: [[Фронтенд/Инженерные основы/07. Тестирование/02. Проверка поиска с поздними ответами|стенд поиска]]. Кэш и повторы требуют отдельного согласования, не входят в этот этап.
 
 ### Поиск и подсветка текста из API
 
-Создайте Vue-виджет поиска всех вхождений в полученном абзаце. По порядку: загрузка, ошибки, число вхождений, переключение поиска без учёта регистра, кнопка more. Отображаемый текст должен сохранять исходный регистр.
+**Формат раунда:** Ревью кода
+
+Проведите ревью Vue-виджета поиска всех вхождений в полученном абзаце. Сначала расставьте проблемы по влиянию, затем предложите минимальное исправление и проверки. Отображаемый текст должен сохранять исходный регистр; загрузка, ошибка и пустой результат должны различаться.
 
 ```ts
 type TextResponse = { text: string } | { error: string };
@@ -334,6 +424,19 @@ const textApi = (p = 1) => fetch(
 ).then(r => r.json());
 ```
 
+```vue
+<script setup>
+import { ref, watch } from 'vue';
+const query = ref('');
+const html = ref('');
+watch(query, async value => {
+  const data = await textApi();
+  html.value = data.text.replace(new RegExp(value, 'gi'), '<mark>$&</mark>');
+});
+</script>
+<template><input v-model="query" aria-label="Поиск"><p v-html="html" /></template>
+```
+
 Можно заменить внешний запрос заранее подготовленными данными с тем же контрактом. Уточните пересечение вхождений, специальные символы поиска и защиту от вставки произвольного HTML. Не переносите чужой ключ.
 
 > [!example]- Разбор простыми словами
@@ -341,6 +444,14 @@ const textApi = (p = 1) => fetch(
 > Сначала загрузи текст с проверкой response.ok и варианта ответа. Для подсветки ищи позиции в копии строки с нужным регистром, а части вырезай из исходной строки. Отрисуй массив фрагментов обычным текстом и mark для совпадений.
 >
 > Не собирай произвольный HTML для v-html: текст API может содержать разметку. Для простого поиска indexOf не требует экранировать специальные символы регулярного выражения. При непересекающихся совпадениях двигайся на длину найденной строки; пустой запрос должен давать обычный текст. Полную Unicode-нормализацию нужно оговорить отдельно.
+
+**Критерии ответа:** Отделяю гонку запросов от XSS, сохраняю текст API без интерпретации HTML; проверяю поздний ответ, пустой запрос и специальные символы.
+
+**Изучить:** [[Фронтенд/API браузера/05. Fetch, CORS и сетевые запросы/03. AbortController и race condition в запросах|Отмена и гонки запросов]], [[Фронтенд/Vue/03. computed, watch и watchEffect|Наблюдатели и очистка]], [[Фронтенд/Vue/07. Шаблоны, директивы, события и v-model|Шаблоны и события]]
+
+**Уточнения**
+- API вернул имя с HTML-разметкой. Проверьте безопасное отображение без потери подсветки.
+- Нужно искать без учёта регистра. Уточните Unicode-контракт и покажите пример, который ломает наивную реализацию.
 
 ### Поиск репозиториев GitHub
 
@@ -581,34 +692,86 @@ const availableSpotTime = props.spots.map(spot => ({
 
 ### Список дел: добавить, переключить и удалить
 
-Реализуйте незаполненные функции: добавление текста из поля ввода с последующей очисткой, переключение isDone, удаление по id. Контракт Item: получает данные, испускает toggle/delete с id. Начальные данные предоставляются приложением; состав и генерацию id уточните.
+**Формат раунда:** Написание кода
+**Этап кода:** main
 
-```vue
-<script setup lang="ts">
-import { ref } from 'vue';
-import Item from './Item.vue';
-type Todo = { id: string; text: string; isDone: boolean };
-const props = defineProps<{ initialData: Todo[] }>();
-const items = ref(props.initialData);
-const text = ref('');
-function addItem() { /* Ваш код */ }
-function toggleItem(id: string) { /* Ваш код */ }
-function deleteItem(id: string) { /* Ваш код */ }
-</script>
-<template>
-  <input v-model="text" placeholder="Новое дело" />
-  <button @click="addItem">Добавить</button>
-  <Item v-for="item in items" :data="item" @toggle="toggleItem" @delete="deleteItem" />
-</template>
-```
+Реализуй список дел на Vue 3. Вход `initialData` — массив `{ id: string, text: string, isDone: boolean }` с уникальными ID. Это только начальный снимок; не изменяй массив и объекты родителя. Новое дело получает уникальный ID через переданную `makeId()`. Добавление обрезает пробелы, игнорирует пустой текст и очищает поле после успеха. Переключение меняет isDone, удаление убирает запись по id; неизвестный ID ничего не делает.
 
-Усложнения: устойчивые ключи, владение переданным массивом, измерение обновлений списка/Item; затем сократите лишние обновления без v-memo. Проверяйте наблюдаемое поведение, а не только число вызовов функции setup.
+Пример: начальное «Прочитать» → ввести ` Написать ` → добавить → два дела, поле пустое. Переключить первое → выполнено. Удалить второе → осталось первое. Добавление одних пробелов не меняет список. Покажи доступные кнопки/checkbox и устойчивые ключи.
 
-> [!example]- Разбор простыми словами
+**Критерии ответа:** Все три операции соблюдают пример; строки обрезаются, пустое дело не создаётся; объекты родителя сохраняются; ID стабилен и используется как key; ввод очищается только после добавления.
+**Изучить:** [[Фронтенд/Vue/02. ref, reactive и потеря реактивности|Реактивное состояние]], [[Фронтенд/Vue/07. Шаблоны, директивы, события и v-model|Список и события]], [[Фронтенд/Vue/04. Компоненты, props, emits и slots|Владение props]]
+
+> [!example]- Разбор: локальный список и операции по ID
 >
-> Скопируй начальные записи: `ref(props.initialData.map(item => ({ ...item })))`, чтобы локальное переключение не меняло объекты родителя. При добавлении обрежь пробелы, проверь непустой текст, создай уникальный id, добавь запись и очисти поле.
+> ```js
+> // checked-example: vue-todos-base
+> import { ref } from 'vue';
+> function useTodos(initialData, makeId) {
+>   const items = ref(initialData.map(item => ({ ...item })));
+>   const text = ref('');
+>   function addItem() {
+>     const value = text.value.trim();
+>     if (!value) return;
+>     items.value.push({ id: makeId(), text: value, isDone: false });
+>     text.value = '';
+>   }
+>   function toggleItem(id) {
+>     const item = items.value.find(item => item.id === id);
+>     if (item) item.isDone = !item.isDone;
+>   }
+>   function deleteItem(id) {
+>     items.value = items.value.filter(item => item.id !== id);
+>   }
+>   return { items, text, addItem, toggleItem, deleteItem };
+> }
+> ```
 >
-> Переключение: найди запись по id и измени isDone. Удаление: оставь записи с другим id через filter. Передай `:key="item.id"`. Отдельно выбери, является ли initialData только начальным значением или последующие изменения родителя тоже нужно применять.
+> Экспортируй useTodos из useTodos.js. Здесь makeId гарантирует отсутствие коллизий с начальными и новыми ID, а приложение передаёт, например, `() => crypto.randomUUID()`.
+>
+> ```vue
+> <script setup>
+> import { useTodos } from './useTodos.js';
+> const props = defineProps({ initialData: Array, makeId: Function });
+> const { items, text, addItem, toggleItem, deleteItem } = useTodos(props.initialData, props.makeId);
+> </script>
+> <template>
+>   <form @submit.prevent="addItem">
+>     <label>Новое дело <input v-model="text"></label>
+>     <button type="submit">Добавить</button>
+>   </form>
+>   <ul><li v-for="item in items" :key="item.id">
+>     <label><input type="checkbox" :checked="item.isDone" @change="toggleItem(item.id)">{{ item.text }}</label>
+>     <button type="button" @click="deleteItem(item.id)">Удалить {{ item.text }}</button>
+>   </li></ul>
+> </template>
+> ```
+>
+> Копии записей отделяют локальный черновик от родителя. Изменение initialData после создания списка намеренно не синхронизируется: это начальный снимок, а не управляемая модель.
+
+#### Выделение Item с контрактом событий
+
+Вынеси строку в Item.vue. Компонент получает объект data, не меняет его и испускает toggle/delete с ID. Родитель по-прежнему владеет массивом. Проверь переключение и удаление второго элемента после удаления первого: событие должно использовать ID записи, а не прежний индекс.
+
+**Критерии ответа:** Item не мутирует props; оба события несут ID; родитель сохраняет операции и ключи; checkbox отражает актуальное isDone.
+**Изучить:** [[Фронтенд/Vue/04. Компоненты, props, emits и slots|Контракт props/emits]]
+
+> [!example]- Разбор: события вместо изменения props
+>
+> ```vue
+> <script setup>
+> defineProps({ data: { type: Object, required: true } });
+> const emit = defineEmits(['toggle', 'delete']);
+> </script>
+> <template>
+>   <li>
+>     <label><input type="checkbox" :checked="data.isDone" @change="emit('toggle', data.id)">{{ data.text }}</label>
+>     <button type="button" @click="emit('delete', data.id)">Удалить {{ data.text }}</button>
+>   </li>
+> </template>
+> ```
+>
+> В родителе импортируй Item и замени li на `<Item v-for="item in items" :key="item.id" :data="item" @toggle="toggleItem" @delete="deleteItem" />`. Локальные операции остаются прежними. Оптимизацию списка обсуждай после измерения, отдельно от корректности событий.
 
 ### Лента публикаций: реклама и страницы
 
@@ -698,4 +861,4 @@ Modal: [[Собеседования/Проектирование/Клиентс�
 > - обработка loading/error/empty;
 > - тестируемость и accessibility.
 
-Источники для порядка обновлений и очистки: [Vue — хуки жизненного цикла](https://vuejs.org/api/composition-api-lifecycle.html), [наблюдатели](https://vuejs.org/guide/essentials/watchers.html). Версия учебных примеров — Vue 3.5; разборы не подразумевают существование неуказанных методов внешних библиотек.
+Версия примеров — Vue 3.5; разборы не подразумевают существование неуказанных методов внешних библиотек.

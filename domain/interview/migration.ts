@@ -8,6 +8,14 @@ export function mergeLegacyState(
   const legacy = validateState(incoming);
   return validateState({
     version: 3,
+    ...(legacy.practiceAttempts || current.practiceAttempts
+      ? {
+          practiceAttempts: {
+            ...legacy.practiceAttempts,
+            ...current.practiceAttempts,
+          },
+        }
+      : {}),
     progress: { ...legacy.progress, ...current.progress },
     questionProgress: {
       ...legacy.questionProgress,

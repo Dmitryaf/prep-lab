@@ -111,7 +111,11 @@ test("Markdown escapes HTML, dangerous URLs and code, renders tables and closed 
   assert(html.includes('href="#note=path">Ссылка</a>'));
   assert.equal((html.match(/<details/g) || []).length, 2);
   assert(!html.includes(" open"));
-  assert(html.includes("&lt;img onerror=alert(1)&gt;"));
+  assert(
+    html
+      .replace(/<\/?span\b[^>]*>/g, "")
+      .includes("&lt;img onerror=alert(1)&gt;"),
+  );
   assert(html.includes(`id="${headingId("Тема")}"`));
 });
 test("read-only inventory resolves the route and does not follow symlinks outside the vault", (t) => {

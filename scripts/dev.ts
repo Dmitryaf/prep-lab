@@ -8,11 +8,13 @@ import {
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
 import { runtimeDatabasePath } from "../server/infrastructure/storage/runtime.ts";
+import { packageLabs } from "./package-labs.ts";
 
 export async function createDevelopmentServer({
   port = Number(process.env.PORT || 4173),
   ...options
 }: ServerOptions & { port?: number } = {}) {
+  await packageLabs();
   const api = createHttpService({
     ...options,
     databasePath: options.databasePath ?? runtimeDatabasePath(),

@@ -11,6 +11,7 @@ export {
   availableFollowups,
   openFollowup,
   advanceQuestion,
+  finishInterview,
   previousQuestion,
 } from "./navigation.ts";
 export {

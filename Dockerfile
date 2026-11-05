@@ -15,6 +15,7 @@ COPY scripts ./scripts
 COPY tests ./tests
 COPY content ./content
 COPY public ./public
+COPY exercises ./exercises
 RUN npm run build
 
 FROM node:22.22.3-bookworm-slim AS assistant-runtime

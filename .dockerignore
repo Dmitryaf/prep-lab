@@ -25,6 +25,8 @@
 !content/prompts/**
 !public/
 !public/**
+!exercises/
+!exercises/**
 
 # Do not include nested runtime data or credentials in an allowed source folder.
 **/.env
@@ -37,6 +39,8 @@
 **/artifacts/**
 **/node_modules
 **/node_modules/**
+exercises/**/dist
+exercises/**/dist/**
 **/*.sqlite
 **/*.sqlite-wal
 **/*.sqlite-shm

@@ -87,6 +87,37 @@
 .platform code {
   font-family: Consolas, monospace;
 }
+.platform pre .hljs-comment,
+.platform pre .hljs-quote {
+  color: #a7b5cb;
+}
+.platform pre .hljs-keyword,
+.platform pre .hljs-selector-tag {
+  color: #f0abfc;
+}
+.platform pre .hljs-string,
+.platform pre .hljs-regexp {
+  color: #86efac;
+}
+.platform pre .hljs-number,
+.platform pre .hljs-literal {
+  color: #fdba74;
+}
+.platform pre .hljs-title,
+.platform pre .hljs-built_in,
+.platform pre .hljs-name {
+  color: #93c5fd;
+}
+.platform pre .hljs-attr,
+.platform pre .hljs-attribute,
+.platform pre .hljs-selector-class {
+  color: #fde68a;
+}
+.platform pre .hljs-type,
+.platform pre .hljs-variable,
+.platform pre .hljs-tag {
+  color: #7dd3fc;
+}
 .platform :not(pre) > code {
   font-size: 0.9em;
   background: #eef2f8;

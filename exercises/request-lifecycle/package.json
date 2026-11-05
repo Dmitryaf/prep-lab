@@ -1,0 +1,12 @@
+{
+  "name": "frontend-request-lifecycle-lab",
+  "private": true,
+  "type": "module",
+  "engines": { "node": "^22.12.0 || >=24.0.0" },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": { "vue": "3.5.40" },
+  "devDependencies": { "typescript": "5.9.3", "vitest": "4.1.11", "vite": "7.3.6" }
+}

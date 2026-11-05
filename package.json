@@ -7,7 +7,8 @@
   },
   "scripts": {
     "dev": "node --experimental-strip-types scripts/dev.ts",
-    "build": "nuxt prepare && vue-tsc --noEmit && nuxt build",
+    "labs:package": "node --experimental-strip-types scripts/package-labs.ts",
+    "build": "npm run labs:package && nuxt prepare && vue-tsc --noEmit && nuxt build",
     "start": "node --experimental-strip-types scripts/start.ts",
     "test": "node --experimental-strip-types --test --test-concurrency=1 tests/*.test.ts",
     "test:integration": "node --experimental-strip-types --test --test-concurrency=1 tests/integration/*.test.ts",
@@ -27,6 +28,7 @@
     "@pinia/nuxt": "1.0.3",
     "better-sqlite3": "13.0.3",
     "h3": "1.15.11",
+    "highlight.js": "11.12.0",
     "jose": "6.2.15",
     "nuxt": "4.6.4",
     "pinia": "4.1.0",

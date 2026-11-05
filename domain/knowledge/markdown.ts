@@ -90,6 +90,57 @@ export function categoryFor(path: string, heading: string = "") {
   return "Инженерные вопросы";
 }
 function separateBody(body: string) {
+  let codingRole: PreparedQuestion["codingRole"];
+  let codeFence: string | undefined;
+  body = body
+    .split("\n")
+    .map((line) => {
+      const marker = /^\s*(`{3,}|~{3,})(.*)$/.exec(line);
+      if (codeFence) {
+        if (
+          marker &&
+          marker[1][0] === codeFence[0] &&
+          marker[1].length >= codeFence.length &&
+          !marker[2].trim()
+        )
+          codeFence = undefined;
+        return line;
+      }
+      if (marker) {
+        codeFence = marker[1];
+        return line;
+      }
+      const role = /^\*\*Этап кода:\*\*\s*([^\n]*)$/.exec(line);
+      if (!role) return line;
+      const value = role[1].trim();
+      if (value === "short" || value === "main" || value === "advanced")
+        codingRole = value;
+      return "";
+    })
+    .join("\n");
+  const interviewEligible = /^\*\*Допуск к интервью:\*\*\s*нет\s*$/m.test(body)
+    ? false
+    : undefined;
+  body = body.replace(
+    /^\*\*(?:Тип источника|Источник задания|Допуск к интервью):\*\*[^\n]*\n?/gm,
+    "",
+  );
+  const formatName = /^\*\*Формат раунда:\*\*\s*([^\n]+)/m
+    .exec(body)?.[1]
+    .trim();
+  const roundFormats: Record<string, "coding" | "review" | "design"> = {
+    coding: "coding",
+    review: "review",
+    design: "design",
+    "Написание кода": "coding",
+    "Ревью кода": "review",
+    Проектирование: "design",
+  };
+  const roundFormat =
+    formatName && Object.hasOwn(roundFormats, formatName)
+      ? roundFormats[formatName]
+      : undefined;
+  body = body.replace(/^\*\*Формат раунда:\*\*[^\n]*\n?/gm, "");
   const learningLinks: StudyLink[] = [];
   for (const match of body.matchAll(
     /^\*\*(Изучить|Практика)(?: (Vue|React))?:\*\*[^\n]*$/gm,
@@ -161,6 +212,9 @@ function separateBody(body: string) {
     followups,
     learningLinks,
     criteria,
+    roundFormat,
+    codingRole,
+    interviewEligible,
   };
 }
 export function extractQuestions(
@@ -231,6 +285,11 @@ export function extractQuestions(
       followups: split.followups,
       learningLinks: split.learningLinks,
       criteria: split.criteria,
+      ...(split.roundFormat ? { roundFormat: split.roundFormat } : {}),
+      ...(split.codingRole ? { codingRole: split.codingRole } : {}),
+      ...(split.interviewEligible === false
+        ? { interviewEligible: false }
+        : {}),
       _start: h.start,
       _end: h.end,
     });
@@ -247,6 +306,11 @@ export function extractQuestions(
   for (const q of result)
     q.followupAnswers = result
       .filter((child) => child.parentId === q.id)
-      .map((child) => ({ title: child.title, answer: child.answer }));
+      .map((child) => ({
+        title: child.title,
+        answer: child.answer,
+        ...(child.prompt ? { prompt: child.prompt } : {}),
+        ...(child.criteria ? { criteria: child.criteria } : {}),
+      }));
   return result.map(({ _start, _end, ...q }) => q);
 }
