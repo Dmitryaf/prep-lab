@@ -27,17 +27,7 @@ for (const topic of topics) {
     "Incomplete explanation: " + topic.id,
   );
   if (topic.story) {
-    for (const field of [
-      "confirmed",
-      "reconstruction",
-      "assumptions",
-      "short",
-      "boundaries",
-    ])
-      assert(
-        topic.story[field as keyof typeof topic.story],
-        "Missing story " + field + ": " + topic.id,
-      );
+    assert(topic.story.short.trim(), "Missing short story: " + topic.id);
     assert(topic.story.deep.length > 0, "Missing long story: " + topic.id);
     assert(
       topic.context &&

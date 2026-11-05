@@ -23,7 +23,6 @@ import {
   previousQuestion,
   finishInterview,
 } from "../../../../domain/interview/engine.ts";
-import { useNotices } from "../../../shared/model/notices.ts";
 import { kindLabel } from "../../../entities/question/lib/presentation.ts";
 import { link } from "../../../shared/lib/navigation.ts";
 import PageHeading from "../../../shared/ui/PageHeading.vue";
@@ -41,7 +40,6 @@ const route = useRoute(),
   router = useRouter(),
   date = ref(localDate());
 const format = ref<InterviewFormat>("mixed");
-const { notify } = useNotices();
 function sessionTitle(value: Interview) {
   return value.kind === "daily"
     ? "Ежедневное интервью"
@@ -82,27 +80,14 @@ const reviewed = computed(
       session.value.reviewed?.includes(current.value.id)
     ),
 );
-const pending = computed(() =>
-  sessions.value.filter((s) => !s.finished && s.id !== today.value?.id),
-);
 async function start(kind: "daily" | "full") {
   const id = await (kind === "daily" ? startDaily() : startFull(format.value));
   if (id) void router.push(link("interview", { session: id }));
 }
-async function finish(value: Interview, fromList = false) {
+async function finish(value: Interview) {
   if (!(await setSession(finishInterview(value)))) return;
-  if (fromList) {
-    notify("Интервью завершено.");
-    await nextTick();
-    document
-      .getElementById(
-        pending.value.length ? "pendingInterviews" : "platformMain",
-      )
-      ?.focus();
-  } else {
-    await nextTick();
-    document.getElementById("platformMain")?.focus();
-  }
+  await nextTick();
+  document.getElementById("platformMain")?.focus();
 }
 async function move(
   action: "next" | "skip" | "followup" | "previous",
@@ -255,23 +240,6 @@ watch(() => route.fullPath, refreshDate);
         >
       </section>
     </div>
-    <section v-if="pending.length">
-      <h2 id="pendingInterviews" tabindex="-1">Незавершённые интервью</h2>
-      <div v-for="s in pending" :key="s.id" class="interview-pending-row">
-        <span
-          ><strong>{{ sessionTitle(s) }} · {{ s.date }}</strong
-          ><small
-            >Вопрос {{ s.index + 1 }} из {{ s.questionIds.length }}</small
-          ></span
-        >
-        <div class="interview-pending-actions">
-          <RouterLink :to="link('interview', { session: s.id })"
-            >Продолжить →</RouterLink
-          >
-          <button :disabled="saving" @click="finish(s, true)">Завершить</button>
-        </div>
-      </div>
-    </section>
   </template>
   <template v-else-if="!session"
     ><PageHeading title="Интервью не найдено" /><RouterLink to="/interview"
@@ -507,33 +475,6 @@ watch(() => route.fullPath, refreshDate);
 .interview-start {
   margin-top: 20px;
 }
-.interview-pending-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 20px 0;
-  border-bottom: 1px solid var(--line);
-}
-.interview-pending-row strong {
-  font-size: 15px;
-}
-.interview-pending-row small {
-  display: block;
-  color: var(--muted);
-  font-size: 12px;
-  margin-top: 6px;
-}
-.interview-pending-actions {
-  display: flex;
-  align-items: center;
-  gap: 22px;
-  flex-shrink: 0;
-}
-.interview-pending-actions a {
-  font-size: 14px;
-  text-decoration: none;
-}
 .interview-session-heading {
   display: flex;
   align-items: flex-start;
@@ -558,15 +499,10 @@ watch(() => route.fullPath, refreshDate);
   .interview-format {
     padding: 16px;
   }
-  .interview-pending-row,
   .interview-session-heading {
     align-items: flex-start;
     flex-direction: column;
     gap: 14px;
-  }
-  .interview-pending-actions {
-    width: 100%;
-    justify-content: space-between;
   }
   .interview-start button {
     width: 100%;

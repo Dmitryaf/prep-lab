@@ -11,3 +11,4 @@ package-lock.json
 content/common/**/*.md
 exercises/
 public/labs/
+tests/fixtures/hr-legacy-presented/

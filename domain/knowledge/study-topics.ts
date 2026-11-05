@@ -20,7 +20,7 @@ export function studyTopics(question: Question, notes: Note[]) {
           topics.push({
             noteId,
             heading,
-            title: (item.label || heading || note.title).replace(
+            title: (heading.split("#").at(-1) || note.title).replace(
               /^\d+\.\s*/,
               "",
             ),

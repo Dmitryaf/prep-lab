@@ -2,33 +2,29 @@ import type { Topic, Project } from "../../../../domain/projects/types.ts";
 import type { PreparedQuestion } from "../../../../domain/knowledge/question.ts";
 import { questionCards } from "../../../../domain/projects/review.ts";
 import type { ProjectCatalog } from "../../../../domain/projects/catalog.ts";
+import { cleanEditorialNotes } from "../../../../domain/knowledge/editorial-notes.ts";
 
 // Adapt the existing map; IDs, answers and code remain owned by its topics.
 export function projectQuestions(
   topics: Topic[],
-  projects: Record<string, Project> = {},
+  _projects: Record<string, Project> = {},
   experience: ProjectCatalog["experience"] = {},
 ): PreparedQuestion[] {
   return questionCards(topics).map((card) => {
     const topic = topics.find((t) => t.id === card.topicId)!;
     const q = card.pilot.questions.find((q) => q.id === card.questionId)!;
     const commercial = experience[card.project]?.kind === "commercial";
-    const scope = commercial ? "Коммерческий опыт" : "Личный проект";
-    const limits =
-      experience[card.project]?.notice ||
-      "Отделите собственную работу от решений библиотек и помощи других участников. Исходный код сам по себе не подтверждает личное авторство.";
-    const facts =
-      commercial && topic.story?.short
-        ? `Подтверждённый рассказ о работе: ${topic.story.short}\n\n`
-        : "";
+    const notice = cleanEditorialNotes(
+      experience[card.project]?.notice || "",
+    ).trim();
     return {
       id: card.id,
       source: "projects",
       kind: "project",
       category: commercial ? "Коммерческий опыт" : "Собственные проекты",
       title: card.question,
-      prompt: `${card.question}\n\n${scope}: ${projects[card.project]?.name || card.project} — ${topic.title}. ${limits}`,
-      answer: facts + card.answer,
+      prompt: [card.question, notice].filter(Boolean).join("\n\n"),
+      answer: card.answer,
       details: [
         ...(q.detailed || []),
         q.example,
@@ -38,7 +34,7 @@ export function projectQuestions(
         .join("\n\n"),
       criteria:
         q.criteria ||
-        "Объясняю задачу, свою часть работы, решение и альтернативу, сложность и способ проверки результата. Разделяю подтверждённые факты и учебные предположения.",
+        "Объясняю задачу, свою часть работы, решение и альтернативу, сложность и способ проверки результата.",
       topicId: card.topicId,
       project: card.project,
       projectGroup: topic.group,

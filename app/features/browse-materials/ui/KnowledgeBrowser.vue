@@ -4,13 +4,14 @@ import { storeToRefs } from "pinia";
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useMaterials } from "../../../entities/material/model/store.ts";
-const { knowledge, loading } = storeToRefs(useMaterials());
+const { knowledge, baseKnowledge, loading } = storeToRefs(useMaterials());
 const { noteFor } = useMaterials();
 
 import { link } from "../../../shared/lib/navigation.ts";
 import { useProjectCatalog } from "../../../entities/project/model/catalog.ts";
 const { topics, projects } = storeToRefs(useProjectCatalog());
 import { canonicalNotePath } from "../../../../domain/knowledge/path.ts";
+import { libraryNotes } from "../../../../domain/knowledge/library-navigation.ts";
 import PageHeading from "../../../shared/ui/PageHeading.vue";
 import MarkdownContent from "../../../entities/material/ui/MarkdownContent.vue";
 import QuestionList from "../../../entities/question/ui/QuestionList.vue";
@@ -32,7 +33,10 @@ const noteQuestions = computed(() =>
 );
 const groups = computed(() => {
   const groups = new Map<string, typeof knowledge.value.notes>();
-  for (const n of knowledge.value.notes) {
+  for (const n of libraryNotes(
+    knowledge.value.notes,
+    baseKnowledge.value.notes,
+  )) {
     const name = n.path.split("/")[0];
     if (!groups.has(name)) groups.set(name, []);
     groups.get(name)!.push(n);
@@ -42,7 +46,7 @@ const groups = computed(() => {
 function subgroups(notes: typeof knowledge.value.notes) {
   const result = new Map<string, typeof notes>();
   for (const n of notes) {
-    const name = n.path.split("/").length > 2 ? n.path.split("/")[1]! : "Обзор";
+    const name = n.path.split("/").length > 2 ? n.path.split("/")[1]! : "";
     if (!result.has(name)) result.set(name, []);
     result.get(name)!.push(n);
   }
@@ -123,27 +127,33 @@ function back() {
     >
       <summary>{{ title }} · {{ notes.length }}</summary>
       <div v-if="title === 'Фронтенд'" class="knowledge-categories">
-        <details
-          v-for="[category, items] in subgroups(notes)"
-          :key="category"
-          class="knowledge-subgroup"
-        >
-          <summary>
-            {{ category }}
-            <small>{{ items.length }} {{ materialWord(items.length) }}</small>
-          </summary>
-          <div class="platform-note-list">
+        <template v-for="[category, items] in subgroups(notes)" :key="category">
+          <div v-if="!category" class="platform-note-list">
             <RouterLink
               v-for="n in items"
               :key="n.id"
               :to="link('themes', { note: n.id })"
-              >{{ n.title
-              }}<small>{{
-                n.path.split("/").slice(2, -1).join(" / ")
-              }}</small></RouterLink
+              >{{ n.title }}</RouterLink
             >
           </div>
-        </details>
+          <details v-else class="knowledge-subgroup">
+            <summary>
+              {{ category }}
+              <small>{{ items.length }} {{ materialWord(items.length) }}</small>
+            </summary>
+            <div class="platform-note-list">
+              <RouterLink
+                v-for="n in items"
+                :key="n.id"
+                :to="link('themes', { note: n.id })"
+                >{{ n.title
+                }}<small>{{
+                  n.path.split("/").slice(2, -1).join(" / ")
+                }}</small></RouterLink
+              >
+            </div>
+          </details>
+        </template>
       </div>
       <div v-else class="platform-note-list">
         <RouterLink

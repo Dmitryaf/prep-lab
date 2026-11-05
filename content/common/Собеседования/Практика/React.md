@@ -346,7 +346,7 @@ function BrokenUserSearch({ orgId, query, onQueryChange, onSelect }) {
 >
 > **Приёмка ревью.** Назови три наиболее существенных дефекта с пользовательским последствием, минимальную правку и независимую проверку для каждого. Затем примени все согласованные изменения и повтори весь сценарий, включая unmount и обратный порядок ответов. Не удаляй сложное требование, чтобы получить зелёный happy path.
 
-Контракты списка и эффектов: [React: keys](https://react.dev/learn/rendering-lists), [когда effect не нужен](https://react.dev/learn/you-might-not-need-an-effect), [StrictMode](https://react.dev/reference/react/StrictMode). Прохождение этой страницы не подтверждает освоение: повтори задачи без раскрытого решения.
+Контракты списка и эффектов: [React: keys](https://react.dev/learn/rendering-lists), [когда effect не нужен](https://react.dev/learn/you-might-not-need-an-effect), [StrictMode](https://react.dev/reference/react/StrictMode). Для повторения реши задачи без открытого разбора.
 
 **Уточнения**
 - Оставьте только два самых важных исправления для ближайшего выпуска и объясните риск остальных.

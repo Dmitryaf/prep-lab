@@ -16,6 +16,7 @@ const { notify } = useNotices();
 
 import { link } from "../../../shared/lib/navigation.ts";
 import { canonicalNotePath } from "../../../../domain/knowledge/path.ts";
+import { cleanEditorialNotes } from "../../../../domain/knowledge/editorial-notes.ts";
 import {
   localCodeReference,
   highlightedCode,
@@ -65,12 +66,26 @@ function jump(section: string) {
   heading?.focus({ preventScroll: true });
   heading?.scrollIntoView({ block: "start", behavior: "instant" });
 }
-const sections = [
+const hasCode = computed(() =>
+  Boolean(
+    props.topic.pilot.code.steps.length || props.topic.pilot.code.tests.length,
+  ),
+);
+const storyParagraphs = computed(() => {
+  const story = props.topic.story;
+  if (!story) return [];
+  return [
+    ...new Set(
+      [story.short, story.confirmed, ...story.deep].map(cleanEditorialNotes),
+    ),
+  ].filter((text) => text.trim() && text.trim() !== props.topic.summary.trim());
+});
+const sections = computed(() => [
   ["explanation", "Как это работает"],
-  ["study", "Что нужно изучить"],
+  ...(props.topic.pilot.study.length ? [["study", "Что нужно изучить"]] : []),
   ["interview", "Вопросы на собеседовании"],
-  ["code", "Реализация в коде"],
-];
+  ...(hasCode.value ? [["code", "Реализация в коде"]] : []),
+]);
 </script>
 <template>
   <article id="details" class="platform-card project-detail">
@@ -94,14 +109,9 @@ const sections = [
         :context="JSON.stringify(topic, null, 2)"
       />
     </header>
-    <details v-if="topic.story">
-      <summary>История и границы подтверждённого опыта</summary>
-      <p>{{ topic.story.short }}</p>
-      <p>{{ topic.story.confirmed }}</p>
-      <p>{{ topic.story.reconstruction }}</p>
-      <p>{{ topic.story.assumptions }}</p>
-      <p>{{ topic.story.boundaries }}</p>
-      <p v-for="text in topic.story.deep" :key="text">{{ text }}</p>
+    <details v-if="storyParagraphs.length">
+      <summary>Моя работа в проекте</summary>
+      <p v-for="text in storyParagraphs" :key="text">{{ text }}</p>
     </details>
     <div class="topic-reading-layout">
       <nav class="topic-outline" aria-label="В этом разборе">
@@ -118,7 +128,11 @@ const sections = [
       <div class="topic-sections">
         <section data-section="explanation">
           <h3 tabindex="-1">Как это работает</h3>
-          <p>{{ topic.pilot.explanation.intro }}</p>
+          <p
+            v-if="topic.pilot.explanation.intro.trim() !== topic.summary.trim()"
+          >
+            {{ topic.pilot.explanation.intro }}
+          </p>
           <ol class="explanation-steps">
             <li v-for="step in topic.pilot.explanation.steps" :key="step.title">
               <h4>{{ step.title }}</h4>
@@ -130,7 +144,7 @@ const sections = [
             <p>{{ topic.pilot.explanation.details }}</p>
           </details>
         </section>
-        <section data-section="study">
+        <section v-if="topic.pilot.study.length" data-section="study">
           <h3 tabindex="-1">Что нужно изучить</h3>
           <ul class="study-links">
             <li v-for="note in topic.pilot.study" :key="note.path">
@@ -144,9 +158,6 @@ const sections = [
         </section>
         <section data-section="interview">
           <h3 tabindex="-1">Вопросы на собеседовании</h3>
-          <p class="section-hint">
-            Сначала ответьте вслух. Нажмите на вопрос, чтобы сравнить ответ.
-          </p>
           <details
             v-for="q in topic.pilot.questions"
             :key="q.id"
@@ -156,16 +167,16 @@ const sections = [
             <div class="interview-answer">
               <h4>Короткий ответ</h4>
               <p>{{ q.short }}</p>
-              <details>
+              <details v-if="q.detailed.length || q.example">
                 <summary>Подробный разбор</summary>
                 <p v-for="text in q.detailed" :key="text">{{ text }}</p>
-                <h4>Пример из проекта</h4>
-                <p>{{ q.example }}</p>
+                <h4 v-if="q.example">Пример из проекта</h4>
+                <p v-if="q.example">{{ q.example }}</p>
               </details>
             </div>
           </details>
         </section>
-        <section data-section="code">
+        <section v-if="hasCode" data-section="code">
           <h3 tabindex="-1">Реализация в коде</h3>
           <p>{{ topic.pilot.code.intro }}</p>
           <details
@@ -266,7 +277,7 @@ const sections = [
       </div>
     </div>
     <div v-if="related.length">
-      <h3>Связанные узлы карты</h3>
+      <h3>Связанные темы</h3>
       <RouterLink
         v-for="t in related"
         :key="t.id"

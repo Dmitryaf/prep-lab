@@ -13,6 +13,12 @@ test("topics are visible before the solution and navigation preserves the unsave
   const topics = page.getByRole("complementary", { name: "Полезные темы" });
   await expect(topics).toBeVisible();
   await expect(topics.getByRole("link")).toHaveCount(4);
+  await expect(topics.locator("a > span:first-child")).toHaveText([
+    "Promise — базовая модель и цепочки",
+    "AbortController и race condition в запросах",
+    "REST, GraphQL и WebSocket",
+    "Map, Set, WeakMap и WeakSet",
+  ]);
   await expect(page.locator(".platform-answer")).toHaveCount(0);
   await expect(page.locator(".question-source")).toHaveCount(0);
   await expect(page.locator(".question-card")).not.toContainText(
@@ -31,7 +37,9 @@ test("topics are visible before the solution and navigation preserves the unsave
     path: info.outputPath("topics-desktop.png"),
     fullPage: true,
   });
-  await topics.getByRole("link", { name: /Promise и завершение/ }).click();
+  await topics
+    .getByRole("link", { name: /Promise — базовая модель и цепочки/ })
+    .click();
   await expect(page.locator(".platform-note")).toBeVisible();
   await page.locator("[data-action=back]").click();
   await expect(

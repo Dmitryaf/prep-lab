@@ -74,13 +74,13 @@ test("project navigation", async ({
   expect(await page.getByLabel("Раздел", { exact: true }).inputValue()).toBe(
     "Сценарии",
   );
-  await page.locator("#inlineSearch").fill("ежеднев");
+  await page.locator("#inlineSearch").fill(title);
   await page.locator(".topic-row").first().click();
   await visibleTitle();
   await page.reload();
   await visibleTitle();
   await page.locator("[data-action=back-to-topics]").click();
-  expect(await page.locator("#inlineSearch").inputValue()).toBe("ежеднев");
+  expect(await page.locator("#inlineSearch").inputValue()).toBe(title);
   await page.goto(base + "/#/projects");
   await page.locator("[data-action=mode][data-mode=map]").click();
   await page.locator(".route-topics a").first().click();

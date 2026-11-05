@@ -12,64 +12,50 @@ import { loadCommonKnowledge } from "../../server/infrastructure/knowledge/commo
 
 test.use({ appOptions: { projectPackageRoot: null } });
 
-test("unfinished daily and full sessions can be completed from the list, while failed writes keep the session active", async ({
+test("the start page hides saved interviews without deleting them; direct links can still finish with write failures preserved", async ({
   app: { base },
   page,
 }, testInfo) => {
   const bank = loadCommonKnowledge().questions;
   const full = createSession(bank, "full");
-  let state = dailySession(
+  const state = dailySession(
     loadState({ getItem: () => null }),
     bank,
     "2026-01-01",
   );
-  const daily = state.daily["2026-01-01"];
-  state = { ...state, sessions: { [full.id]: full } };
+  state.sessions[full.id] = full;
   await page.goto(base + "/#/interview");
   await restoreProgressFixture(page, state);
-  const rows = page.locator(".interview-pending-row");
-  await expect(rows).toHaveCount(2);
+  await expect(
+    page.getByRole("heading", {
+      name: /Незавершённые интервью|Завершённые интервью/,
+    }),
+  ).toHaveCount(0);
+  await expect(page.locator(".interview-pending-row")).toHaveCount(0);
+  expect(await readProgress(page)).toEqual(state);
   await page.screenshot({
     path: testInfo.outputPath("interview-desktop.png"),
     fullPage: true,
   });
+  await page.goto(base + "/#/interview?session=" + encodeURIComponent(full.id));
+  await expect(page.locator('[data-action="session-finish"]')).toBeVisible();
   await page.route("**/api/preparation", async (route) => {
     if (route.request().method() === "PUT")
       await route.fulfill({ status: 503, json: { error: "Тестовый отказ" } });
     else await route.continue();
   });
-  await rows
-    .first()
-    .getByRole("button", { name: "Завершить", exact: true })
-    .click();
+  await page.locator('[data-action="session-finish"]').click();
   await expect(page.locator("#platformStatus")).toContainText("Тестовый отказ");
-  await expect(rows).toHaveCount(2);
-  expect((await readProgress(page)).daily["2026-01-01"].finished).toBe(false);
+  expect((await readProgress(page)).sessions[full.id].finished).toBe(false);
   await page.unroute("**/api/preparation");
-  await rows
-    .first()
-    .getByRole("button", { name: "Завершить", exact: true })
-    .click();
-  await expect(rows).toHaveCount(1);
-  await rows
-    .first()
-    .getByRole("button", { name: "Завершить", exact: true })
-    .click();
-  await expect(rows).toHaveCount(0);
-  await page.reload();
-  const saved = await readProgress(page);
-  expect(saved.daily["2026-01-01"]).toMatchObject({
-    ...daily,
-    finished: true,
-    index: daily.questionIds.length,
-    followupIndex: 0,
-  });
-  expect(saved.sessions[full.id].finished).toBe(true);
-  await expect(page.getByText(/Завершённые интервью/)).toHaveCount(0);
-  await page.goto(base + "/#/interview?session=" + encodeURIComponent(full.id));
+  await page.locator('[data-action="session-finish"]').click();
   await expect(
     page.getByRole("heading", { name: "Разбор интервью" }),
   ).toBeVisible();
+  await page.reload();
+  const saved = await readProgress(page);
+  expect(saved.sessions[full.id].finished).toBe(true);
+  expect(saved.daily).toEqual(state.daily);
 });
 
 test("early finish opens the review and keeps both saved and unsaved attempts", async ({

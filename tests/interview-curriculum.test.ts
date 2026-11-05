@@ -120,7 +120,7 @@ test(
   },
 );
 test(
-  "project adapters preserve map IDs, use confirmed stories and keep code separate from experience",
+  "project adapters preserve map IDs and the answer belonging to each question",
   { skip: !ownerAvailable },
   () => {
     assert.equal(projects.length, 177);
@@ -132,10 +132,11 @@ test(
           q.learningLinks!.length,
       );
       const t = required(topics.find((t) => t.id === q.topicId));
-      assert(t.pilot.questions.some((p) => `${t.id}/${p.id}` === q.id));
+      const original = required(
+        t.pilot.questions.find((p) => `${t.id}/${p.id}` === q.id),
+      );
+      assert.equal(q.answer, original.short);
       if (q.project === "lanit") {
-        assert(q.prompt.includes("Учебный код cokr не подтверждает"));
-        assert(q.answer.includes(required(t.story).short));
         assert(
           q.learningLinks.some((l) => l.noteId.startsWith("Опыт и проекты/")),
         );

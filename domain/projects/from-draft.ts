@@ -39,15 +39,11 @@ export function projectFromDraft(
     catalog = emptyProjectCatalog(),
     id = `review-${makeId()}`;
   const topicIds = draft.topics.map(() => `topic-${makeId()}`);
-  const confirmed =
-    draft.roleFacts
-      .filter((fact) => fact.basis === "user_statement")
-      .map((fact) => fact.text)
-      .join("\n") || "Личная роль не подтверждена.";
+  const confirmed = draft.roleFacts.map((fact) => fact.text).join("\n");
   catalog.projects[id] = {
     id,
     name: draft.name,
-    subtitle: "Принятый личный разбор",
+    subtitle: "Устройство и сценарии проекта",
     pitch: draft.summary,
     icon: "◈",
     repo: id,
@@ -57,8 +53,8 @@ export function projectFromDraft(
     routes: [
       {
         id: `route-${id}`,
-        name: "Основной маршрут",
-        caption: "Темы принятого разбора",
+        name: "Знакомство с проектом",
+        caption: "От назначения приложения к основным сценариям и коду",
         nodes: topicIds,
       },
     ],
@@ -89,7 +85,7 @@ export function projectFromDraft(
       id: topicId,
       project: id,
       title: topic.title,
-      group: "Личный разбор",
+      group: "Устройство проекта",
       priority: "P1",
       minutes: 8,
       summary: topic.explanation,
@@ -101,14 +97,12 @@ export function projectFromDraft(
       theory: [],
       related: topicIds.filter((other) => other !== topicId),
       story: {
-        short: draft.summary,
-        deep: topic.mechanism,
+        short: confirmed,
+        deep: [],
         confirmed,
         assumptions: draft.unknowns.join("\n"),
-        reconstruction:
-          "Подготовлено по выбранным материалам и принято пользователем.",
-        boundaries:
-          "Чтение фрагментов не подтверждает запуск, авторство и коммерческие результаты.",
+        reconstruction: "",
+        boundaries: "",
       },
       pilot: {
         id: topicId,
@@ -130,20 +124,15 @@ export function projectFromDraft(
           example: "",
         })),
         code: {
-          intro: code.length
-            ? "Ссылки относятся к выбранным текстовым снимкам; доступ к исходной папке не заявляется."
-            : "Исходники для этой темы не переданы.",
+          intro: code.length ? "Код основных шагов сценария." : "",
           steps: code,
           tests: [],
-          limitations: draft.unknowns.join("\n"),
         },
       },
     };
   });
   catalog.experience[id] = {
     kind: "personal",
-    notice:
-      "Личный разбор по переданным данным. Код не подтверждает авторство; сведения о роли требуют рассказа пользователя.",
   };
   return { id, catalog: projectCatalogSchema.parse(catalog) };
 }

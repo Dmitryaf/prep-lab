@@ -16,8 +16,12 @@ test("projects", async ({
     "Совместимость личного пакета проверяется только при его наличии.",
   );
   const state = () => readProgress(page);
-  const open = (id: string) =>
-    page.goto(base + "/#/projects?projectTopic=" + id);
+  const open = async (id: string) => {
+    await page.goto(base + "/#/projects?projectTopic=" + id);
+    await expect(page.locator(".topic-title")).toHaveText(
+      topics.find((topic) => topic.id === id)!.title,
+    );
+  };
   await mkdir("artifacts/vue-migration", { recursive: true });
 
   await page.goto(base + "/?projects=1");

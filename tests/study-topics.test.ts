@@ -79,3 +79,56 @@ test("the sidebar resolves scoped theory links, removes duplicates and cannot li
   ]);
   assert.deepEqual(studyTopics({ ...question, learningLinks: [] }, notes), []);
 });
+
+test("sidebar labels name the actual note or resolved section instead of a generic link alias", () => {
+  const notes: Note[] = [
+    {
+      id: "promises",
+      path: "promises.md",
+      title: "02. Promise и обработка ошибок",
+      category: "JavaScript",
+      markdown:
+        "# Promise и обработка ошибок\n\n## Отмена\n### AbortController\nТеория.",
+    },
+    {
+      id: "examples",
+      path: "examples.md",
+      title: "Объяснение и примеры",
+      category: "JavaScript",
+      markdown: "# Объяснение и примеры\nПодробности.",
+    },
+  ];
+  const question: Question = {
+    id: "q",
+    title: "Задача",
+    prompt: "Условие",
+    answer: "Скрытое решение",
+    kind: "practice",
+    source: "knowledge",
+    category: "JavaScript",
+    learningLinks: [
+      {
+        kind: "theory",
+        noteId: "promises",
+        heading: "",
+        label: "Объяснение и примеры",
+      },
+      {
+        kind: "theory",
+        noteId: "promises",
+        heading: "Отмена#AbortController",
+        label: "Подробнее",
+      },
+      { kind: "theory", noteId: "examples", heading: "", label: "Прочитать" },
+    ],
+  };
+  assert.deepEqual(studyTopics(question, notes), [
+    { noteId: "promises", heading: "", title: "Promise и обработка ошибок" },
+    {
+      noteId: "promises",
+      heading: "Отмена#AbortController",
+      title: "AbortController",
+    },
+    { noteId: "examples", heading: "", title: "Объяснение и примеры" },
+  ]);
+});

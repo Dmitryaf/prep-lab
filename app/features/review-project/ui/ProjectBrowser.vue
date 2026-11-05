@@ -115,7 +115,7 @@ const {
     <div class="catalog-heading">
       <PageHeading
         title="Проекты"
-        description="Карта проектов, маршруты, объяснения и ссылки на реализацию."
+        description="Назначение, основные сценарии и устройство ваших проектов."
       />
       <div class="platform-actions">
         <RouterLink

@@ -12,6 +12,7 @@ import { emptyProjectCatalog } from "../domain/projects/catalog.ts";
 import type { Answer } from "../server/types.ts";
 import type { ProjectDraft } from "../domain/projects/draft.ts";
 import { projectQuestions } from "../app/entities/project/model/questions.ts";
+import { projectFromDraft } from "../domain/projects/from-draft.ts";
 const draft: ProjectDraft = {
   schemaVersion: 1,
   name: "Учебный сервис",
@@ -42,6 +43,46 @@ const input = {
   context: "",
   materials: [],
 };
+
+test("accepted role facts remain separate from the technical explanation", () => {
+  let sequence = 0;
+  const roleFacts: ProjectDraft["roleFacts"] = [
+    {
+      text: "Добавил сохранение черновика.",
+      basis: "user_statement",
+      sourceId: null,
+    },
+    {
+      text: "Разработал поиск по заметкам.",
+      basis: "document",
+      sourceId: "experience",
+    },
+  ];
+  const { catalog } = projectFromDraft(
+    { ...draft, roleFacts },
+    {
+      ...input,
+      context: roleFacts[0].text,
+      materials: [
+        { id: "experience", path: "Experience.md", text: roleFacts[1].text },
+      ],
+    },
+    () => String(++sequence),
+  );
+  assert.equal(
+    catalog.topics[0].story?.short,
+    roleFacts.map((fact) => fact.text).join("\n"),
+  );
+  assert.deepEqual(catalog.topics[0].story?.deep, []);
+  assert.equal(
+    catalog.topics[0].pilot.explanation.intro,
+    draft.topics[0].explanation,
+  );
+  assert.deepEqual(
+    catalog.topics[0].pilot.explanation.steps.map((step) => step.text),
+    draft.topics[0].mechanism,
+  );
+});
 function setup(answer: Answer) {
   const db = openDatabase(":memory:");
   const repository = new GenerationRepository(db),
@@ -85,10 +126,10 @@ test("a model result remains a draft until explicit atomic project acceptance", 
     );
     assert.equal(cards[0].criteria, draft.topics[0].questions[0].criteria);
     assert(!cards[0].details?.includes(cards[0].criteria));
-    assert.equal(
-      catalog.topics[0].story?.confirmed,
-      "Личная роль не подтверждена.",
-    );
+    assert.equal(catalog.topics[0].story?.confirmed, "");
+    assert.equal(catalog.experience[accepted.projectId].notice, undefined);
+    assert.equal(catalog.topics[0].pilot.code.limitations, undefined);
+    assert.equal(catalog.topics[0].story?.boundaries, "");
     assert.deepEqual(await service.accept(job.id, draft, 0), accepted);
   } finally {
     await service.close();

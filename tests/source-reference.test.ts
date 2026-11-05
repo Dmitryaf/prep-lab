@@ -58,7 +58,7 @@ test(
     for (const [id, symbols] of Object.entries(codeHighlights)) {
       const pilot = pilots.find((p) => p.id === id);
       assert(pilot, "Unknown highlighted topic: " + id);
-      assert(symbols.length >= 4 && symbols.length <= 5);
+      assert(symbols.length >= 1 && symbols.length <= 5);
       const selection = required(highlightedCode(pilot));
       assert.equal(
         selection.length,

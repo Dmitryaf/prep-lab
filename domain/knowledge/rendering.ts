@@ -192,12 +192,17 @@ export function renderMarkdown(
     if (/^\s*(?:[-*+] |\d+\. )/.test(line)) {
       const ordered = /^\s*\d+\./.test(line),
         tag = ordered ? "ol" : "ul";
-      html += `<${tag}>`;
-      while (
-        i < lines.length &&
-        (ordered ? /^\s*\d+\. / : /^\s*[-*+] /).test(lines[i])
-      )
+      const itemPattern = ordered ? /^\s*\d+\. / : /^\s*[-*+] /;
+      const start = ordered ? Number(/^\s*(\d+)/.exec(line)![1]) : 1;
+      html += `<${tag}${ordered && start !== 1 ? ` start="${start}"` : ""}>`;
+      while (i < lines.length && itemPattern.test(lines[i])) {
         html += `<li>${inline(lines[i++].replace(/^\s*(?:[-*+] |\d+\. )/, ""))}</li>`;
+        // Empty lines separate loose items, not independent lists. Stop before
+        // prose, headings, code or a different list kind rather than swallowing it.
+        let next = i;
+        while (next < lines.length && !lines[next].trim()) next++;
+        if (itemPattern.test(lines[next] || "")) i = next;
+      }
       html += `</${tag}>`;
       continue;
     }
