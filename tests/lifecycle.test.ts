@@ -7,7 +7,7 @@ import { get } from "node:http";
 import { mkdtempSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createServer } from "../scripts/serve.ts";
+import { createServer } from "#scripts/serve.ts";
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function lease(base: string) {
   return new Promise<{ request: ClientRequest; res: IncomingMessage }>(

@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { usePreparation } from "../../../entities/preparation/model/store.ts";
-import { useAnswerAttempts, hasChanges } from "../model/store.ts";
+import { usePreparation } from "#ui/entities/preparation/model/store.ts";
+import {
+  useAnswerAttempts,
+  hasChanges,
+} from "#ui/features/answer-attempt/model/store.ts";
 const props = defineProps<{
   questionId: string;
   sessionId?: string;

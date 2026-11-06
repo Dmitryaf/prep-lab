@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useSources } from "../model/useSources.ts";
+import { useSources } from "#ui/features/connect-source/model/useSources.ts";
 import SourcePreview from "./SourcePreview.vue";
 const state = useSources();
 const {

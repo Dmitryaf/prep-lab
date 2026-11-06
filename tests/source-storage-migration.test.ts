@@ -5,8 +5,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { versionOneDatabase } from "./fixtures/sqlite-v1.ts";
-import { openDatabase } from "../server/infrastructure/storage/database.ts";
-import { PreparationRepository } from "../server/infrastructure/storage/preparation.ts";
+import { openDatabase } from "#server/infrastructure/storage/database.ts";
+import { PreparationRepository } from "#server/infrastructure/storage/preparation.ts";
 
 test("source storage upgrades version one without changing existing repeats or their revision", () => {
   const directory = mkdtempSync(join(tmpdir(), "frontend-lab-v1-upgrade-")),

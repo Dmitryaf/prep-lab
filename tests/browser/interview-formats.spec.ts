@@ -1,9 +1,9 @@
-import { test, expect } from "../helpers/browser.ts";
-import { readProgress } from "../helpers/browser-progress.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
+import { readProgress } from "#tests/helpers/browser-progress.ts";
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { projectFixture } from "../fixtures/projects.ts";
+import { projectFixture } from "#tests/fixtures/projects.ts";
 
 test.use({ appOptions: { projectPackageRoot: null } });
 

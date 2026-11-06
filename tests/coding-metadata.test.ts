@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { extractQuestions } from "../domain/knowledge/markdown.ts";
-import { preparedQuestionSchema } from "../domain/knowledge/contracts.ts";
-import { cleanEditorialNotes } from "../domain/knowledge/editorial-notes.ts";
-import { validateState } from "../domain/interview/saved-state.ts";
+import { extractQuestions } from "#domain/knowledge/markdown.ts";
+import { preparedQuestionSchema } from "#domain/knowledge/contracts.ts";
+import { cleanEditorialNotes } from "#domain/knowledge/editorial-notes.ts";
+import { validateState } from "#domain/interview/saved-state.ts";
 
 const note = (markdown: string) => ({
   id: "Собеседования/Практика/Пример",

@@ -1,5 +1,5 @@
 import { test as baseTest, expect } from "@playwright/test";
-import { createServer } from "../../scripts/serve.ts";
+import { createServer } from "#scripts/serve.ts";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";

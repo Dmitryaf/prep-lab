@@ -1,11 +1,11 @@
 import type { SourceDocument } from "./contracts.ts";
-import type { Note } from "../knowledge/material.ts";
-import type { PreparedQuestion } from "../knowledge/question.ts";
+import type { Note } from "#domain/knowledge/material.ts";
+import type { PreparedQuestion } from "#domain/knowledge/question.ts";
 import {
   extractQuestions,
   categoryFor,
   headings,
-} from "../knowledge/markdown.ts";
+} from "#domain/knowledge/markdown.ts";
 import { sourceMetadata } from "./metadata.ts";
 import { assignQuestionIdentities } from "./question-identity.ts";
 import { sourceDocumentSchema } from "./contracts.ts";

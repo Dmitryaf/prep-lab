@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { findMaterial } from "../domain/knowledge/lookup.ts";
-import { resolveKnowledgeLink } from "../app/entities/material/lib/links.ts";
-import type { Note } from "../domain/knowledge/material.ts";
+import { findMaterial } from "#domain/knowledge/lookup.ts";
+import { resolveKnowledgeLink } from "#ui/entities/material/lib/links.ts";
+import type { Note } from "#domain/knowledge/material.ts";
 
 const notes: Note[] = [
   {

@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { extractQuestions } from "../domain/knowledge/markdown.ts";
-import { selectInterview } from "../domain/interview/selection.ts";
-import { withBundledRounds } from "../domain/knowledge/bundled-rounds.ts";
-import { compileKnowledge } from "../domain/knowledge/catalog.ts";
-import { loadState, validateState } from "../domain/interview/saved-state.ts";
+import { extractQuestions } from "#domain/knowledge/markdown.ts";
+import { selectInterview } from "#domain/interview/selection.ts";
+import { withBundledRounds } from "#domain/knowledge/bundled-rounds.ts";
+import { compileKnowledge } from "#domain/knowledge/catalog.ts";
+import { loadState, validateState } from "#domain/interview/saved-state.ts";
 
 const document = (metadata: string) => ({
   id: "Собеседования/Проектирование/Пример",

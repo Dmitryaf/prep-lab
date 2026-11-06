@@ -1,4 +1,4 @@
-import { canonicalNotePath } from "../../../domain/knowledge/path.ts";
+import { canonicalNotePath } from "#domain/knowledge/path.ts";
 export function legacyLocation(search: string, hash: string) {
   const query = new URLSearchParams(search),
     old = new URLSearchParams(hash.replace(/^#\/?/, ""));

@@ -1,6 +1,9 @@
 import { z } from "zod";
-import { promptInputSchema, importDraftSchema } from "../prompts/contracts.ts";
-import { projectDraftSchema } from "../projects/draft.ts";
+import {
+  promptInputSchema,
+  importDraftSchema,
+} from "#domain/prompts/contracts.ts";
+import { projectDraftSchema } from "#domain/projects/draft.ts";
 export const scenarioSchema = z.enum(["import", "project"]);
 export const generationSchema = z.strictObject({
   id: z.string().uuid(),

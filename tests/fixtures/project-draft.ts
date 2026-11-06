@@ -1,4 +1,4 @@
-import type { ProjectDraft } from "../../domain/projects/draft.ts";
+import type { ProjectDraft } from "#domain/projects/draft.ts";
 export const projectDraftFixture: ProjectDraft = {
   schemaVersion: 1,
   name: "Форма регистрации",

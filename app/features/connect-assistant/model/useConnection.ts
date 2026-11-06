@@ -5,7 +5,7 @@ import {
   cancelConnection,
   renewConnection,
   removeConnection,
-} from "../api/connection.ts";
+} from "#ui/features/connect-assistant/api/connection.ts";
 export function useConnection() {
   const connection = ref<Awaited<ReturnType<typeof readConnection>> | null>(
       null,

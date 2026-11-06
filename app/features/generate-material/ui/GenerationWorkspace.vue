@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useGeneration } from "../model/useGeneration.ts";
+import { useGeneration } from "#ui/features/generate-material/model/useGeneration.ts";
 import ImportDraftEditor from "./ImportDraftEditor.vue";
 import ProjectDraftEditor from "./ProjectDraftEditor.vue";
 const state = useGeneration();

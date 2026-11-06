@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { answerContent } from "../domain/knowledge/answer-content.ts";
+import { answerContent } from "#domain/knowledge/answer-content.ts";
 
 test("a repeated short answer leaves only the unique continuation", () => {
   const question = {

@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { existsSync, mkdirSync, openSync, writeSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { workspaceId } from "../server/infrastructure/workspace.ts";
+import { workspaceId } from "#server/infrastructure/workspace.ts";
 
 import type { SpawnOptions } from "node:child_process";
 type Service = { close: () => Promise<void> };
@@ -13,7 +13,10 @@ interface Health {
 }
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-export async function probe(base: string): Promise<Health | null> {
+export async function probe(
+  base: string,
+  pageTimeoutMs = 1000,
+): Promise<Health | null> {
   try {
     const response = await fetch(base + "/api/health", {
       signal: AbortSignal.timeout(1000),
@@ -22,7 +25,9 @@ export async function probe(base: string): Promise<Health | null> {
     const data = await response.json();
     if (data.application !== "projects-map" || data.workspace !== workspaceId)
       return null;
-    const page = await fetch(base + "/", { signal: AbortSignal.timeout(1000) });
+    const page = await fetch(base + "/", {
+      signal: AbortSignal.timeout(pageTimeoutMs),
+    });
     return page.ok && /id="(?:app|__nuxt)"/.test(await page.text())
       ? data
       : null;
@@ -43,7 +48,8 @@ export async function ensureRunning({
   // A free port is claimed by Vite with strictPort. No other process is stopped.
   try {
     const service = await start(port);
-    if (!(await probe(base))) {
+    // Nuxt compiles the first page on demand after the HTTP listener is ready.
+    if (!(await probe(base, 10000))) {
       await service.close();
       throw Error("Сервер запущен, но проверка готовности не прошла.");
     }

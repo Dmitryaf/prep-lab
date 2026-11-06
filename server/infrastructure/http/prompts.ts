@@ -1,14 +1,14 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { z } from "zod";
-import { composePrompt } from "../../../domain/prompts/compose.ts";
+import { composePrompt } from "#domain/prompts/compose.ts";
 import {
   promptInputSchema,
   promptSaveSchema,
   promptTemplateSchema,
   type PromptTemplate,
-} from "../../../domain/prompts/contracts.ts";
-import { PromptRepository } from "../storage/prompts.ts";
-import { RevisionConflict } from "../storage/preparation.ts";
+} from "#domain/prompts/contracts.ts";
+import { PromptRepository } from "#server/infrastructure/storage/prompts.ts";
+import { RevisionConflict } from "#server/infrastructure/storage/preparation.ts";
 import { readJsonBody, respondJson, InvalidBody } from "./json.ts";
 
 const previewInput = z.strictObject({

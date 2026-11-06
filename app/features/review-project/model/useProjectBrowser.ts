@@ -1,13 +1,13 @@
 import { storeToRefs } from "pinia";
 import { computed, ref, watch, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useProjectCatalog } from "../../../entities/project/model/catalog.ts";
-import { usePreparation } from "../../../entities/preparation/model/store.ts";
-import { link } from "../../../shared/lib/navigation.ts";
+import { useProjectCatalog } from "#ui/entities/project/model/catalog.ts";
+import { usePreparation } from "#ui/entities/preparation/model/store.ts";
+import { link } from "#ui/shared/lib/navigation.ts";
 import {
   selectQuestionReview,
   sessions as reviewSessions,
-} from "../../../../domain/projects/review.ts";
+} from "#domain/projects/review.ts";
 export function useProjectBrowser() {
   const { catalog, projects, topics, projectCards } =
     storeToRefs(useProjectCatalog());
@@ -18,7 +18,7 @@ export function useProjectBrowser() {
     project = ref(
       catalog.value.defaultProject || Object.keys(projects.value)[0] || "",
     ),
-    mode = ref("topics"),
+    mode = ref("overview"),
     group = ref("Все"),
     query = ref(""),
     routeId = ref(
@@ -66,7 +66,7 @@ export function useProjectBrowser() {
         (!selected.value || selected.value.project === params.project)
       )
         project.value = params.project;
-      if (["topics", "map", "review"].includes(String(params.mode)))
+      if (["overview", "topics", "map", "review"].includes(String(params.mode)))
         mode.value = String(params.mode);
       if (typeof params.group === "string") group.value = params.group;
       if (typeof params.search === "string") query.value = params.search;
@@ -110,6 +110,12 @@ export function useProjectBrowser() {
     group: group.value,
     search: query.value,
     route: routeId.value,
+    ...(typeof route.query.mapView === "string"
+      ? { mapView: route.query.mapView }
+      : {}),
+    ...(typeof route.query.mapNode === "string"
+      ? { mapNode: route.query.mapNode }
+      : {}),
   });
   const topicLink = (id: string) =>
     link("projects", { ...contextQuery(), projectTopic: id });

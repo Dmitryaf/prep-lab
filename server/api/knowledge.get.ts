@@ -1,14 +1,19 @@
 import { createError, defineEventHandler } from "nuxt/server";
-import { readKnowledge } from "../application/knowledge.ts";
-import { readBundledKnowledge } from "../infrastructure/knowledge/bundled.ts";
-import { sourceKnowledge } from "../../domain/source/knowledge.ts";
-import { getSources } from "../infrastructure/storage/runtime.ts";
+import { readKnowledge } from "#server/application/knowledge.ts";
+import { readBundledKnowledge } from "#server/infrastructure/knowledge/bundled.ts";
+import { sourceKnowledge } from "#domain/source/knowledge.ts";
+import {
+  getSources,
+  getAnalysisRepository,
+} from "#server/infrastructure/storage/runtime.ts";
 
 export default defineEventHandler(async () => {
   try {
-    return sourceKnowledge(
-      await readKnowledge({ common: readBundledKnowledge }),
-      getSources().snapshot().sources,
+    return getAnalysisRepository().knowledge(
+      sourceKnowledge(
+        await readKnowledge({ common: readBundledKnowledge }),
+        getSources().snapshot().sources,
+      ),
     );
   } catch {
     throw createError({

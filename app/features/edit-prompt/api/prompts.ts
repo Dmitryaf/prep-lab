@@ -3,7 +3,7 @@ import {
   promptStateSchema,
   type PromptId,
   type PromptInput,
-} from "../../../../domain/prompts/contracts.ts";
+} from "#domain/prompts/contracts.ts";
 
 export type PromptState = z.infer<typeof promptStateSchema>;
 async function request(path: string, body?: unknown) {

@@ -1,6 +1,6 @@
 import { parseDocument } from "yaml";
 import { z } from "zod";
-import { stripFrontmatter } from "../knowledge/markdown.ts";
+import { stripFrontmatter } from "#domain/knowledge/markdown.ts";
 
 export interface SourceMetadata {
   title: string;

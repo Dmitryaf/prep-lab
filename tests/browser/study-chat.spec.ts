@@ -1,8 +1,8 @@
-import { required } from "../helpers/values.ts";
-import type { Knowledge } from "../../domain/knowledge/material.ts";
-import { test, expect } from "../helpers/browser.ts";
+import { required } from "#tests/helpers/values.ts";
+import type { Knowledge } from "#domain/knowledge/material.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
 import { mkdirSync } from "node:fs";
-import { ownerAvailable } from "../helpers/owner-package.ts";
+import { ownerAvailable } from "#tests/helpers/owner-package.ts";
 test.use({
   appOptions: {
     studyChatOptions: {

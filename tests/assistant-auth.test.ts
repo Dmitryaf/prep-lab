@@ -9,10 +9,10 @@ import {
   authorize,
   consumeCallback,
   validateCredentials,
-} from "../server/infrastructure/codex/oauth.ts";
-import { CredentialStore } from "../server/infrastructure/codex/credentials.ts";
-import { refreshCredentials } from "../server/infrastructure/codex/refresh.ts";
-import { importCredentials } from "../server/infrastructure/codex/cli.ts";
+} from "#server/infrastructure/codex/oauth.ts";
+import { CredentialStore } from "#server/infrastructure/codex/credentials.ts";
+import { refreshCredentials } from "#server/infrastructure/codex/refresh.ts";
+import { importCredentials } from "#server/infrastructure/codex/cli.ts";
 
 test("credential transfer verifies signed identity and keeps the target host without a token refresh", async () => {
   const directory = await mkdtemp(join(tmpdir(), "lab-assistant-import-"));

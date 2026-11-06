@@ -3,11 +3,11 @@ import { z } from "zod";
 import {
   migratePreparationInput,
   savePreparationInput,
-} from "../../../domain/interview/contracts.ts";
+} from "#domain/interview/contracts.ts";
 import {
   PreparationRepository,
   RevisionConflict,
-} from "../storage/preparation.ts";
+} from "#server/infrastructure/storage/preparation.ts";
 
 import { readJsonBody, InvalidBody, respondJson as respond } from "./json.ts";
 const body = (request: IncomingMessage) => readJsonBody(request, 15_000_000);

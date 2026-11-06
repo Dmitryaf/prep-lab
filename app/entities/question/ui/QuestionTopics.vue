@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { link } from "../../../shared/lib/navigation.ts";
+import { link } from "#ui/shared/lib/navigation.ts";
 defineProps<{ topics: { noteId: string; heading: string; title: string }[] }>();
 </script>
 <template>
   <aside class="question-topics" aria-label="Полезные темы">
     <h3>Полезные темы</h3>
-    <p>Что стоит повторить для этого вопроса</p>
     <ul>
       <li v-for="topic in topics" :key="topic.noteId + '#' + topic.heading">
         <RouterLink
@@ -34,14 +33,8 @@ defineProps<{ topics: { noteId: string; heading: string; title: string }[] }>();
   min-width: 0;
 }
 .question-topics h3 {
-  margin: 0;
+  margin: 0 0 12px;
   font-size: 18px;
-}
-.question-topics p {
-  margin: 8px 0 18px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--muted);
 }
 .question-topics ul {
   margin: 0;

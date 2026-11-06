@@ -4,10 +4,10 @@ import type { Server } from "node:http";
 import {
   createHttpService,
   type ServerOptions,
-} from "../server/application/http.ts";
+} from "#server/application/http.ts";
 import { fileURLToPath } from "node:url";
 import { resolve } from "node:path";
-import { runtimeDatabasePath } from "../server/infrastructure/storage/runtime.ts";
+import { runtimeDatabasePath } from "#server/infrastructure/storage/runtime.ts";
 import { packageLabs } from "./package-labs.ts";
 
 export async function createDevelopmentServer({

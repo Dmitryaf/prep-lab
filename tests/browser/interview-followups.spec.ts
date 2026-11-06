@@ -1,10 +1,10 @@
-import { ownerAvailable } from "../helpers/owner-package.ts";
-import { required } from "../helpers/values.ts";
-import type { Progress } from "../../domain/interview/state.ts";
-import { readProgress } from "../helpers/browser-progress.ts";
-import { test, expect } from "../helpers/browser.ts";
+import { ownerAvailable } from "#tests/helpers/owner-package.ts";
+import { required } from "#tests/helpers/values.ts";
+import type { Progress } from "#domain/interview/state.ts";
+import { readProgress } from "#tests/helpers/browser-progress.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
 import { mkdir } from "node:fs/promises";
-import { restoreProgressFixture } from "../helpers/browser-progress.ts";
+import { restoreProgressFixture } from "#tests/helpers/browser-progress.ts";
 
 test("interview followups", async ({
   app: { base },

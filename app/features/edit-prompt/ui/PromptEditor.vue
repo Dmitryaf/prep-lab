@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { usePromptEditor } from "../model/usePromptEditor.ts";
+import { usePromptEditor } from "#ui/features/edit-prompt/model/usePromptEditor.ts";
 const state = usePromptEditor();
 const {
   prompts,

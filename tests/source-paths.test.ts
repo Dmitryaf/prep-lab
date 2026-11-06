@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { documentInputSchema } from "../domain/source/contracts.ts";
+import { documentInputSchema } from "#domain/source/contracts.ts";
 
 test("source entries cannot carry traversal, hidden instructions or executable files", () => {
   for (const path of [

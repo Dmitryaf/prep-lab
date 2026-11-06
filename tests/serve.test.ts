@@ -1,7 +1,7 @@
 import type { AddressInfo } from "node:net";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createServer } from "../scripts/serve.ts";
+import { createServer } from "#scripts/serve.ts";
 test("static server serves only the map, never old data, code repositories or mutations", async () => {
   const server = createServer();
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));

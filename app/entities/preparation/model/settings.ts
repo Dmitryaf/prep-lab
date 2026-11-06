@@ -1,8 +1,11 @@
 import { defineStore } from "pinia";
 import { ref, shallowRef } from "vue";
-import type { InstanceSettings } from "../../../../domain/instance/contracts.ts";
-import { requestSettings, writeSettings } from "../api/settings.ts";
-import { useNotices } from "../../../shared/model/notices.ts";
+import type { InstanceSettings } from "#domain/instance/contracts.ts";
+import {
+  requestSettings,
+  writeSettings,
+} from "#ui/entities/preparation/api/settings.ts";
+import { useNotices } from "#ui/shared/model/notices.ts";
 
 export const useSettings = defineStore("instance-settings", () => {
   const settings = shallowRef<InstanceSettings>({

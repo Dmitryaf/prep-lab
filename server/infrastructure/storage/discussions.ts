@@ -3,8 +3,8 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import type Database from "better-sqlite3";
 import { z } from "zod";
-import { historySchema } from "../../../domain/discussion/contracts.ts";
-import type { ChatHistory } from "../../types.ts";
+import { historySchema } from "#domain/discussion/contracts.ts";
+import type { ChatHistory } from "#server/types.ts";
 
 export class DiscussionRepository {
   private readonly database: Database.Database;

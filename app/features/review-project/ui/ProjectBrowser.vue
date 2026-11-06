@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import PageHeading from "../../../shared/ui/PageHeading.vue";
+import PageHeading from "#ui/shared/ui/PageHeading.vue";
 import TopicDetail from "./ProjectTopic.vue";
-import QuestionCard from "../../study-discussion/index.ts";
-import RatingButtons from "../../manage-repeat/index.ts";
-import StudyLinks from "../../../entities/question/ui/StudyLinks.vue";
-import { useProjectBrowser } from "../model/useProjectBrowser.ts";
+import ProjectMap from "./ProjectMap.vue";
+import QuestionCard from "#ui/features/study-discussion/index.ts";
+import RatingButtons from "#ui/features/manage-repeat/index.ts";
+import StudyLinks from "#ui/entities/question/ui/StudyLinks.vue";
+import { useProjectBrowser } from "#ui/features/review-project/model/useProjectBrowser.ts";
 const {
   projects,
   topics,
@@ -49,7 +50,14 @@ const {
         data-action="back-to-topics"
         @click="closeTopic"
       >
-        ← {{ mode === "map" ? "К маршруту" : "К списку тем" }}
+        ←
+        {{
+          mode === "overview"
+            ? "К карте проекта"
+            : mode === "map"
+              ? "К маршруту"
+              : "К списку тем"
+        }}
       </button>
       <span class="reading-location"
         >{{ projects[selected.project].name }} <span aria-hidden="true">/</span>
@@ -94,33 +102,22 @@ const {
     >
   </template>
   <template v-else-if="!Object.keys(projects).length">
-    <PageHeading
-      title="Проекты"
-      description="Разбор вашей работы и технических решений."
-    />
+    <PageHeading title="Проекты" />
     <section class="platform-card">
       <h2>Добавьте свой проект</h2>
-      <RouterLink :to="{ path: '/generate', query: { scenario: 'project' } }"
+      <RouterLink :to="{ path: '/sources', query: { scenario: 'project' } }"
         >Подготовить разбор проекта</RouterLink
       >
-      <p>
-        Для подготовки к общим вопросам проекты не обязательны. Для личного
-        разбора понадобятся описание задачи, ваша роль и выбранные материалы.
-        После проверки и принятия разбора здесь появятся темы и вопросы по
-        вашему проекту.
-      </p>
+      <p>Для разбора понадобятся описание проекта и код.</p>
     </section>
   </template>
   <template v-else>
     <div class="catalog-heading">
-      <PageHeading
-        title="Проекты"
-        description="Назначение, основные сценарии и устройство ваших проектов."
-      />
+      <PageHeading title="Проекты" />
       <div class="platform-actions">
         <RouterLink
           class="platform-button secondary"
-          :to="{ path: '/generate', query: { scenario: 'project' } }"
+          :to="{ path: '/sources', query: { scenario: 'project' } }"
           >Добавить разбор проекта</RouterLink
         >
         <RouterLink
@@ -148,6 +145,7 @@ const {
     <nav class="platform-actions" aria-label="Карта проектов">
       <button
         v-for="[id, label] in [
+          ['overview', 'Карта'],
           ['map', 'Маршруты'],
           ['topics', 'Темы'],
           ['review', 'Повторение'],
@@ -165,7 +163,14 @@ const {
         {{ label }}
       </button>
     </nav>
-    <template v-if="mode === 'topics'"
+    <ProjectMap
+      v-if="mode === 'overview' && projects[project]"
+      :key="project"
+      :project="projects[project]"
+      :topics="projectTopics"
+      :topic-link="topicLink"
+    />
+    <template v-else-if="mode === 'topics'"
       ><div class="platform-filters">
         <label
           >Раздел<select v-model="group" aria-label="Раздел">

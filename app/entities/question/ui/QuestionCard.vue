@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { Question } from "../../../../domain/knowledge/question.ts";
-import { kindLabel, categoryLabel } from "../lib/presentation.ts";
-import MarkdownContent from "../../material/ui/MarkdownContent.vue";
+import type { Question } from "#domain/knowledge/question.ts";
+import {
+  kindLabel,
+  categoryLabel,
+} from "#ui/entities/question/lib/presentation.ts";
+import MarkdownContent from "#ui/entities/material/ui/MarkdownContent.vue";
 import AnswerPanel from "./AnswerPanel.vue";
 const props = defineProps<{
   question: Question;
@@ -29,7 +32,7 @@ const stage = computed(() =>
             : question.codingRole === "main"
               ? "Основная задача · 15–25 минут"
               : question.codingRole === "advanced"
-                ? "Углублённая практика"
+                ? "Дополнительная практика"
                 : kindLabel(question)
       }}
       ·
@@ -47,10 +50,7 @@ const stage = computed(() =>
         "
         :source-id="question.noteId"
       />
-      <p v-if="question.codingRole" class="platform-muted">
-        Этот этап можно пропустить: для базового решения он не требуется.
-      </p></template
-    >
+    </template>
     <template v-else
       ><h2>{{ question.title }}</h2>
       <MarkdownContent

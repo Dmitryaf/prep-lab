@@ -1,10 +1,10 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { z } from "zod";
-import { CredentialStore } from "../codex/credentials.ts";
-import { assistantRuntime } from "../codex/runtime.ts";
-import { assistantLogin } from "../codex/login.ts";
-import { refreshCredentials } from "../codex/refresh.ts";
-import { signOut } from "../codex/sign-out.ts";
+import { CredentialStore } from "#server/infrastructure/codex/credentials.ts";
+import { assistantRuntime } from "#server/infrastructure/codex/runtime.ts";
+import { assistantLogin } from "#server/infrastructure/codex/login.ts";
+import { refreshCredentials } from "#server/infrastructure/codex/refresh.ts";
+import { signOut } from "#server/infrastructure/codex/sign-out.ts";
 import { respondJson, readJsonBody, InvalidBody } from "./json.ts";
 export async function handleConnection(
   request: IncomingMessage,

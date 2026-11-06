@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { studyTopics } from "../domain/knowledge/study-topics.ts";
-import type { Question } from "../domain/knowledge/question.ts";
-import type { Note } from "../domain/knowledge/material.ts";
+import { studyTopics } from "#domain/knowledge/study-topics.ts";
+import type { Question } from "#domain/knowledge/question.ts";
+import type { Note } from "#domain/knowledge/material.ts";
 
 test("the sidebar resolves scoped theory links, removes duplicates and cannot link the answer or a missing section", () => {
   const notes: Note[] = [

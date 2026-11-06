@@ -6,6 +6,16 @@ export default {
     if (
       !saved &&
       to.path === "/projects" &&
+      from.path === "/projects" &&
+      !to.query.projectTopic &&
+      !from.query.projectTopic &&
+      (!to.query.mode || to.query.mode === "overview") &&
+      (!from.query.mode || from.query.mode === "overview")
+    )
+      return false;
+    if (
+      !saved &&
+      to.path === "/projects" &&
       from.query.projectTopic &&
       !to.query.projectTopic &&
       /^[\w-]+$/.test(String(from.query.projectTopic))

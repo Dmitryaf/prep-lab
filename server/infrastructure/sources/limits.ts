@@ -2,7 +2,7 @@ import {
   documentInputSchema,
   markdownPathSchema,
   type SourceDocumentInput,
-} from "../../../domain/source/contracts.ts";
+} from "#domain/source/contracts.ts";
 
 export const sourceLimits = {
   files: 200,

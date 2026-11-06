@@ -1,8 +1,11 @@
 import type { Progress, Interview } from "./state.ts";
-import type { Question } from "../knowledge/question.ts";
+import type { Question } from "#domain/knowledge/question.ts";
 import type { Mark } from "./rating.ts";
 import { hash } from "./deterministic.ts";
-import { supportsQuestion, type StackProfile } from "../knowledge/profile.ts";
+import {
+  supportsQuestion,
+  type StackProfile,
+} from "#domain/knowledge/profile.ts";
 import type { InterviewFormat } from "./formats.ts";
 export function localDate(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;

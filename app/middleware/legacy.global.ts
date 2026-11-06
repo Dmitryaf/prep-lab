@@ -1,5 +1,5 @@
 import { defineNuxtRouteMiddleware, navigateTo } from "#app";
-import { legacyLocation } from "../shared/lib/navigation.ts";
+import { legacyLocation } from "#ui/shared/lib/navigation.ts";
 
 export default defineNuxtRouteMiddleware((to) => {
   const legacy = legacyLocation(window.location.search, window.location.hash);

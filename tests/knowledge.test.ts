@@ -13,11 +13,11 @@ import {
   allowedKnowledgePath,
   extractQuestions,
   loadKnowledge,
-} from "../server/knowledge.ts";
+} from "#server/knowledge.ts";
 import {
   renderMarkdown,
   headingId,
-} from "../app/entities/material/lib/markdown.ts";
+} from "#ui/entities/material/lib/markdown.ts";
 
 test("allowlist excludes private and service documents, traversal and executable labs", () => {
   for (const path of [

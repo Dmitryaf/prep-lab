@@ -1,5 +1,5 @@
-import type { Question } from "../../../../domain/knowledge/question.ts";
-import { useProjectCatalog } from "../../project/model/catalog.ts";
+import type { Question } from "#domain/knowledge/question.ts";
+import { useProjectCatalog } from "#ui/entities/project/model/catalog.ts";
 const labels: Record<string, string> = {
   theory: "Вопрос",
   practice: "Практическая задача",

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { storeToRefs } from "pinia";
 
-import type { Rating } from "../../../../domain/interview/rating.ts";
-import { usePreparation } from "../../../entities/preparation/model/store.ts";
+import type { Rating } from "#domain/interview/rating.ts";
+import { usePreparation } from "#ui/entities/preparation/model/store.ts";
 const { progress, saving } = storeToRefs(usePreparation());
-import { useRepeat } from "../model/store.ts";
+import { useRepeat } from "#ui/features/manage-repeat/model/store.ts";
 const { rate } = useRepeat();
 
 defineProps<{ id: string; sessionId?: string }>();

@@ -1,16 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { extractQuestions } from "../domain/knowledge/markdown.ts";
-import {
-  selectInterview,
-  createSession,
-} from "../domain/interview/selection.ts";
-import { loadCommonKnowledge } from "../server/infrastructure/knowledge/common.ts";
-import { knowledgeForProfile } from "../domain/knowledge/profile.ts";
+import { extractQuestions } from "#domain/knowledge/markdown.ts";
+import { selectInterview, createSession } from "#domain/interview/selection.ts";
+import { loadCommonKnowledge } from "#server/infrastructure/knowledge/common.ts";
+import { knowledgeForProfile } from "#domain/knowledge/profile.ts";
 import {
   availableFollowups,
   openFollowup,
-} from "../domain/interview/navigation.ts";
+} from "#domain/interview/navigation.ts";
 
 const makeQuestion = (
   id: string,

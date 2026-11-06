@@ -3,8 +3,8 @@ import {
   importDraftSchema,
   promptInputSchema,
   type PromptInput,
-} from "../../../../domain/prompts/contracts.ts";
-import { projectDraftSchema } from "../../../../domain/projects/draft.ts";
+} from "#domain/prompts/contracts.ts";
+import { projectDraftSchema } from "#domain/projects/draft.ts";
 export const generationStatusSchema = z.enum([
   "pending",
   "completed",

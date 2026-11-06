@@ -1,9 +1,9 @@
 import { z } from "zod";
 import type Database from "better-sqlite3";
-import type { Progress, Interview } from "../../../domain/interview/state.ts";
-import type { Mark } from "../../../domain/interview/rating.ts";
-import { validateState } from "../../../domain/interview/saved-state.ts";
-import { mergeLegacyState } from "../../../domain/interview/migration.ts";
+import type { Progress, Interview } from "#domain/interview/state.ts";
+import type { Mark } from "#domain/interview/rating.ts";
+import { validateState } from "#domain/interview/saved-state.ts";
+import { mergeLegacyState } from "#domain/interview/migration.ts";
 
 export class RevisionConflict extends Error {}
 export class PreparationRepository {

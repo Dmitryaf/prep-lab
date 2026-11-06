@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {
   readGenerationStream,
   type GenerationEvent,
-} from "../app/features/generate-material/api/generations.ts";
+} from "#ui/features/generate-material/api/generations.ts";
 function response(chunks: Uint8Array[]) {
   return new Response(
     new ReadableStream<Uint8Array>({

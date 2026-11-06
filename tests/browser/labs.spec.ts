@@ -1,4 +1,4 @@
-import { test, expect } from "../helpers/browser.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
 import { resolve } from "node:path";
 
 test.use({

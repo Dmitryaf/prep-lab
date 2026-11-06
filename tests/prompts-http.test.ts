@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { openDatabase } from "../server/infrastructure/storage/database.ts";
-import { PromptRepository } from "../server/infrastructure/storage/prompts.ts";
-import { readPromptTemplates } from "../server/infrastructure/prompts/templates.ts";
-import { handlePrompts } from "../server/infrastructure/http/prompts.ts";
+import { openDatabase } from "#server/infrastructure/storage/database.ts";
+import { PromptRepository } from "#server/infrastructure/storage/prompts.ts";
+import { readPromptTemplates } from "#server/infrastructure/prompts/templates.ts";
+import { handlePrompts } from "#server/infrastructure/http/prompts.ts";
 
 test("prompt API previews unsaved text, persists overrides and rejects stale writes and arbitrary operations", async () => {
   const database = openDatabase(":memory:");

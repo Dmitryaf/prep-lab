@@ -1,3 +1,4 @@
+import type { ProjectMap } from "./map.ts";
 export interface CodeStep {
   project: string;
   path: string;
@@ -67,6 +68,8 @@ export interface RoutePath {
   nodes: string[];
 }
 export interface Project {
+  map?: ProjectMap;
+  structure?: ProjectMap;
   id: string;
   name: string;
   subtitle: string;

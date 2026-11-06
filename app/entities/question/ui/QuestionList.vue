@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import type { Question } from "../../../../domain/knowledge/question.ts";
-import { link } from "../../../shared/lib/navigation.ts";
-import { kindLabel, categoryLabel } from "../lib/presentation.ts";
+import type { Question } from "#domain/knowledge/question.ts";
+import { link } from "#ui/shared/lib/navigation.ts";
+import {
+  kindLabel,
+  categoryLabel,
+} from "#ui/entities/question/lib/presentation.ts";
 defineProps<{ items: Question[] }>();
 </script>
 <template>

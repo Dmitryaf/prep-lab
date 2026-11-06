@@ -1,9 +1,9 @@
 import { defineStore } from "pinia";
-import type { Rating } from "../../../../domain/interview/rating.ts";
-import { rateQuestion } from "../../../../domain/interview/saved-state.ts";
-import { dailyKey } from "../../../../domain/interview/selection.ts";
-import { usePreparation } from "../../../entities/preparation/model/store.ts";
-import { useNotices } from "../../../shared/model/notices.ts";
+import type { Rating } from "#domain/interview/rating.ts";
+import { rateQuestion } from "#domain/interview/saved-state.ts";
+import { dailyKey } from "#domain/interview/selection.ts";
+import { usePreparation } from "#ui/entities/preparation/model/store.ts";
+import { useNotices } from "#ui/shared/model/notices.ts";
 
 export const useRepeat = defineStore("repeat", () => {
   const preparation = usePreparation(),

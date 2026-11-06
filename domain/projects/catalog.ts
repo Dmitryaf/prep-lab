@@ -54,13 +54,29 @@ export const projectCatalogSchema = z
         });
       ids.add(topic.id);
     }
-    for (const project of Object.values(catalog.projects))
+    for (const project of Object.values(catalog.projects)) {
+      const projectTopics = new Set(
+        catalog.topics
+          .filter((topic) => topic.project === project.id)
+          .map((topic) => topic.id),
+      );
+      for (const node of [
+        ...(project.map?.nodes || []),
+        ...(project.structure?.nodes || []),
+      ]) {
+        if (node.topicIds.some((id) => !projectTopics.has(id)))
+          context.addIssue({
+            code: "custom",
+            message: "Карта ссылается на неизвестную тему проекта.",
+          });
+      }
       for (const route of project.routes)
         if (route.nodes.some((id) => !ids.has(id)))
           context.addIssue({
             code: "custom",
             message: "Маршрут ссылается на неизвестную тему.",
           });
+    }
   });
 export type ProjectCatalog = z.infer<typeof projectCatalogSchema>;
 export const emptyProjectCatalog = (): ProjectCatalog => ({

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import type { Question } from "../../../../domain/knowledge/question.ts";
-import QuestionCard from "../../../entities/question/ui/QuestionCard.vue";
+import type { Question } from "#domain/knowledge/question.ts";
+import QuestionCard from "#ui/entities/question/ui/QuestionCard.vue";
 import StudyDiscussion from "./StudyDiscussion.vue";
-import QuestionTopics from "../../../entities/question/ui/QuestionTopics.vue";
-import { useMaterials } from "../../../entities/material/model/store.ts";
-import { studyTopics } from "../../../../domain/knowledge/study-topics.ts";
-import { usePreparation } from "../../../entities/preparation/model/store.ts";
+import QuestionTopics from "#ui/entities/question/ui/QuestionTopics.vue";
+import { useMaterials } from "#ui/entities/material/model/store.ts";
+import { studyTopics } from "#domain/knowledge/study-topics.ts";
+import { usePreparation } from "#ui/entities/preparation/model/store.ts";
 const materials = useMaterials();
 const preparation = usePreparation();
 const props = defineProps<{

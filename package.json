@@ -2,6 +2,13 @@
   "name": "projects-map",
   "private": true,
   "type": "module",
+  "imports": {
+    "#ui/*": "./app/*",
+    "#domain/*": "./domain/*",
+    "#server/*": "./server/*",
+    "#scripts/*": "./scripts/*",
+    "#tests/*": "./tests/*"
+  },
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
   },

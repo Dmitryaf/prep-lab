@@ -1,6 +1,6 @@
-import { composePrompt } from "../../domain/prompts/compose.ts";
-import type { PromptTemplate } from "../../domain/prompts/contracts.ts";
-import type { PromptRepository } from "../infrastructure/storage/prompts.ts";
+import { composePrompt } from "#domain/prompts/compose.ts";
+import type { PromptTemplate } from "#domain/prompts/contracts.ts";
+import type { PromptRepository } from "#server/infrastructure/storage/prompts.ts";
 export function discussionPrompt(
   templates: () => Promise<PromptTemplate[]>,
   prompts: () => PromptRepository,

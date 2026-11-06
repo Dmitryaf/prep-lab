@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { CodeStep } from "../../../../domain/projects/types.ts";
+import type { CodeStep } from "#domain/projects/types.ts";
 import { storeToRefs } from "pinia";
-import { useProjectCatalog } from "../model/catalog.ts";
+import { useProjectCatalog } from "#ui/entities/project/model/catalog.ts";
 import {
   sourceUrl as url,
   sourceContext as context,
-} from "../../../../domain/projects/sources.ts";
+} from "#domain/projects/sources.ts";
 const { catalog } = storeToRefs(useProjectCatalog());
 const sourceUrl = (step: CodeStep, revision?: string) =>
   url(step, catalog.value.repositories, revision);

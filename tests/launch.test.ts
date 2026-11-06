@@ -2,8 +2,8 @@ import type { AddressInfo } from "node:net";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer as httpServer } from "node:http";
-import { createDevelopmentServer } from "../scripts/dev.ts";
-import { ensureRunning } from "../scripts/launch.ts";
+import { createDevelopmentServer } from "#scripts/dev.ts";
+import { ensureRunning } from "#scripts/launch.ts";
 
 test("launcher cold start and repeated click use one ready server and keep the same origin", async () => {
   const probe = httpServer();

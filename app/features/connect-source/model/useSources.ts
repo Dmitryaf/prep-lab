@@ -1,9 +1,9 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import * as api from "../api/sources.ts";
-import type { SourcePreview } from "../../../../domain/source/preview.ts";
-import type { SourceResolution } from "../../../../domain/source/contracts.ts";
-import { useMaterials } from "../../../entities/material/model/store.ts";
+import * as api from "#ui/features/connect-source/api/sources.ts";
+import type { SourcePreview } from "#domain/source/preview.ts";
+import type { SourceResolution } from "#domain/source/contracts.ts";
+import { useMaterials } from "#ui/entities/material/model/store.ts";
 export function useSources() {
   const route = useRoute();
   const catalog = ref<api.SourceCatalog>({

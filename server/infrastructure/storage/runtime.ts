@@ -9,6 +9,7 @@ import { SourceRepository } from "./sources.ts";
 import { PromptRepository } from "./prompts.ts";
 import { GenerationRepository } from "./generations.ts";
 import { ProjectRepository } from "./reviewed-projects.ts";
+import { AnalysisRepository } from "./analyses.ts";
 
 let database: ReturnType<typeof openDatabase> | undefined;
 let preparation: PreparationRepository | undefined;
@@ -18,6 +19,10 @@ let sources: SourceRepository | undefined;
 let prompts: PromptRepository | undefined;
 let generations: GenerationRepository | undefined;
 let projects: ProjectRepository | undefined;
+let analysis: AnalysisRepository | undefined;
+export function getAnalysisRepository() {
+  return (analysis ??= new AnalysisRepository(getDatabase()));
+}
 export function privateDataDirectory() {
   const directory = resolve(
     process.env.FRONTEND_LAB_DATA_DIR || ".local",
@@ -79,4 +84,5 @@ export function closeDatabase() {
   prompts = undefined;
   generations = undefined;
   projects = undefined;
+  analysis = undefined;
 }

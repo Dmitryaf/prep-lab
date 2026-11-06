@@ -9,16 +9,16 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { readKnowledge } from "../server/application/knowledge.ts";
-import { loadKnowledge } from "../server/infrastructure/knowledge/folder.ts";
-import { loadCommonKnowledge } from "../server/infrastructure/knowledge/common.ts";
-import { knowledgeForProfile } from "../domain/knowledge/profile.ts";
-import { createSession } from "../domain/interview/selection.ts";
-import { findMaterial } from "../domain/knowledge/lookup.ts";
-import { resolveKnowledgeLink } from "../domain/knowledge/links.ts";
-import { extractQuestions } from "../domain/knowledge/markdown.ts";
-import { withBundledRounds } from "../domain/knowledge/bundled-rounds.ts";
-import type { Knowledge } from "../domain/knowledge/material.ts";
+import { readKnowledge } from "#server/application/knowledge.ts";
+import { loadKnowledge } from "#server/infrastructure/knowledge/folder.ts";
+import { loadCommonKnowledge } from "#server/infrastructure/knowledge/common.ts";
+import { knowledgeForProfile } from "#domain/knowledge/profile.ts";
+import { createSession } from "#domain/interview/selection.ts";
+import { findMaterial } from "#domain/knowledge/lookup.ts";
+import { resolveKnowledgeLink } from "#domain/knowledge/links.ts";
+import { extractQuestions } from "#domain/knowledge/markdown.ts";
+import { withBundledRounds } from "#domain/knowledge/bundled-rounds.ts";
+import type { Knowledge } from "#domain/knowledge/material.ts";
 
 for (const mode of ["folder", "owner-package"] as const)
   test(`bundled rounds remain available with a legacy ${mode}, without replacing personal questions`, async () => {

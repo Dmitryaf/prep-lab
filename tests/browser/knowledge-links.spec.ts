@@ -1,6 +1,6 @@
-import { test, expect } from "../helpers/browser.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
 import { mkdir } from "node:fs/promises";
-import { headingId } from "../../app/entities/material/lib/markdown.ts";
+import { headingId } from "#ui/entities/material/lib/markdown.ts";
 
 const sourceId = "Фронтенд/JavaScript/Навигация";
 const targetId = "Фронтенд/JavaScript/Материал с пробелами";

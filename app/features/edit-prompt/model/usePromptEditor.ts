@@ -1,13 +1,13 @@
 import { computed, onMounted, ref, watch } from "vue";
-import { useMaterials } from "../../../entities/material/model/store.ts";
-import { useSettings } from "../../../entities/preparation/model/settings.ts";
-import { type PromptId } from "../../../../domain/prompts/contracts.ts";
+import { useMaterials } from "#ui/entities/material/model/store.ts";
+import { useSettings } from "#ui/entities/preparation/model/settings.ts";
+import { type PromptId } from "#domain/prompts/contracts.ts";
 import {
   readPrompts,
   savePrompt,
   previewPrompt,
   type PromptState,
-} from "../api/prompts.ts";
+} from "#ui/features/edit-prompt/api/prompts.ts";
 
 export function usePromptEditor() {
   const prompts = ref<PromptState[]>([]),

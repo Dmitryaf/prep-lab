@@ -3,7 +3,7 @@ import { resolve, join } from "node:path";
 import {
   projectCatalogSchema,
   emptyProjectCatalog,
-} from "../../../domain/projects/catalog.ts";
+} from "#domain/projects/catalog.ts";
 
 export const ownerPackagePath = () =>
   resolve(

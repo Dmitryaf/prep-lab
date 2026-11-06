@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createServer } from "../scripts/serve.ts";
+import { createServer } from "#scripts/serve.ts";
 import { get } from "node:http";
 test("API reads only configured knowledge and degrades without hiding map", async () => {
   const root = mkdtempSync(join(tmpdir(), "map-api-"));

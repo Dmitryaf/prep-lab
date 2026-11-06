@@ -1,8 +1,8 @@
-import type { Topic, Project } from "../../../../domain/projects/types.ts";
-import type { PreparedQuestion } from "../../../../domain/knowledge/question.ts";
-import { questionCards } from "../../../../domain/projects/review.ts";
-import type { ProjectCatalog } from "../../../../domain/projects/catalog.ts";
-import { cleanEditorialNotes } from "../../../../domain/knowledge/editorial-notes.ts";
+import type { Topic, Project } from "#domain/projects/types.ts";
+import type { PreparedQuestion } from "#domain/knowledge/question.ts";
+import { questionCards } from "#domain/projects/review.ts";
+import type { ProjectCatalog } from "#domain/projects/catalog.ts";
+import { cleanEditorialNotes } from "#domain/knowledge/editorial-notes.ts";
 
 // Adapt the existing map; IDs, answers and code remain owned by its topics.
 export function projectQuestions(

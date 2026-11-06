@@ -1,12 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { composePrompt } from "../domain/prompts/compose.ts";
+import { composePrompt } from "#domain/prompts/compose.ts";
 import {
   importDraftSchema,
   type PromptInput,
-} from "../domain/prompts/contracts.ts";
-import { projectDraftSchema } from "../domain/projects/draft.ts";
-import { readPromptTemplates } from "../server/infrastructure/prompts/templates.ts";
+} from "#domain/prompts/contracts.ts";
+import { projectDraftSchema } from "#domain/projects/draft.ts";
+import { readPromptTemplates } from "#server/infrastructure/prompts/templates.ts";
 
 // These reviewed fixtures check composition/contract preservation, not a live model's quality.
 const note =

@@ -2,13 +2,16 @@
 const router = useRouter();
 import { computed, nextTick, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { renderMarkdown, headingId } from "../lib/markdown.ts";
-import { resolveKnowledgeLink } from "../lib/links.ts";
-import { materialHeading } from "../../../../domain/knowledge/links.ts";
-import { useMaterials } from "../model/store.ts";
+import {
+  renderMarkdown,
+  headingId,
+} from "#ui/entities/material/lib/markdown.ts";
+import { resolveKnowledgeLink } from "#ui/entities/material/lib/links.ts";
+import { materialHeading } from "#domain/knowledge/links.ts";
+import { useMaterials } from "#ui/entities/material/model/store.ts";
 const { noteFor } = useMaterials();
 
-import { link } from "../../../shared/lib/navigation.ts";
+import { link } from "#ui/shared/lib/navigation.ts";
 const props = withDefaults(defineProps<{ text: string; sourceId?: string }>(), {
   sourceId: "",
 });

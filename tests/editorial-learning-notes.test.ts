@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { cleanEditorialNotes } from "../domain/knowledge/editorial-notes.ts";
-import { renderMarkdown } from "../domain/knowledge/rendering.ts";
+import { cleanEditorialNotes } from "#domain/knowledge/editorial-notes.ts";
+import { renderMarkdown } from "#domain/knowledge/rendering.ts";
 
 const notices = [
   "Готовая реализация помогает проверить механизм; успешный запуск сам по себе не подтверждает самостоятельное решение.",

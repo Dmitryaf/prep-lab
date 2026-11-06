@@ -1,4 +1,4 @@
-import type { Answer } from "../server/types.ts";
+import type { Answer } from "#server/types.ts";
 interface ChatFixture {
   directory: string;
   base: string;
@@ -18,7 +18,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { createServer } from "../scripts/serve.ts";
+import { createServer } from "#scripts/serve.ts";
 
 async function fixture(
   answer: Answer,

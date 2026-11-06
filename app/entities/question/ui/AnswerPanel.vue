@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { Question } from "../../../../domain/knowledge/question.ts";
-import { answerContent } from "../../../../domain/knowledge/answer-content.ts";
-import MarkdownContent from "../../material/ui/MarkdownContent.vue";
+import type { Question } from "#domain/knowledge/question.ts";
+import { answerContent } from "#domain/knowledge/answer-content.ts";
+import MarkdownContent from "#ui/entities/material/ui/MarkdownContent.vue";
 const props = withDefaults(
   defineProps<{ question: Question; forFollowup?: boolean }>(),
   {

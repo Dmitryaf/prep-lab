@@ -1,6 +1,6 @@
-import { test, expect } from "../helpers/browser.ts";
-import { readProgress } from "../helpers/browser-progress.ts";
-import { supportsQuestion } from "../../domain/knowledge/profile.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
+import { readProgress } from "#tests/helpers/browser-progress.ts";
+import { supportsQuestion } from "#domain/knowledge/profile.ts";
 import { mkdir } from "node:fs/promises";
 
 test.use({ appOptions: { projectPackageRoot: null } });

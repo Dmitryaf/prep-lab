@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { openDatabase } from "../server/infrastructure/storage/database.ts";
-import { SourceRepository } from "../server/infrastructure/storage/sources.ts";
-import { SourceService } from "../server/application/sources.ts";
-import type { Knowledge } from "../domain/knowledge/material.ts";
+import { openDatabase } from "#server/infrastructure/storage/database.ts";
+import { SourceRepository } from "#server/infrastructure/storage/sources.ts";
+import { SourceService } from "#server/application/sources.ts";
+import type { Knowledge } from "#domain/knowledge/material.ts";
 const base: Knowledge = { notes: [], questions: [], route: [], warnings: [] };
 const text = (answer: string) =>
   `# JavaScript\n## Порядок выполнения\n> [!answer]- Ответ\n> ${answer}\n`;

@@ -1,6 +1,6 @@
 import { useStorage } from "nitropack/runtime";
 import { z } from "zod";
-import { promptTemplateSchema } from "../../../domain/prompts/contracts.ts";
+import { promptTemplateSchema } from "#domain/prompts/contracts.ts";
 export async function readBundledPrompts() {
   const storage = useStorage("assets:prompts");
   const raw = await storage.getItem<string>("manifest.json");

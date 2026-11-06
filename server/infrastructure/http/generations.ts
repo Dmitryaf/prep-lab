@@ -1,10 +1,10 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { z } from "zod";
-import { promptInputSchema } from "../../../domain/prompts/contracts.ts";
-import { scenarioSchema } from "../../../domain/generation/contracts.ts";
-import type { GenerationService } from "../../application/generations.ts";
+import { promptInputSchema } from "#domain/prompts/contracts.ts";
+import { scenarioSchema } from "#domain/generation/contracts.ts";
+import type { GenerationService } from "#server/application/generations.ts";
 import { readJsonBody, respondJson, InvalidBody } from "./json.ts";
-import { RevisionConflict } from "../storage/preparation.ts";
+import { RevisionConflict } from "#server/infrastructure/storage/preparation.ts";
 export async function handleGenerations(
   request: IncomingMessage,
   response: ServerResponse,

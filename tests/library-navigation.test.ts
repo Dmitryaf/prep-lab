@@ -1,10 +1,10 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import type { Note } from "../domain/knowledge/material.ts";
-import { libraryNotes } from "../domain/knowledge/library-navigation.ts";
-import { findMaterial } from "../domain/knowledge/lookup.ts";
-import { knowledgeForProfile } from "../domain/knowledge/profile.ts";
+import type { Note } from "#domain/knowledge/material.ts";
+import { libraryNotes } from "#domain/knowledge/library-navigation.ts";
+import { findMaterial } from "#domain/knowledge/lookup.ts";
+import { knowledgeForProfile } from "#domain/knowledge/profile.ts";
 
 const labId = "Фронтенд/Практикумы/00. Карта раздела";
 const oldText = readFileSync(

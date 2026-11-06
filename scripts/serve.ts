@@ -2,7 +2,7 @@ import http from "node:http";
 import {
   createHttpService,
   type ServerOptions,
-} from "../server/application/http.ts";
+} from "#server/application/http.ts";
 export type { ServerOptions };
 // Compatibility host for the existing isolated HTTP/browser fixtures.
 export function createServer(options: ServerOptions = {}) {

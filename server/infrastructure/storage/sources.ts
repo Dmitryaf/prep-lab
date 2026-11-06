@@ -6,8 +6,8 @@ import {
   acceptSourceSchema,
   type AcceptedSource,
   type AcceptSource,
-} from "../../../domain/source/preview.ts";
-import type { SourceDocument } from "../../../domain/source/contracts.ts";
+} from "#domain/source/preview.ts";
+import type { SourceDocument } from "#domain/source/contracts.ts";
 import { RevisionConflict } from "./preparation.ts";
 
 export class SourceRepository {

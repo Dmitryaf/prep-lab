@@ -1,6 +1,6 @@
 import { z } from "zod";
-import type { Progress } from "../../../../domain/interview/state.ts";
-import { preparationEnvelope } from "../../../../domain/interview/contracts.ts";
+import type { Progress } from "#domain/interview/state.ts";
+import { preparationEnvelope } from "#domain/interview/contracts.ts";
 
 export class PreparationRequestError extends Error {
   readonly status: number;

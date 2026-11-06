@@ -15,7 +15,7 @@ import {
   readMarkdownFolder,
   readMarkdownZip,
   readMarkdownUploads,
-} from "../server/infrastructure/sources/input.ts";
+} from "#server/infrastructure/sources/input.ts";
 
 async function zip(entries: { path: string; text: string; mode?: number }[]) {
   const archive = new ZipFile();

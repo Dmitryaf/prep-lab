@@ -5,11 +5,11 @@ import {
   getReviewedProjects,
   getPrompts,
   getSources,
-} from "../infrastructure/storage/runtime.ts";
+} from "#server/infrastructure/storage/runtime.ts";
 import { readKnowledge } from "./knowledge.ts";
-import { readBundledKnowledge } from "../infrastructure/knowledge/bundled.ts";
-import { readBundledPrompts } from "../infrastructure/prompts/bundled.ts";
-import { answerWithCodex } from "../codex.ts";
+import { readBundledKnowledge } from "#server/infrastructure/knowledge/bundled.ts";
+import { readBundledPrompts } from "#server/infrastructure/prompts/bundled.ts";
+import { answerWithCodex } from "#server/codex.ts";
 let service: GenerationService | undefined;
 export function generations() {
   return (service ??= new GenerationService({

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { DiscussionMaterial } from "../../../../domain/discussion/contracts.ts";
-import { useDiscussion } from "../model/useDiscussion.ts";
+import type { DiscussionMaterial } from "#domain/discussion/contracts.ts";
+import { useDiscussion } from "#ui/features/study-discussion/model/useDiscussion.ts";
 const props = defineProps<DiscussionMaterial>();
 const {
   opened,

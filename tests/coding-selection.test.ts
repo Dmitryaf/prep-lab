@@ -1,16 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import type { Question } from "../domain/knowledge/question.ts";
-import {
-  createSession,
-  selectInterview,
-} from "../domain/interview/selection.ts";
+import type { Question } from "#domain/knowledge/question.ts";
+import { createSession, selectInterview } from "#domain/interview/selection.ts";
 import {
   availableFollowups,
   openFollowup,
   advanceQuestion,
   previousQuestion,
-} from "../domain/interview/navigation.ts";
+} from "#domain/interview/navigation.ts";
 
 function task(
   id: string,

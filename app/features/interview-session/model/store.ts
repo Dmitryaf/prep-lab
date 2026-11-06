@@ -1,16 +1,16 @@
 import { defineStore } from "pinia";
-import type { Interview } from "../../../../domain/interview/state.ts";
+import type { Interview } from "#domain/interview/state.ts";
 import {
   dailySession,
   createSession,
   localDate,
   dailyKey,
-} from "../../../../domain/interview/selection.ts";
-import { usePreparation } from "../../../entities/preparation/model/store.ts";
-import { useQuestions } from "../../../entities/question/model/store.ts";
-import { useSettings } from "../../../entities/preparation/model/settings.ts";
-import type { InterviewFormat } from "../../../../domain/interview/formats.ts";
-import { useNotices } from "../../../shared/model/notices.ts";
+} from "#domain/interview/selection.ts";
+import { usePreparation } from "#ui/entities/preparation/model/store.ts";
+import { useQuestions } from "#ui/entities/question/model/store.ts";
+import { useSettings } from "#ui/entities/preparation/model/settings.ts";
+import type { InterviewFormat } from "#domain/interview/formats.ts";
+import { useNotices } from "#ui/shared/model/notices.ts";
 
 export const useInterview = defineStore("interview", () => {
   const preparation = usePreparation(),

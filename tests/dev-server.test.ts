@@ -1,11 +1,11 @@
-import type { Knowledge } from "../domain/knowledge/material.ts";
+import type { Knowledge } from "#domain/knowledge/material.ts";
 import type { AddressInfo } from "node:net";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
-import { createDevelopmentServer } from "../scripts/dev.ts";
+import { createDevelopmentServer } from "#scripts/dev.ts";
 import { resolve } from "node:path";
-import { readKnowledge } from "../server/application/knowledge.ts";
+import { readKnowledge } from "#server/application/knowledge.ts";
 test("Vue development entry serves app and readonly API without exposing private workspace files", async () => {
   const probe = createServer();
   await new Promise<void>((r) => probe.listen(0, "127.0.0.1", r));

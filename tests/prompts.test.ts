@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { composePrompt } from "../domain/prompts/compose.ts";
-import { PromptRepository } from "../server/infrastructure/storage/prompts.ts";
-import { openDatabase } from "../server/infrastructure/storage/database.ts";
-import { readPromptTemplates } from "../server/infrastructure/prompts/templates.ts";
+import { composePrompt } from "#domain/prompts/compose.ts";
+import { PromptRepository } from "#server/infrastructure/storage/prompts.ts";
+import { openDatabase } from "#server/infrastructure/storage/database.ts";
+import { readPromptTemplates } from "#server/infrastructure/prompts/templates.ts";
 
 test("all three templates compose a visible task with isolated untrusted context and enforced result format", () => {
   const templates = readPromptTemplates();

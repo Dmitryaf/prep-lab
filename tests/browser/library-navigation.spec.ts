@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
-import { test, expect } from "../helpers/browser.ts";
-import type { Note } from "../../domain/knowledge/material.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
+import type { Note } from "#domain/knowledge/material.ts";
 
 const labId = "Фронтенд/Практикумы/00. Карта раздела";
 const oldText = readFileSync(

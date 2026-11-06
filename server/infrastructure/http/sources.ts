@@ -1,15 +1,15 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { z } from "zod";
-import { SourceService } from "../../application/sources.ts";
-import { SourceRepository } from "../storage/sources.ts";
-import { RevisionConflict } from "../storage/preparation.ts";
+import { SourceService } from "#server/application/sources.ts";
+import { SourceRepository } from "#server/infrastructure/storage/sources.ts";
+import { RevisionConflict } from "#server/infrastructure/storage/preparation.ts";
 import { readJsonBody, InvalidBody, respondJson } from "./json.ts";
-import { acceptSourceSchema } from "../../../domain/source/preview.ts";
+import { acceptSourceSchema } from "#domain/source/preview.ts";
 import {
   uploadSchema,
   readMarkdownUploads,
   readMarkdownFolder,
-} from "../sources/input.ts";
+} from "#server/infrastructure/sources/input.ts";
 const previewInput = z.strictObject({
   sourceId: z.string().max(120).optional(),
   name: z.string().trim().min(1).max(160),
@@ -23,9 +23,7 @@ export async function handleSources(
   request: IncomingMessage,
   response: ServerResponse,
   source: SourceRepository | (() => SourceRepository),
-  base: () => Promise<
-    import("../../../domain/knowledge/material.ts").Knowledge
-  >,
+  base: () => Promise<import("#domain/knowledge/material.ts").Knowledge>,
 ) {
   const path = new URL(request.url || "/", "http://localhost").pathname;
   if (path !== "/api/sources" && !path.startsWith("/api/sources/"))

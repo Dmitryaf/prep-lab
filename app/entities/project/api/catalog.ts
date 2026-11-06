@@ -1,4 +1,4 @@
-import { projectCatalogSchema } from "../../../../domain/projects/catalog.ts";
+import { projectCatalogSchema } from "#domain/projects/catalog.ts";
 
 export async function getProjectCatalog() {
   const response = await fetch("/api/projects");

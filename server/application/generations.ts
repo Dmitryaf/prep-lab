@@ -1,23 +1,23 @@
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { composePrompt } from "../../domain/prompts/compose.ts";
+import { composePrompt } from "#domain/prompts/compose.ts";
 import {
   promptInputSchema,
   importDraftSchema,
   type PromptInput,
   type PromptTemplate,
-} from "../../domain/prompts/contracts.ts";
-import { projectDraftSchema } from "../../domain/projects/draft.ts";
-import { validateProjectEvidence } from "../../domain/projects/from-draft.ts";
+} from "#domain/prompts/contracts.ts";
+import { projectDraftSchema } from "#domain/projects/draft.ts";
+import { validateProjectEvidence } from "#domain/projects/from-draft.ts";
 import type {
   Generation,
   GenerationEvent,
-} from "../../domain/generation/contracts.ts";
-import type { Answer } from "../types.ts";
-import { GenerationRepository } from "../infrastructure/storage/generations.ts";
-import { PromptRepository } from "../infrastructure/storage/prompts.ts";
-import { ProjectRepository } from "../infrastructure/storage/reviewed-projects.ts";
-import { RevisionConflict } from "../infrastructure/storage/preparation.ts";
+} from "#domain/generation/contracts.ts";
+import type { Answer } from "#server/types.ts";
+import { GenerationRepository } from "#server/infrastructure/storage/generations.ts";
+import { PromptRepository } from "#server/infrastructure/storage/prompts.ts";
+import { ProjectRepository } from "#server/infrastructure/storage/reviewed-projects.ts";
+import { RevisionConflict } from "#server/infrastructure/storage/preparation.ts";
 import type { SourceService } from "./sources.ts";
 interface Options {
   repository: GenerationRepository;

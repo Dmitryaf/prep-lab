@@ -12,6 +12,12 @@ const features = readdirSync(new URL("./app/features", import.meta.url), {
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name);
 
+const deepRelativeImport = {
+  regex: "^\\.\\./\\.\\./",
+  message:
+    "Для импортов между каталогами используйте алиасы из package.json imports.",
+};
+
 export default ts.config(
   {
     ignores: [
@@ -45,6 +51,7 @@ export default ts.config(
       parserOptions: { parser: ts.parser, extraFileExtensions: [".vue"] },
     },
     rules: {
+      "no-restricted-imports": ["error", { patterns: [deepRelativeImport] }],
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
@@ -63,6 +70,7 @@ export default ts.config(
         "error",
         {
           patterns: [
+            deepRelativeImport,
             {
               group: [
                 "vue",
@@ -74,6 +82,10 @@ export default ts.config(
                 "**/app/**",
                 "**/server/**",
                 "**/content/**",
+                "\\#ui/**",
+                "\\#server/**",
+                "\\#scripts/**",
+                "\\#tests/**",
               ],
               message:
                 "Domain содержит предметную логику без UI, ввода-вывода и каталога экземпляра.",
@@ -97,6 +109,7 @@ export default ts.config(
         "error",
         {
           patterns: [
+            deepRelativeImport,
             {
               group: [
                 "node:*",
@@ -104,6 +117,9 @@ export default ts.config(
                 "**/features/**",
                 "**/pages/**",
                 "**/layouts/**",
+                "\\#server/**",
+                "\\#scripts/**",
+                "\\#tests/**",
               ],
               message:
                 "Entity не зависит от интерфейсных сценариев, страниц и сервера.",
@@ -120,12 +136,19 @@ export default ts.config(
         "error",
         {
           patterns: [
+            deepRelativeImport,
             {
               regex: `(?:^|/)(?:${features.filter((name) => name !== feature).join("|")})/(?:ui|model|api)/`,
               message: "Другие features подключаются через публичный index.ts.",
             },
             {
-              group: ["node:*", "**/server/**"],
+              group: [
+                "node:*",
+                "**/server/**",
+                "\\#server/**",
+                "\\#scripts/**",
+                "\\#tests/**",
+              ],
               message: "Браузерный сценарий обращается к серверу через API.",
             },
           ],

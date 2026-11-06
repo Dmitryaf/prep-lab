@@ -3,7 +3,7 @@ import test from "node:test";
 import {
   renderMarkdown,
   headingId,
-} from "../app/entities/material/lib/markdown.ts";
+} from "#ui/entities/material/lib/markdown.ts";
 
 const source = "Собеседования/Темы/JavaScript";
 const notes = new Map([
@@ -34,7 +34,7 @@ const hrefFor = (id: string, heading: string) =>
   (heading ? "&heading=" + encodeURIComponent(heading) : "");
 async function resolver() {
   const { resolveKnowledgeLink } =
-    await import("../app/entities/material/lib/links.ts");
+    await import("#ui/entities/material/lib/links.ts");
   return (raw: string) =>
     resolveKnowledgeLink(raw, source, (id) => notes.get(id), hrefFor);
 }

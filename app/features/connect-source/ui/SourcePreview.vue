@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import type { SourcePreview } from "../../../../domain/source/preview.ts";
-import type { SourceResolution } from "../../../../domain/source/contracts.ts";
+import type { SourcePreview } from "#domain/source/preview.ts";
+import type { SourceResolution } from "#domain/source/contracts.ts";
 const props = defineProps<{ preview: SourcePreview; busy: boolean }>();
 const resolutions = defineModel<Record<string, SourceResolution>>(
   "resolutions",

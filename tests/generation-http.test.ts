@@ -4,11 +4,11 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
-import { createServer } from "../scripts/serve.ts";
-import type { Answer } from "../server/types.ts";
+import { createServer } from "#scripts/serve.ts";
+import type { Answer } from "#server/types.ts";
 import { projectDraftFixture } from "./fixtures/project-draft.ts";
-import type { PromptInput } from "../domain/prompts/contracts.ts";
-import { openDatabase } from "../server/infrastructure/storage/database.ts";
+import type { PromptInput } from "#domain/prompts/contracts.ts";
+import { openDatabase } from "#server/infrastructure/storage/database.ts";
 
 const input: PromptInput = {
   profile: "react",

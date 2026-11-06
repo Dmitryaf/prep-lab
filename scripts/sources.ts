@@ -2,8 +2,8 @@ import { resolve, isAbsolute } from "node:path";
 import {
   getSources,
   closeDatabase,
-} from "../server/infrastructure/storage/runtime.ts";
-import { validateSourceRoot } from "../server/infrastructure/sources/folder.ts";
+} from "#server/infrastructure/storage/runtime.ts";
+import { validateSourceRoot } from "#server/infrastructure/sources/folder.ts";
 const [command, id, name, path] = process.argv.slice(2);
 try {
   if (

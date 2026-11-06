@@ -1,16 +1,16 @@
-import { restoreProgressFixture } from "../helpers/browser-progress.ts";
-import type { Interview } from "../../domain/interview/state.ts";
-import { required } from "../helpers/values.ts";
-import { readProgress } from "../helpers/browser-progress.ts";
-import { test, expect } from "../helpers/browser.ts";
+import { restoreProgressFixture } from "#tests/helpers/browser-progress.ts";
+import type { Interview } from "#domain/interview/state.ts";
+import { required } from "#tests/helpers/values.ts";
+import { readProgress } from "#tests/helpers/browser-progress.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
 import { mkdir } from "node:fs/promises";
-import { loadCommonKnowledge } from "../../server/infrastructure/knowledge/common.ts";
+import { loadCommonKnowledge } from "#server/infrastructure/knowledge/common.ts";
 import { resolve } from "node:path";
 import {
   loadState,
   createSession,
   storageKey,
-} from "../../domain/interview/engine.ts";
+} from "#domain/interview/engine.ts";
 
 test.use({
   viewport: { width: 1440, height: 1100 },

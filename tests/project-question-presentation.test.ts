@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { projectFixture } from "./fixtures/projects.ts";
-import { projectQuestions } from "../app/entities/project/model/questions.ts";
+import { projectQuestions } from "#ui/entities/project/model/questions.ts";
 
 test("project questions keep their context without injecting authorship disclaimers", () => {
   const catalog = projectFixture();

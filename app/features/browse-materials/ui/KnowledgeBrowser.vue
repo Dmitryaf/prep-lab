@@ -3,19 +3,19 @@ import { storeToRefs } from "pinia";
 
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { useMaterials } from "../../../entities/material/model/store.ts";
+import { useMaterials } from "#ui/entities/material/model/store.ts";
 const { knowledge, baseKnowledge, loading } = storeToRefs(useMaterials());
 const { noteFor } = useMaterials();
 
-import { link } from "../../../shared/lib/navigation.ts";
-import { useProjectCatalog } from "../../../entities/project/model/catalog.ts";
+import { link } from "#ui/shared/lib/navigation.ts";
+import { useProjectCatalog } from "#ui/entities/project/model/catalog.ts";
 const { topics, projects } = storeToRefs(useProjectCatalog());
-import { canonicalNotePath } from "../../../../domain/knowledge/path.ts";
-import { libraryNotes } from "../../../../domain/knowledge/library-navigation.ts";
-import PageHeading from "../../../shared/ui/PageHeading.vue";
-import MarkdownContent from "../../../entities/material/ui/MarkdownContent.vue";
-import QuestionList from "../../../entities/question/ui/QuestionList.vue";
-import { StudyDiscussion as StudyChat } from "../../study-discussion/index.ts";
+import { canonicalNotePath } from "#domain/knowledge/path.ts";
+import { libraryNotes } from "#domain/knowledge/library-navigation.ts";
+import PageHeading from "#ui/shared/ui/PageHeading.vue";
+import MarkdownContent from "#ui/entities/material/ui/MarkdownContent.vue";
+import QuestionList from "#ui/entities/question/ui/QuestionList.vue";
+import { StudyDiscussion as StudyChat } from "#ui/features/study-discussion/index.ts";
 const route = useRoute(),
   router = useRouter(),
   note = computed(() =>
@@ -114,10 +114,7 @@ function back() {
     ></template
   >
   <template v-else
-    ><PageHeading
-      title="Темы"
-      description="Теория и практические материалы из вашей локальной базы знаний."
-    />
+    ><PageHeading title="Темы" />
     <p v-if="loading">Подключаем каталог…</p>
     <details
       v-for="[title, notes] in groups"

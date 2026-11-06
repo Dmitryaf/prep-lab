@@ -3,9 +3,9 @@ import { z } from "zod";
 import {
   saveSettingsInput,
   migrateSettingsInput,
-} from "../../../domain/instance/contracts.ts";
-import { RevisionConflict } from "../storage/preparation.ts";
-import type { SettingsRepository } from "../storage/settings.ts";
+} from "#domain/instance/contracts.ts";
+import { RevisionConflict } from "#server/infrastructure/storage/preparation.ts";
+import type { SettingsRepository } from "#server/infrastructure/storage/settings.ts";
 import { readJsonBody, InvalidBody, respondJson } from "./json.ts";
 
 export async function handleSettings(

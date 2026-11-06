@@ -1,7 +1,7 @@
-import { test, expect } from "../helpers/browser.ts";
-import { readProgress } from "../helpers/browser-progress.ts";
-import { dailySession } from "../../domain/interview/selection.ts";
-import { loadState, storageKey } from "../../domain/interview/saved-state.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
+import { readProgress } from "#tests/helpers/browser-progress.ts";
+import { dailySession } from "#domain/interview/selection.ts";
+import { loadState, storageKey } from "#domain/interview/saved-state.ts";
 
 test("a corrupt browser record stays untouched and blocks automatic writes", async ({
   app: { base },

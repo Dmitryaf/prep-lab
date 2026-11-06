@@ -1,9 +1,9 @@
-import { ownerAvailable, ownerCatalog } from "../helpers/owner-package.ts";
-import { required } from "../helpers/values.ts";
-import type { Knowledge } from "../../domain/knowledge/material.ts";
-import type { Progress } from "../../domain/interview/state.ts";
-import { readProgress } from "../helpers/browser-progress.ts";
-import { test, expect } from "../helpers/browser.ts";
+import { ownerAvailable, ownerCatalog } from "#tests/helpers/owner-package.ts";
+import { required } from "#tests/helpers/values.ts";
+import type { Knowledge } from "#domain/knowledge/material.ts";
+import type { Progress } from "#domain/interview/state.ts";
+import { readProgress } from "#tests/helpers/browser-progress.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
 import { mkdir } from "node:fs/promises";
 
 test("interview flow", async ({ app: { base }, page, pageErrors: errors }) => {

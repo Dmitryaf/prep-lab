@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { z } from "zod";
-import type { AnswerOptions } from "../../types.ts";
+import type { AnswerOptions } from "#server/types.ts";
 import { CredentialStore, assistantDirectory } from "./credentials.ts";
 import { refreshCredentials } from "./refresh.ts";
 import { StdioCodexTransport, type CodexTransport } from "./transport.ts";

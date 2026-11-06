@@ -2,14 +2,14 @@ import { ref, shallowRef, watch, onBeforeUnmount, nextTick } from "vue";
 import type {
   DiscussionMessage,
   DiscussionMaterial,
-} from "../../../../domain/discussion/contracts.ts";
+} from "#domain/discussion/contracts.ts";
 import {
   getDiscussion,
   sendDiscussion,
   cancelDiscussion,
   previewDiscussion,
   DiscussionRequestError,
-} from "../api/discussion.ts";
+} from "#ui/features/study-discussion/api/discussion.ts";
 
 export function useDiscussion(material: DiscussionMaterial) {
   const opened = ref(false),

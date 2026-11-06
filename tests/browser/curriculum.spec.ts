@@ -1,10 +1,10 @@
-import { readProgress } from "../helpers/browser-progress.ts";
-import { required } from "../helpers/values.ts";
-import type { Knowledge } from "../../domain/knowledge/material.ts";
-import type { Progress } from "../../domain/interview/state.ts";
-import { knowledgeForProfile } from "../../domain/knowledge/profile.ts";
+import { readProgress } from "#tests/helpers/browser-progress.ts";
+import { required } from "#tests/helpers/values.ts";
+import type { Knowledge } from "#domain/knowledge/material.ts";
+import type { Progress } from "#domain/interview/state.ts";
+import { knowledgeForProfile } from "#domain/knowledge/profile.ts";
 
-import { test, expect } from "../helpers/browser.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
 import { mkdir, writeFile } from "node:fs/promises";
 
 test("curriculum", async ({ app: { base }, page, pageErrors: errors }) => {

@@ -1,17 +1,14 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { loadCommonKnowledge } from "../server/infrastructure/knowledge/common.ts";
+import { loadCommonKnowledge } from "#server/infrastructure/knowledge/common.ts";
 import {
   knowledgeForProfile,
   supportsQuestion,
-} from "../domain/knowledge/profile.ts";
-import { headings } from "../domain/knowledge/markdown.ts";
-import { compileKnowledge } from "../domain/knowledge/catalog.ts";
-import {
-  selectInterview,
-  dailySession,
-} from "../domain/interview/selection.ts";
-import { loadState, validateState } from "../domain/interview/saved-state.ts";
+} from "#domain/knowledge/profile.ts";
+import { headings } from "#domain/knowledge/markdown.ts";
+import { compileKnowledge } from "#domain/knowledge/catalog.ts";
+import { selectInterview, dailySession } from "#domain/interview/selection.ts";
+import { loadState, validateState } from "#domain/interview/saved-state.ts";
 
 const common = loadCommonKnowledge();
 test("the complete common base contains no owner materials and retains stable question identities", () => {

@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { Question } from "../../../../domain/knowledge/question.ts";
-import { useMaterials } from "../../material/model/store.ts";
+import type { Question } from "#domain/knowledge/question.ts";
+import { useMaterials } from "#ui/entities/material/model/store.ts";
 const { noteFor } = useMaterials();
 
-import { link } from "../../../shared/lib/navigation.ts";
+import { link } from "#ui/shared/lib/navigation.ts";
 defineProps<{ question: Question }>();
 </script>
 <template>

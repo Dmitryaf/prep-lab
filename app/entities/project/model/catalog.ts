@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { computed, ref, shallowRef } from "vue";
-import { emptyProjectCatalog } from "../../../../domain/projects/catalog.ts";
-import { getProjectCatalog } from "../api/catalog.ts";
+import { emptyProjectCatalog } from "#domain/projects/catalog.ts";
+import { getProjectCatalog } from "#ui/entities/project/api/catalog.ts";
 import { projectQuestions } from "./questions.ts";
 export const useProjectCatalog = defineStore("project-catalog", () => {
   const catalog = shallowRef(emptyProjectCatalog()),

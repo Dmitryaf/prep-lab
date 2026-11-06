@@ -3,7 +3,7 @@ import {
   acceptedSourceSchema,
   previewSchema,
   type AcceptSource,
-} from "../../../../domain/source/preview.ts";
+} from "#domain/source/preview.ts";
 export const sourceCatalogSchema = z.object({
   revision: z.number(),
   sources: z.array(acceptedSourceSchema),

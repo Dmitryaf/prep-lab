@@ -1,1 +1,1 @@
-export { resolveKnowledgeLink } from "../../../../domain/knowledge/links.ts";
+export { resolveKnowledgeLink } from "#domain/knowledge/links.ts";

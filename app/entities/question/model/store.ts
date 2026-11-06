@@ -1,13 +1,13 @@
 import { defineStore } from "pinia";
 import { computed } from "vue";
-import { useMaterials } from "../../material/model/store.ts";
-import { usePreparation } from "../../preparation/model/store.ts";
-import { useProjectCatalog } from "../../project/model/catalog.ts";
-import { useSettings } from "../../preparation/model/settings.ts";
+import { useMaterials } from "#ui/entities/material/model/store.ts";
+import { usePreparation } from "#ui/entities/preparation/model/store.ts";
+import { useProjectCatalog } from "#ui/entities/project/model/catalog.ts";
+import { useSettings } from "#ui/entities/preparation/model/settings.ts";
 import {
   supportsQuestion,
   questionForProfile,
-} from "../../../../domain/knowledge/profile.ts";
+} from "#domain/knowledge/profile.ts";
 
 export const useQuestions = defineStore("questions", () => {
   const materials = useMaterials(),

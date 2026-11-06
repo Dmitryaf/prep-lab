@@ -1,9 +1,9 @@
 import { compileSourceDocument } from "./compile.ts";
 import type { AcceptedSource } from "./preview.ts";
-import type { Knowledge } from "../knowledge/material.ts";
-import { findMaterial } from "../knowledge/lookup.ts";
-import { resolveKnowledgeLink } from "../knowledge/links.ts";
-import { renderMarkdown } from "../knowledge/rendering.ts";
+import type { Knowledge } from "#domain/knowledge/material.ts";
+import { findMaterial } from "#domain/knowledge/lookup.ts";
+import { resolveKnowledgeLink } from "#domain/knowledge/links.ts";
+import { renderMarkdown } from "#domain/knowledge/rendering.ts";
 
 export function sourceKnowledge(base: Knowledge, sources: AcceptedSource[]) {
   const knowledge: Knowledge = {

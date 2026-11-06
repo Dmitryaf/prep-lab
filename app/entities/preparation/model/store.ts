@@ -1,17 +1,14 @@
 import { defineStore } from "pinia";
 import { computed, onScopeDispose, ref, shallowRef } from "vue";
-import type { Progress } from "../../../../domain/interview/state.ts";
-import {
-  loadState,
-  storageKey,
-} from "../../../../domain/interview/saved-state.ts";
+import type { Progress } from "#domain/interview/state.ts";
+import { loadState, storageKey } from "#domain/interview/saved-state.ts";
 import {
   readPreparation,
   writePreparation,
   migratePreparation,
   PreparationRequestError,
-} from "../api/preparation.ts";
-import { useNotices } from "../../../shared/model/notices.ts";
+} from "#ui/entities/preparation/api/preparation.ts";
+import { useNotices } from "#ui/shared/model/notices.ts";
 
 export const usePreparation = defineStore("preparation", () => {
   const progress = shallowRef<Progress>(loadState({ getItem: () => null }));

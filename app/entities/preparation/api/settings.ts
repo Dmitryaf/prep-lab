@@ -1,7 +1,7 @@
 import {
   settingsEnvelopeSchema,
   type InstanceSettings,
-} from "../../../../domain/instance/contracts.ts";
+} from "#domain/instance/contracts.ts";
 
 export async function requestSettings(method = "GET", body?: unknown) {
   const response = await fetch(

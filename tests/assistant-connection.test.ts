@@ -4,10 +4,10 @@ import { createServer } from "node:http";
 import { mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { CredentialStore } from "../server/infrastructure/codex/credentials.ts";
-import { LoginManager } from "../server/infrastructure/codex/login.ts";
-import { handleConnection } from "../server/infrastructure/http/connection.ts";
-import { signOut } from "../server/infrastructure/codex/sign-out.ts";
+import { CredentialStore } from "#server/infrastructure/codex/credentials.ts";
+import { LoginManager } from "#server/infrastructure/codex/login.ts";
+import { handleConnection } from "#server/infrastructure/http/connection.ts";
+import { signOut } from "#server/infrastructure/codex/sign-out.ts";
 
 test("connection API exposes status only, requires same-origin JSON and never accepts RPC or paths", async () => {
   const directory = await mkdtemp(join(tmpdir(), "lab-connection-api-"));

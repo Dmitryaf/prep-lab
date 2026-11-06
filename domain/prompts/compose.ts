@@ -6,7 +6,7 @@ import {
   type PromptTemplate,
   type PromptInput,
 } from "./contracts.ts";
-import { projectDraftSchema } from "../projects/draft.ts";
+import { projectDraftSchema } from "#domain/projects/draft.ts";
 export function composePrompt(
   inputTemplate: PromptTemplate,
   custom: string | null,

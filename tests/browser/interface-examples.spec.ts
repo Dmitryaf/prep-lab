@@ -1,6 +1,6 @@
 import { test, expect, type Route } from "@playwright/test";
 import assert from "node:assert/strict";
-import { loadCommonKnowledge } from "../../server/infrastructure/knowledge/common.ts";
+import { loadCommonKnowledge } from "#server/infrastructure/knowledge/common.ts";
 
 const common = loadCommonKnowledge();
 function example(title: string, marker: string) {

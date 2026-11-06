@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useConnection } from "../model/useConnection.ts";
+import { useConnection } from "#ui/features/connect-assistant/model/useConnection.ts";
 const {
   connection,
   busy,

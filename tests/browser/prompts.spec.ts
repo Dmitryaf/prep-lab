@@ -1,4 +1,4 @@
-import { test, expect } from "../helpers/browser.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
 test.use({ appOptions: { projectPackageRoot: null } });
 test("prompt editor saves all three overrides, previews exact context and restores the built-in version", async ({
   app: { base },

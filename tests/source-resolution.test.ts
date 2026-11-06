@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { resolveSourcePlan } from "../domain/source/resolve.ts";
-import type { SourcePlanEntry } from "../domain/source/contracts.ts";
+import { resolveSourcePlan } from "#domain/source/resolve.ts";
+import type { SourcePlanEntry } from "#domain/source/contracts.ts";
 
 const conflict: SourcePlanEntry = {
   id: "source-a/material/one",

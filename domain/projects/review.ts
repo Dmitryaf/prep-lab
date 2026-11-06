@@ -1,4 +1,4 @@
-import type { Mark } from "../interview/rating.ts";
+import type { Mark } from "#domain/interview/rating.ts";
 import type { Topic } from "./types.ts";
 interface ReviewOptions {
   project?: string;

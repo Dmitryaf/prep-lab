@@ -3,13 +3,13 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { openDatabase } from "../server/infrastructure/storage/database.ts";
+import { openDatabase } from "#server/infrastructure/storage/database.ts";
 import {
   PreparationRepository,
   RevisionConflict,
-} from "../server/infrastructure/storage/preparation.ts";
-import { loadState } from "../domain/interview/saved-state.ts";
-import { dailySession } from "../domain/interview/selection.ts";
+} from "#server/infrastructure/storage/preparation.ts";
+import { loadState } from "#domain/interview/saved-state.ts";
+import { dailySession } from "#domain/interview/selection.ts";
 
 const empty = () => loadState({ getItem: () => null });
 test("v1 and v2 browser marks migrate through the same validated adapter", () => {

@@ -1,4 +1,4 @@
-import { test, expect } from "../helpers/browser.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
 test.use({ appOptions: { projectPackageRoot: null } });
 const markdown = (answer: string) =>
   `# Своя заметка\n## Свой вопрос\n> [!answer]- Ответ\n> ${answer}\n`;
@@ -7,6 +7,9 @@ test("upload preview, acceptance, repeat, local edit and conflicting update surv
   page,
 }) => {
   await page.goto(base + "/#/sources");
+  await page
+    .getByRole("link", { name: "Импорт готовых материалов", exact: true })
+    .click();
   await expect(
     page.getByRole("heading", { name: "Свои материалы" }),
   ).toBeVisible();

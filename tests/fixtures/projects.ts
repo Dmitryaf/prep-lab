@@ -1,5 +1,5 @@
-import type { Topic, Project } from "../../domain/projects/types.ts";
-import type { ProjectCatalog } from "../../domain/projects/catalog.ts";
+import type { Topic, Project } from "#domain/projects/types.ts";
+import type { ProjectCatalog } from "#domain/projects/catalog.ts";
 
 // Synthetic data for portable project scenarios; no personal work history or source files.
 export function projectFixture(): ProjectCatalog {

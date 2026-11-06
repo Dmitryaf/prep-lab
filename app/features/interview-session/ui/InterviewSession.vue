@@ -3,15 +3,15 @@ import { storeToRefs } from "pinia";
 
 import { computed, ref, watch, onMounted, onUnmounted, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { usePreparation } from "../../../entities/preparation/model/store.ts";
-import { useSettings } from "../../../entities/preparation/model/settings.ts";
+import { usePreparation } from "#ui/entities/preparation/model/store.ts";
+import { useSettings } from "#ui/entities/preparation/model/settings.ts";
 const instanceSettings = useSettings();
 const { progress, sessions, saving } = storeToRefs(usePreparation());
-import { useMaterials } from "../../../entities/material/model/store.ts";
+import { useMaterials } from "#ui/entities/material/model/store.ts";
 const { knowledge, loading } = storeToRefs(useMaterials());
-import { useQuestions } from "../../../entities/question/model/store.ts";
+import { useQuestions } from "#ui/entities/question/model/store.ts";
 const { weakQuestions } = storeToRefs(useQuestions());
-import { useInterview } from "../model/store.ts";
+import { useInterview } from "#ui/features/interview-session/model/store.ts";
 const { setSession, startDaily, startFull } = useInterview();
 
 import {
@@ -22,20 +22,20 @@ import {
   advanceQuestion,
   previousQuestion,
   finishInterview,
-} from "../../../../domain/interview/engine.ts";
-import { kindLabel } from "../../../entities/question/lib/presentation.ts";
-import { link } from "../../../shared/lib/navigation.ts";
-import PageHeading from "../../../shared/ui/PageHeading.vue";
-import QuestionCard from "../../study-discussion/index.ts";
-import AnswerAttempt from "../../answer-attempt/index.ts";
+} from "#domain/interview/engine.ts";
+import { kindLabel } from "#ui/entities/question/lib/presentation.ts";
+import { link } from "#ui/shared/lib/navigation.ts";
+import PageHeading from "#ui/shared/ui/PageHeading.vue";
+import QuestionCard from "#ui/features/study-discussion/index.ts";
+import AnswerAttempt from "#ui/features/answer-attempt/index.ts";
 import {
   interviewFormats,
   formatInfo,
   type InterviewFormat,
-} from "../../../../domain/interview/formats.ts";
-import type { Interview } from "../../../../domain/interview/state.ts";
-import RatingButtons from "../../manage-repeat/index.ts";
-import StudyLinks from "../../../entities/question/ui/StudyLinks.vue";
+} from "#domain/interview/formats.ts";
+import type { Interview } from "#domain/interview/state.ts";
+import RatingButtons from "#ui/features/manage-repeat/index.ts";
+import StudyLinks from "#ui/entities/question/ui/StudyLinks.vue";
 const route = useRoute(),
   router = useRouter(),
   date = ref(localDate());
@@ -127,10 +127,7 @@ watch(() => route.fullPath, refreshDate);
 </script>
 <template>
   <template v-if="!route.query.session">
-    <PageHeading
-      title="Пробное интервью"
-      description="Один вопрос за раз. В ежедневной тренировке проверяйте ответ сразу; в полном интервью разбор откроется в конце."
-    />
+    <PageHeading title="Пробное интервью" />
     <section class="platform-card daily-card">
       <div class="platform-meta">
         {{
@@ -145,9 +142,7 @@ watch(() => route.fullPath, refreshDate);
       <p>
         11–12 вопросов по
         {{ instanceSettings.settings.profile === "react" ? "React" : "Vue" }},
-        TypeScript, JavaScript и инженерным темам. Ваши проекты и опыт
-        включаются, если они добавлены. Подборка сохраняется на день для
-        выбранного профиля.
+        TypeScript, JavaScript и инженерным темам.
       </p>
       <button
         class="primary"
@@ -174,9 +169,6 @@ watch(() => route.fullPath, refreshDate);
     </section>
     <section class="interview-setup" aria-labelledby="fullInterviewHeading">
       <h2 id="fullInterviewHeading">Полное интервью</h2>
-      <p class="interview-setup-intro">
-        Выберите, что хотите потренировать. Разбор откроется после завершения.
-      </p>
       <fieldset class="interview-formats">
         <legend class="platform-search-label">Формат интервью</legend>
         <label
@@ -218,10 +210,6 @@ watch(() => route.fullPath, refreshDate);
     <div class="platform-grid">
       <section class="platform-card">
         <h2>Свободная практика</h2>
-        <p>
-          Выберите направление, основной маршрут или задачи. Открывайте ответ
-          после самостоятельной попытки.
-        </p>
         <RouterLink class="platform-button secondary" to="/practice"
           >Выбрать вопросы</RouterLink
         >
@@ -231,8 +219,8 @@ watch(() => route.fullPath, refreshDate);
         <p>
           {{
             weakQuestions.length
-              ? `Вопросов с затруднениями: ${weakQuestions.length}. Вернитесь к ним и проверьте себя снова.`
-              : "Здесь появятся вопросы с отметками «Частично» и «Не смог ответить»."
+              ? `Вопросов с затруднениями: ${weakQuestions.length}`
+              : "Вопросов для повторения пока нет"
           }}
         </p>
         <RouterLink class="platform-button secondary" to="/repeat"
@@ -247,10 +235,9 @@ watch(() => route.fullPath, refreshDate);
     ></template
   >
   <template v-else-if="session.finished">
-    <PageHeading
-      title="Разбор интервью"
-      description="Оцените каждый ответ самостоятельно. Частичные и неудачные ответы попадут в повторение."
-    /><RouterLink class="platform-back" to="/interview"
+    <PageHeading title="Разбор интервью" /><RouterLink
+      class="platform-back"
+      to="/interview"
       >← Все интервью</RouterLink
     >
     <section
@@ -325,9 +312,6 @@ watch(() => route.fullPath, refreshDate);
       "
       class="coding-stages"
     >
-      <p class="platform-muted">
-        Дополнительные этапы — по желанию. Можно вернуться к любому из них.
-      </p>
       <div class="platform-actions">
         <button
           v-for="(title, index) in current.followups"
@@ -408,11 +392,7 @@ watch(() => route.fullPath, refreshDate);
   margin-top: 32px;
 }
 .interview-setup h2 {
-  margin-bottom: 8px;
-}
-.interview-setup-intro {
-  color: var(--muted);
-  margin: 0 0 22px;
+  margin-bottom: 22px;
 }
 .interview-formats {
   display: grid;

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { validateKnowledge } from "../scripts/validate-knowledge.ts";
-import { canonicalNotePath } from "../domain/knowledge/path.ts";
+import { validateKnowledge } from "#scripts/validate-knowledge.ts";
+import { canonicalNotePath } from "#domain/knowledge/path.ts";
 test("integrity rejects wrong case and missing study links even on Windows", () => {
   const id = "Фронтенд/JavaScript/Topic";
   const bank = {

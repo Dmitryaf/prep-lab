@@ -1,5 +1,5 @@
-import { test, expect } from "../helpers/browser.ts";
-import { projectDraftFixture } from "../fixtures/project-draft.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
+import { projectDraftFixture } from "#tests/fixtures/project-draft.ts";
 test.use({
   appOptions: {
     projectPackageRoot: null,

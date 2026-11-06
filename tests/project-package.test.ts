@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { readProjectCatalog } from "../server/infrastructure/projects/catalog.ts";
+import { readProjectCatalog } from "#server/infrastructure/projects/catalog.ts";
 import { projectFixture } from "./fixtures/projects.ts";
 
 test("a missing private package is optional; a corrupt or incomplete package is never treated as empty", () => {

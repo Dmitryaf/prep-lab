@@ -1,4 +1,4 @@
-import type { PreparedQuestion } from "../knowledge/question.ts";
+import type { PreparedQuestion } from "#domain/knowledge/question.ts";
 
 const key = (question: PreparedQuestion) => question.heading || question.title;
 function signature(question: PreparedQuestion) {

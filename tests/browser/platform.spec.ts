@@ -1,12 +1,12 @@
-import { ownerAvailable, ownerCatalog } from "../helpers/owner-package.ts";
-import { projectQuestions } from "../../app/entities/project/model/questions.ts";
-import { supportsQuestion } from "../../domain/knowledge/profile.ts";
-import { required } from "../helpers/values.ts";
+import { ownerAvailable, ownerCatalog } from "#tests/helpers/owner-package.ts";
+import { projectQuestions } from "#ui/entities/project/model/questions.ts";
+import { supportsQuestion } from "#domain/knowledge/profile.ts";
+import { required } from "#tests/helpers/values.ts";
 
-import { readProgress } from "../helpers/browser-progress.ts";
-import { test, expect } from "../helpers/browser.ts";
+import { readProgress } from "#tests/helpers/browser-progress.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
 import { mkdir } from "node:fs/promises";
-import { restoreProgressFixture } from "../helpers/browser-progress.ts";
+import { restoreProgressFixture } from "#tests/helpers/browser-progress.ts";
 
 test("platform", async ({ app: { base }, page, pageErrors: errors }) => {
   test.skip(

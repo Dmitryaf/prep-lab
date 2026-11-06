@@ -1,9 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { discussionPrompt } from "../server/application/discussion-prompt.ts";
-import { readPromptTemplates } from "../server/infrastructure/prompts/templates.ts";
-import { PromptRepository } from "../server/infrastructure/storage/prompts.ts";
-import { openDatabase } from "../server/infrastructure/storage/database.ts";
+import { discussionPrompt } from "#server/application/discussion-prompt.ts";
+import { readPromptTemplates } from "#server/infrastructure/prompts/templates.ts";
+import { PromptRepository } from "#server/infrastructure/storage/prompts.ts";
+import { openDatabase } from "#server/infrastructure/storage/database.ts";
 
 test("hint namespace selects a trusted hint-only result contract despite the ordinary custom prompt", async () => {
   const database = openDatabase(":memory:");

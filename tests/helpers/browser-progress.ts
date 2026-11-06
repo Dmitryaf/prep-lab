@@ -1,12 +1,14 @@
-import { importState } from "../../domain/interview/engine.ts";
+import { importState } from "#domain/interview/engine.ts";
 import type { Page } from "@playwright/test";
 import { expect } from "@playwright/test";
-import type { Progress } from "../../domain/interview/state.ts";
+import type { Progress } from "#domain/interview/state.ts";
 
 export async function readProgress(page: Page): Promise<Progress> {
   await expect(page.locator("#platformMain")).toHaveAttribute(
     "aria-busy",
     "false",
+    // A full owner library reload can exceed the short assertion timeout.
+    { timeout: 30_000 },
   );
   return page.evaluate(async () => {
     const response = await fetch("/api/preparation");
@@ -37,6 +39,7 @@ export async function restoreProgressFixture(page: Page, value: unknown) {
   await expect(page.locator("#platformMain")).toHaveAttribute(
     "aria-busy",
     "false",
+    { timeout: 30_000 },
   );
   await page.locator("#platformMain h1").waitFor();
 }

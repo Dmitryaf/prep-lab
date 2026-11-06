@@ -5,8 +5,8 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import yauzl from "yauzl";
-import { resolveKnowledgeLink } from "../domain/knowledge/links.ts";
-import { renderMarkdown } from "../domain/knowledge/rendering.ts";
+import { resolveKnowledgeLink } from "#domain/knowledge/links.ts";
+import { renderMarkdown } from "#domain/knowledge/rendering.ts";
 
 function entries(buffer: Buffer): Promise<Map<string, Buffer>> {
   return new Promise((resolve, reject) => {

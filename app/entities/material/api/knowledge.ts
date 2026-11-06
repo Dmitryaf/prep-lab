@@ -1,5 +1,5 @@
-import { knowledgeSchema } from "../../../../domain/knowledge/contracts.ts";
-import type { Knowledge } from "../../../../domain/knowledge/material.ts";
+import { knowledgeSchema } from "#domain/knowledge/contracts.ts";
+import type { Knowledge } from "#domain/knowledge/material.ts";
 
 export async function getKnowledge(): Promise<Knowledge> {
   const response = await fetch("/api/knowledge");

@@ -1,18 +1,18 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { openDatabase } from "../server/infrastructure/storage/database.ts";
-import { GenerationRepository } from "../server/infrastructure/storage/generations.ts";
-import { ProjectRepository } from "../server/infrastructure/storage/reviewed-projects.ts";
-import { GenerationService } from "../server/application/generations.ts";
-import { PromptRepository } from "../server/infrastructure/storage/prompts.ts";
-import { SourceRepository } from "../server/infrastructure/storage/sources.ts";
-import { SourceService } from "../server/application/sources.ts";
-import { readPromptTemplates } from "../server/infrastructure/prompts/templates.ts";
-import { emptyProjectCatalog } from "../domain/projects/catalog.ts";
-import type { Answer } from "../server/types.ts";
-import type { ProjectDraft } from "../domain/projects/draft.ts";
-import { projectQuestions } from "../app/entities/project/model/questions.ts";
-import { projectFromDraft } from "../domain/projects/from-draft.ts";
+import { openDatabase } from "#server/infrastructure/storage/database.ts";
+import { GenerationRepository } from "#server/infrastructure/storage/generations.ts";
+import { ProjectRepository } from "#server/infrastructure/storage/reviewed-projects.ts";
+import { GenerationService } from "#server/application/generations.ts";
+import { PromptRepository } from "#server/infrastructure/storage/prompts.ts";
+import { SourceRepository } from "#server/infrastructure/storage/sources.ts";
+import { SourceService } from "#server/application/sources.ts";
+import { readPromptTemplates } from "#server/infrastructure/prompts/templates.ts";
+import { emptyProjectCatalog } from "#domain/projects/catalog.ts";
+import type { Answer } from "#server/types.ts";
+import type { ProjectDraft } from "#domain/projects/draft.ts";
+import { projectQuestions } from "#ui/entities/project/model/questions.ts";
+import { projectFromDraft } from "#domain/projects/from-draft.ts";
 const draft: ProjectDraft = {
   schemaVersion: 1,
   name: "Учебный сервис",

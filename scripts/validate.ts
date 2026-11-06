@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { projects, topics } from "../server/infrastructure/projects/owner.ts";
+import { projects, topics } from "#server/infrastructure/projects/owner.ts";
 
 const ids = new Set();
 for (const topic of topics) {

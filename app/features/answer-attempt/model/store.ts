@@ -1,11 +1,8 @@
 import { defineStore } from "pinia";
 import { onScopeDispose, ref } from "vue";
-import type {
-  AnswerAttempt,
-  Progress,
-} from "../../../../domain/interview/state.ts";
-import { usePreparation } from "../../../entities/preparation/model/store.ts";
-import { useNotices } from "../../../shared/model/notices.ts";
+import type { AnswerAttempt, Progress } from "#domain/interview/state.ts";
+import { usePreparation } from "#ui/entities/preparation/model/store.ts";
+import { useNotices } from "#ui/shared/model/notices.ts";
 
 interface Draft {
   text: string;

@@ -4,8 +4,8 @@ import { createHash } from "node:crypto";
 import { mkdtempSync, readFileSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { openDatabase } from "../server/infrastructure/storage/database.ts";
-import { DiscussionRepository } from "../server/infrastructure/storage/discussions.ts";
+import { openDatabase } from "#server/infrastructure/storage/database.ts";
+import { DiscussionRepository } from "#server/infrastructure/storage/discussions.ts";
 
 test("legacy JSON history is imported once without changing its original file", () => {
   const dir = mkdtempSync(join(tmpdir(), "frontend-lab-history-")),

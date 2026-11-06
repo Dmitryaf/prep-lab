@@ -1,11 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { AssistantRuntime } from "../server/infrastructure/codex/runtime.ts";
+import { AssistantRuntime } from "#server/infrastructure/codex/runtime.ts";
 import type {
   CodexTransport,
   TransportMessage,
-} from "../server/infrastructure/codex/transport.ts";
-import { Codex } from "../server/codex.ts";
+} from "#server/infrastructure/codex/transport.ts";
+import { Codex } from "#server/codex.ts";
 const options = (signal = new AbortController().signal) => ({
   context: "Тестовый материал",
   messages: [

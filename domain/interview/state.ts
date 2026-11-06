@@ -1,4 +1,4 @@
-import type { Question } from "../knowledge/question.ts";
+import type { Question } from "#domain/knowledge/question.ts";
 import type { Rating, Mark } from "./rating.ts";
 export interface AnswerAttempt {
   text: string;

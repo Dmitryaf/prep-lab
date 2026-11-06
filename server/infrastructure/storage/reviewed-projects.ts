@@ -3,10 +3,10 @@ import { randomUUID } from "node:crypto";
 import {
   projectCatalogSchema,
   type ProjectCatalog,
-} from "../../../domain/projects/catalog.ts";
-import { projectFromDraft } from "../../../domain/projects/from-draft.ts";
-import type { ProjectDraft } from "../../../domain/projects/draft.ts";
-import type { Generation } from "../../../domain/generation/contracts.ts";
+} from "#domain/projects/catalog.ts";
+import { projectFromDraft } from "#domain/projects/from-draft.ts";
+import type { ProjectDraft } from "#domain/projects/draft.ts";
+import type { Generation } from "#domain/generation/contracts.ts";
 import { GenerationRepository } from "./generations.ts";
 import { RevisionConflict } from "./preparation.ts";
 export class ProjectRepository {

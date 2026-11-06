@@ -17,7 +17,7 @@ import {
   selectQuestionReview,
   progressSnapshot,
   mergeProgressSnapshot,
-} from "../domain/projects/review.ts";
+} from "#domain/projects/review.ts";
 
 test("existing v1 progress round trips and preserves other projects", () => {
   const current = {

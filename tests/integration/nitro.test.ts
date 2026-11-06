@@ -6,11 +6,11 @@ import { once } from "node:events";
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
-import { openDatabase } from "../../server/infrastructure/storage/database.ts";
-import { DiscussionRepository } from "../../server/infrastructure/storage/discussions.ts";
-import { loadState } from "../../domain/interview/saved-state.ts";
-import { SourceRepository } from "../../server/infrastructure/storage/sources.ts";
-import { GenerationRepository } from "../../server/infrastructure/storage/generations.ts";
+import { openDatabase } from "#server/infrastructure/storage/database.ts";
+import { DiscussionRepository } from "#server/infrastructure/storage/discussions.ts";
+import { loadState } from "#domain/interview/saved-state.ts";
+import { SourceRepository } from "#server/infrastructure/storage/sources.ts";
+import { GenerationRepository } from "#server/infrastructure/storage/generations.ts";
 
 test("standalone prompt assets, saved overrides and interrupted draft history survive restart without inference", async () => {
   const directory = await mkdtemp(join(tmpdir(), "frontend-lab-prompts-api-"));

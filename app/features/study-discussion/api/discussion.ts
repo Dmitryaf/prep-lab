@@ -2,7 +2,7 @@ import { z } from "zod";
 import {
   discussionSchema,
   streamEventSchema,
-} from "../../../../domain/discussion/contracts.ts";
+} from "#domain/discussion/contracts.ts";
 
 const endpoint = (key: string, operation?: "cancel" | "preview") =>
   "/api/study-chat" +

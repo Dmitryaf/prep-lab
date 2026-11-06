@@ -1,11 +1,11 @@
-import { getKnowledge } from "../api/knowledge.ts";
+import { getKnowledge } from "#ui/entities/material/api/knowledge.ts";
 import { defineStore } from "pinia";
 import { shallowRef, ref, computed } from "vue";
-import type { Knowledge } from "../../../../domain/knowledge/material.ts";
-import { findMaterial } from "../../../../domain/knowledge/lookup.ts";
-import { useNotices } from "../../../shared/model/notices.ts";
-import { useSettings } from "../../preparation/model/settings.ts";
-import { knowledgeForProfile } from "../../../../domain/knowledge/profile.ts";
+import type { Knowledge } from "#domain/knowledge/material.ts";
+import { findMaterial } from "#domain/knowledge/lookup.ts";
+import { useNotices } from "#ui/shared/model/notices.ts";
+import { useSettings } from "#ui/entities/preparation/model/settings.ts";
+import { knowledgeForProfile } from "#domain/knowledge/profile.ts";
 
 export const useMaterials = defineStore("materials", () => {
   const baseKnowledge = shallowRef<Knowledge>({

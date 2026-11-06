@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { z } from "zod";
-import { importDraftSchema } from "../../../../domain/prompts/contracts.ts";
+import { importDraftSchema } from "#domain/prompts/contracts.ts";
 const draft = defineModel<z.infer<typeof importDraftSchema>>({
   required: true,
 });

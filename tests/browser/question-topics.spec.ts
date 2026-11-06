@@ -1,5 +1,5 @@
-import { test, expect } from "../helpers/browser.ts";
-import { readProgress } from "../helpers/browser-progress.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
+import { readProgress } from "#tests/helpers/browser-progress.ts";
 
 test.use({ appOptions: { projectPackageRoot: null } });
 const title = "Запросы через одно соединение: ответы не по порядку";

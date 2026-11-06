@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { sourceMetadata } from "../domain/source/metadata.ts";
+import { sourceMetadata } from "#domain/source/metadata.ts";
 
 test("Obsidian title and aliases are read without turning source metadata into instructions", () => {
   const result = sourceMetadata(

@@ -5,15 +5,15 @@ import {
   promptInputSchema,
   importDraftSchema,
   type PromptInput,
-} from "../../../../domain/prompts/contracts.ts";
+} from "#domain/prompts/contracts.ts";
 import {
   projectDraftSchema,
   type ProjectDraft,
-} from "../../../../domain/projects/draft.ts";
-import { useMaterials } from "../../../entities/material/model/store.ts";
-import { useSettings } from "../../../entities/preparation/model/settings.ts";
-import { useProjectCatalog } from "../../../entities/project/model/catalog.ts";
-import * as api from "../api/generations.ts";
+} from "#domain/projects/draft.ts";
+import { useMaterials } from "#ui/entities/material/model/store.ts";
+import { useSettings } from "#ui/entities/preparation/model/settings.ts";
+import { useProjectCatalog } from "#ui/entities/project/model/catalog.ts";
+import * as api from "#ui/features/generate-material/api/generations.ts";
 export function useGeneration() {
   const router = useRouter(),
     route = useRoute(),

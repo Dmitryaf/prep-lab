@@ -2,27 +2,27 @@
 import { storeToRefs } from "pinia";
 
 import { computed, ref, nextTick } from "vue";
-import type { Topic, CodeStep } from "../../../../domain/projects/types.ts";
-import { useProjectCatalog } from "../../../entities/project/model/catalog.ts";
+import type { Topic, CodeStep } from "#domain/projects/types.ts";
+import { useProjectCatalog } from "#ui/entities/project/model/catalog.ts";
 const { topics, catalog } = storeToRefs(useProjectCatalog());
 import { useRoute } from "vue-router";
-import { usePreparation } from "../../../entities/preparation/model/store.ts";
-import { useSettings } from "../../../entities/preparation/model/settings.ts";
+import { usePreparation } from "#ui/entities/preparation/model/store.ts";
+import { useSettings } from "#ui/entities/preparation/model/settings.ts";
 const { progress } = storeToRefs(usePreparation());
-import { useProjectReview } from "../model/store.ts";
+import { useProjectReview } from "#ui/features/review-project/model/store.ts";
 const { markTopic } = useProjectReview();
-import { useNotices } from "../../../shared/model/notices.ts";
+import { useNotices } from "#ui/shared/model/notices.ts";
 const { notify } = useNotices();
 
-import { link } from "../../../shared/lib/navigation.ts";
-import { canonicalNotePath } from "../../../../domain/knowledge/path.ts";
-import { cleanEditorialNotes } from "../../../../domain/knowledge/editorial-notes.ts";
+import { link } from "#ui/shared/lib/navigation.ts";
+import { canonicalNotePath } from "#domain/knowledge/path.ts";
+import { cleanEditorialNotes } from "#domain/knowledge/editorial-notes.ts";
 import {
   localCodeReference,
   highlightedCode,
-} from "../../../../domain/projects/sources.ts";
-import CodeReference from "../../../entities/project/ui/CodeReference.vue";
-import { StudyDiscussion as StudyChat } from "../../study-discussion/index.ts";
+} from "#domain/projects/sources.ts";
+import CodeReference from "#ui/entities/project/ui/CodeReference.vue";
+import { StudyDiscussion as StudyChat } from "#ui/features/study-discussion/index.ts";
 const props = defineProps<{ topic: Topic; routeNodes?: string[] }>();
 const route = useRoute();
 const stepLink = (id: string) => ({

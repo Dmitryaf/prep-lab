@@ -3,19 +3,19 @@ import { storeToRefs } from "pinia";
 
 import { computed, ref, onMounted, onUnmounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { usePreparation } from "../entities/preparation/model/store.ts";
-import { useSettings } from "../entities/preparation/model/settings.ts";
+import { usePreparation } from "#ui/entities/preparation/model/store.ts";
+import { useSettings } from "#ui/entities/preparation/model/settings.ts";
 const instanceSettings = useSettings();
 const { loadError, sessions, ready, saving } = storeToRefs(usePreparation());
-import { useNotices } from "../shared/model/notices.ts";
+import { useNotices } from "#ui/shared/model/notices.ts";
 const { message } = storeToRefs(useNotices());
-import { useMaterials } from "../entities/material/model/store.ts";
+import { useMaterials } from "#ui/entities/material/model/store.ts";
 const { unavailable, knowledge } = storeToRefs(useMaterials());
 const { fetchKnowledge } = useMaterials();
-import { useQuestions } from "../entities/question/model/store.ts";
+import { useQuestions } from "#ui/entities/question/model/store.ts";
 const { weakQuestions, questions } = storeToRefs(useQuestions());
 
-import { useProjectCatalog } from "../entities/project/model/catalog.ts";
+import { useProjectCatalog } from "#ui/entities/project/model/catalog.ts";
 const projectCatalog = useProjectCatalog();
 const {
   topics,
@@ -23,9 +23,9 @@ const {
   ready: projectsReady,
   error: projectError,
 } = storeToRefs(projectCatalog);
-import { link } from "../shared/lib/navigation.ts";
-import QuestionList from "../entities/question/ui/QuestionList.vue";
-import PageHeading from "../shared/ui/PageHeading.vue";
+import { link } from "#ui/shared/lib/navigation.ts";
+import QuestionList from "#ui/entities/question/ui/QuestionList.vue";
+import PageHeading from "#ui/shared/ui/PageHeading.vue";
 const route = useRoute(),
   search = ref(""),
   searchInput = ref<HTMLInputElement>();

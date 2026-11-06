@@ -1,10 +1,10 @@
-import { test, expect } from "../helpers/browser.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
 import {
   readProgress,
   restoreProgressFixture,
-} from "../helpers/browser-progress.ts";
-import { createSession } from "../../domain/interview/selection.ts";
-import type { Question } from "../../domain/knowledge/question.ts";
+} from "#tests/helpers/browser-progress.ts";
+import { createSession } from "#domain/interview/selection.ts";
+import type { Question } from "#domain/knowledge/question.ts";
 
 test.use({ appOptions: { projectPackageRoot: null } });
 

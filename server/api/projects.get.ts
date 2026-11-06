@@ -1,6 +1,6 @@
 import { createError, defineEventHandler } from "nuxt/server";
-import { readProjectCatalog } from "../infrastructure/projects/catalog.ts";
-import { getReviewedProjects } from "../infrastructure/storage/runtime.ts";
+import { readProjectCatalog } from "#server/infrastructure/projects/catalog.ts";
+import { getReviewedProjects } from "#server/infrastructure/storage/runtime.ts";
 export default defineEventHandler(() => {
   try {
     return getReviewedProjects().catalog(readProjectCatalog());

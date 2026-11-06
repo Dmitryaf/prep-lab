@@ -2,24 +2,24 @@ import { randomUUID } from "node:crypto";
 import {
   documentInputSchema,
   type SourceDocumentInput,
-} from "../../domain/source/contracts.ts";
+} from "#domain/source/contracts.ts";
 import {
   acceptSourceSchema,
   type AcceptSource,
   type SourcePreview,
   type AcceptedSource,
-} from "../../domain/source/preview.ts";
-import { planSourceUpdate } from "../../domain/source/update.ts";
-import { resolveSourcePlan } from "../../domain/source/resolve.ts";
-import { compileSourceDocument } from "../../domain/source/compile.ts";
+} from "#domain/source/preview.ts";
+import { planSourceUpdate } from "#domain/source/update.ts";
+import { resolveSourcePlan } from "#domain/source/resolve.ts";
+import { compileSourceDocument } from "#domain/source/compile.ts";
 import {
   sourceKnowledge,
   validateSourceLinks,
-} from "../../domain/source/knowledge.ts";
-import { sourceMetadata } from "../../domain/source/metadata.ts";
-import type { Knowledge } from "../../domain/knowledge/material.ts";
-import { SourceRepository } from "../infrastructure/storage/sources.ts";
-import { RevisionConflict } from "../infrastructure/storage/preparation.ts";
+} from "#domain/source/knowledge.ts";
+import { sourceMetadata } from "#domain/source/metadata.ts";
+import type { Knowledge } from "#domain/knowledge/material.ts";
+import { SourceRepository } from "#server/infrastructure/storage/sources.ts";
+import { RevisionConflict } from "#server/infrastructure/storage/preparation.ts";
 
 export class SourceService {
   readonly repository: SourceRepository;

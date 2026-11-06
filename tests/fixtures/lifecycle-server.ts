@@ -1,5 +1,5 @@
 import type { AddressInfo } from "node:net";
-import { createDevelopmentServer } from "../../scripts/dev.ts";
+import { createDevelopmentServer } from "#scripts/dev.ts";
 const server = await createDevelopmentServer({
   port: 0,
   databasePath: ":memory:",

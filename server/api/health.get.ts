@@ -1,5 +1,5 @@
 import { defineEventHandler } from "nuxt/server";
-import { workspaceId } from "../infrastructure/workspace.ts";
+import { workspaceId } from "#server/infrastructure/workspace.ts";
 export default defineEventHandler(() => ({
   application: "projects-map",
   workspace: workspaceId,

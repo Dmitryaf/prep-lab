@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { openDatabase } from "../server/infrastructure/storage/database.ts";
-import { SettingsRepository } from "../server/infrastructure/storage/settings.ts";
-import { RevisionConflict } from "../server/infrastructure/storage/preparation.ts";
+import { openDatabase } from "#server/infrastructure/storage/database.ts";
+import { SettingsRepository } from "#server/infrastructure/storage/settings.ts";
+import { RevisionConflict } from "#server/infrastructure/storage/preparation.ts";
 
 test("settings migration is one-time; conflicts and failed transactions preserve the accepted value", () => {
   const database = openDatabase(":memory:"),

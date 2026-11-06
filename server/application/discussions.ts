@@ -1,10 +1,10 @@
-import { createStudyChat } from "../study-chat.ts";
+import { createStudyChat } from "#server/study-chat.ts";
 import {
   getDiscussions,
   getPrompts,
   getSettings,
-} from "../infrastructure/storage/runtime.ts";
-import { readBundledPrompts } from "../infrastructure/prompts/bundled.ts";
+} from "#server/infrastructure/storage/runtime.ts";
+import { readBundledPrompts } from "#server/infrastructure/prompts/bundled.ts";
 import { discussionPrompt } from "./discussion-prompt.ts";
 
 // A single active transport/history owner per Nitro process.

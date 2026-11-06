@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { ProjectDraft } from "../../../../domain/projects/draft.ts";
-import type { PromptInput } from "../../../../domain/prompts/contracts.ts";
+import type { ProjectDraft } from "#domain/projects/draft.ts";
+import type { PromptInput } from "#domain/prompts/contracts.ts";
 const draft = defineModel<ProjectDraft>({ required: true });
 defineProps<{ disabled: boolean; materials: PromptInput["materials"] }>();
 function mechanism(index: number, event: Event) {

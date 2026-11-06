@@ -1,6 +1,10 @@
 import { projectDraftSchema, type ProjectDraft } from "./draft.ts";
-import { projectCatalogSchema, emptyProjectCatalog } from "./catalog.ts";
-import type { PromptInput } from "../prompts/contracts.ts";
+import {
+  projectCatalogSchema,
+  emptyProjectCatalog,
+  type ProjectCatalog,
+} from "./catalog.ts";
+import type { PromptInput } from "#domain/prompts/contracts.ts";
 
 export function validateProjectEvidence(
   input: ProjectDraft,
@@ -28,17 +32,47 @@ export function validateProjectEvidence(
       )
         throw new Error("Ссылка на код выходит за переданный фрагмент.");
     }
+  if (
+    draft.map?.nodes.some((node) =>
+      node.topicIndexes.some((index) => index >= draft.topics.length),
+    )
+  )
+    throw new Error("Карта ссылается на неизвестную тему.");
   return draft;
 }
 export function projectFromDraft(
   input: ProjectDraft,
   context: PromptInput,
   makeId: () => string,
+  previous?: { id: string; catalog: ProjectCatalog },
 ) {
   const draft = validateProjectEvidence(input, context),
     catalog = emptyProjectCatalog(),
-    id = `review-${makeId()}`;
-  const topicIds = draft.topics.map(() => `topic-${makeId()}`);
+    id = previous?.id || `review-${makeId()}`;
+  const priorTopics =
+    previous?.catalog.topics.filter((topic) => topic.project === id) || [];
+  const priorFor = (topic: ProjectDraft["topics"][number]) =>
+    priorTopics.find((old) =>
+      topic.previousTopicId
+        ? old.id === topic.previousTopicId
+        : old.title === topic.title,
+    );
+  for (const topic of draft.topics)
+    if (topic.previousTopicId && !priorFor(topic))
+      throw new Error("Неизвестная прежняя тема.");
+  for (const topic of draft.topics)
+    for (const question of topic.questions) {
+      if (
+        question.previousQuestionId &&
+        !priorFor(topic)?.pilot.questions.some(
+          (old) => old.id === question.previousQuestionId,
+        )
+      )
+        throw new Error("Неизвестный прежний вопрос.");
+    }
+  const topicIds = draft.topics.map(
+    (topic) => priorFor(topic)?.id || `topic-${makeId()}`,
+  );
   const confirmed = draft.roleFacts.map((fact) => fact.text).join("\n");
   catalog.projects[id] = {
     id,
@@ -49,7 +83,21 @@ export function projectFromDraft(
     repo: id,
     branch: "",
     color: "#2266aa",
-    stack: [context.profile === "vue" ? "Vue" : "React"],
+    stack: draft.stack ||
+      previous?.catalog.projects[id]?.stack || [
+        context.profile === "vue" ? "Vue" : "React",
+      ],
+    ...(draft.map
+      ? {
+          map: {
+            nodes: draft.map.nodes.map(({ topicIndexes, ...node }) => ({
+              ...node,
+              topicIds: topicIndexes.map((index) => topicIds[index]),
+            })),
+            edges: draft.map.edges,
+          },
+        }
+      : {}),
     routes: [
       {
         id: `route-${id}`,
@@ -116,7 +164,12 @@ export function projectFromDraft(
         },
         study: [],
         questions: topic.questions.map((question) => ({
-          id: `question-${makeId()}`,
+          id:
+            priorFor(topic)?.pilot.questions.find((old) =>
+              question.previousQuestionId
+                ? old.id === question.previousQuestionId
+                : old.question === question.question,
+            )?.id || `question-${makeId()}`,
           question: question.question,
           short: question.answer,
           criteria: question.criteria,
@@ -131,6 +184,26 @@ export function projectFromDraft(
       },
     };
   });
+  for (const topic of catalog.topics) {
+    const old = priorTopics.find((item) => item.id === topic.id);
+    if (old)
+      topic.pilot.questions.push(
+        ...old.pilot.questions.filter(
+          (q) => !topic.pilot.questions.some((next) => next.id === q.id),
+        ),
+      );
+  }
+  catalog.topics.push(
+    ...priorTopics.filter((topic) => !topicIds.includes(topic.id)),
+  );
+  const questionIds = catalog.topics.flatMap((topic) =>
+    topic.pilot.questions.map((question) => question.id),
+  );
+  if (new Set(questionIds).size !== questionIds.length)
+    throw new Error("Повторяются ID вопросов проекта.");
+  catalog.projects[id].routes[0].nodes = catalog.topics.map(
+    (topic) => topic.id,
+  );
   catalog.experience[id] = {
     kind: "personal",
   };

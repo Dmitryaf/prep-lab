@@ -1,12 +1,12 @@
 import { resolve } from "node:path";
-import { test, expect } from "../helpers/browser.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
 import {
   readProgress,
   restoreProgressFixture,
-} from "../helpers/browser-progress.ts";
-import { loadState } from "../../domain/interview/saved-state.ts";
-import { createSession } from "../../domain/interview/selection.ts";
-import { loadCommonKnowledge } from "../../server/infrastructure/knowledge/common.ts";
+} from "#tests/helpers/browser-progress.ts";
+import { loadState } from "#domain/interview/saved-state.ts";
+import { createSession } from "#domain/interview/selection.ts";
+import { loadCommonKnowledge } from "#server/infrastructure/knowledge/common.ts";
 
 test.use({
   appOptions: {

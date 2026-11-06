@@ -4,7 +4,7 @@ import {
   promptSaveSchema,
   promptStateSchema,
   type PromptTemplate,
-} from "../../../domain/prompts/contracts.ts";
+} from "#domain/prompts/contracts.ts";
 import { RevisionConflict } from "./preparation.ts";
 const savedSchema = z.strictObject({
   text: z.string().nullable(),

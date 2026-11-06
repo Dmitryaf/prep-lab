@@ -6,4 +6,4 @@ export {
   stripFrontmatter,
   headings,
   extractQuestions,
-} from "../domain/knowledge/markdown.ts";
+} from "#domain/knowledge/markdown.ts";

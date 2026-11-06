@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { Topic, Project } from "./types.ts";
+import { projectMapSchema } from "./map.ts";
 
 const codeStep = z.looseObject({
   project: z.string(),
@@ -70,6 +71,8 @@ export const topicSchema: z.ZodType<Topic> = z.looseObject({
     .optional(),
 });
 const project: z.ZodType<Project> = z.object({
+  map: projectMapSchema.optional(),
+  structure: projectMapSchema.optional(),
   id: z.string(),
   name: z.string(),
   subtitle: z.string(),

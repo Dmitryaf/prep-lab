@@ -1,7 +1,19 @@
 import { defineNuxtConfig } from "nuxt/config";
 import { resolve } from "node:path";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+const { imports: moduleImports } = JSON.parse(
+  readFileSync(new URL("./package.json", import.meta.url), "utf8"),
+) as { imports: Record<string, string> };
 
 export default defineNuxtConfig({
+  alias: Object.fromEntries(
+    Object.entries(moduleImports).map(([name, target]) => [
+      name.replace(/\/\*$/, ""),
+      fileURLToPath(new URL(target.replace(/\/\*$/, ""), import.meta.url)),
+    ]),
+  ),
   ssr: false,
   devtools: { enabled: false },
   telemetry: false,

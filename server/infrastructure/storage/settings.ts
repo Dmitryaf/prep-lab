@@ -2,7 +2,7 @@ import type Database from "better-sqlite3";
 import {
   settingsEnvelopeSchema,
   instanceSettingsSchema,
-} from "../../../domain/instance/contracts.ts";
+} from "#domain/instance/contracts.ts";
 import { RevisionConflict } from "./preparation.ts";
 
 export class SettingsRepository {

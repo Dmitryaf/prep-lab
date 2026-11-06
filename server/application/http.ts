@@ -4,37 +4,40 @@ import { createHash } from "node:crypto";
 import { readFileSync, realpathSync, statSync } from "node:fs";
 import { resolve, sep, extname } from "node:path";
 import { readKnowledge } from "./knowledge.ts";
-import { createStudyChat } from "../study-chat.ts";
-import { workspaceId } from "../infrastructure/workspace.ts";
-import { createLifecycle } from "../lifecycle.ts";
-import type { StudyChatOptions } from "../types.ts";
-import type { LifecycleOptions } from "../lifecycle.ts";
-import { openDatabase } from "../infrastructure/storage/database.ts";
-import { PreparationRepository } from "../infrastructure/storage/preparation.ts";
-import { handlePreparation } from "../infrastructure/http/preparation.ts";
-import { DiscussionRepository } from "../infrastructure/storage/discussions.ts";
-import { SettingsRepository } from "../infrastructure/storage/settings.ts";
-import { SourceRepository } from "../infrastructure/storage/sources.ts";
-import { sourceKnowledge } from "../../domain/source/knowledge.ts";
-import { handleSources } from "../infrastructure/http/sources.ts";
-import { PromptRepository } from "../infrastructure/storage/prompts.ts";
-import { handlePrompts } from "../infrastructure/http/prompts.ts";
-import { readPromptTemplates } from "../infrastructure/prompts/templates.ts";
+import { createStudyChat } from "#server/study-chat.ts";
+import { workspaceId } from "#server/infrastructure/workspace.ts";
+import { createLifecycle } from "#server/lifecycle.ts";
+import type { StudyChatOptions } from "#server/types.ts";
+import type { LifecycleOptions } from "#server/lifecycle.ts";
+import { openDatabase } from "#server/infrastructure/storage/database.ts";
+import { PreparationRepository } from "#server/infrastructure/storage/preparation.ts";
+import { handlePreparation } from "#server/infrastructure/http/preparation.ts";
+import { DiscussionRepository } from "#server/infrastructure/storage/discussions.ts";
+import { SettingsRepository } from "#server/infrastructure/storage/settings.ts";
+import { SourceRepository } from "#server/infrastructure/storage/sources.ts";
+import { sourceKnowledge } from "#domain/source/knowledge.ts";
+import { handleSources } from "#server/infrastructure/http/sources.ts";
+import { PromptRepository } from "#server/infrastructure/storage/prompts.ts";
+import { handlePrompts } from "#server/infrastructure/http/prompts.ts";
+import { readPromptTemplates } from "#server/infrastructure/prompts/templates.ts";
 import { GenerationService } from "./generations.ts";
-import { GenerationRepository } from "../infrastructure/storage/generations.ts";
-import { ProjectRepository } from "../infrastructure/storage/reviewed-projects.ts";
+import { GenerationRepository } from "#server/infrastructure/storage/generations.ts";
+import { ProjectRepository } from "#server/infrastructure/storage/reviewed-projects.ts";
 import { SourceService } from "./sources.ts";
-import { handleGenerations } from "../infrastructure/http/generations.ts";
-import { answerWithCodex } from "../codex.ts";
-import type { Answer } from "../types.ts";
+import { handleGenerations } from "#server/infrastructure/http/generations.ts";
+import { answerWithCodex } from "#server/codex.ts";
+import { AnalysisService } from "./analysis.ts";
+import { AnalysisRepository } from "#server/infrastructure/storage/analyses.ts";
+import { handleAnalysis } from "#server/infrastructure/http/analysis.ts";
+import type { Answer } from "#server/types.ts";
 import { discussionPrompt } from "./discussion-prompt.ts";
-import { handleConnection } from "../infrastructure/http/connection.ts";
-import { CredentialStore } from "../infrastructure/codex/credentials.ts";
-import { handleSettings } from "../infrastructure/http/settings.ts";
+import { handleConnection } from "#server/infrastructure/http/connection.ts";
+import { CredentialStore } from "#server/infrastructure/codex/credentials.ts";
+import { handleSettings } from "#server/infrastructure/http/settings.ts";
 import {
   readProjectCatalog,
   ownerPackagePath,
-} from "../infrastructure/projects/catalog.ts";
+} from "#server/infrastructure/projects/catalog.ts";
 export interface ServerOptions {
   credentialDirectory?: string;
   generationAnswer?: Answer;
@@ -81,6 +84,18 @@ export function createHttpService({
   const sources = new SourceRepository(database);
   const prompts = new PromptRepository(database);
   const reviewedProjects = new ProjectRepository(database);
+  const analysisRepository = new AnalysisRepository(database);
+  const analyses = new AnalysisService({
+    repository: analysisRepository,
+    knowledge: async () =>
+      analysisRepository.knowledge(
+        sourceKnowledge(
+          await readKnowledge({ knowledgeRoot, projectPackageRoot }),
+          sources.snapshot().sources,
+        ),
+      ),
+    answer: generationAnswer,
+  });
   const generations = new GenerationService({
     repository: new GenerationRepository(database),
     projects: reviewedProjects,
@@ -113,6 +128,12 @@ export function createHttpService({
     }
     if (await handlePreparation(req, res, preparation)) return;
     if (await handleSettings(req, res, settings)) return;
+    if (
+      await handleAnalysis(req, res, analyses, () =>
+        sources.roots().map((root) => root.path),
+      )
+    )
+      return;
     if (
       await handleSources(req, res, sources, () =>
         readKnowledge({ knowledgeRoot, projectPackageRoot }),
@@ -168,9 +189,11 @@ export function createHttpService({
         let body;
         let status = 200;
         try {
-          body = sourceKnowledge(
-            await readKnowledge({ knowledgeRoot, projectPackageRoot }),
-            sources.snapshot().sources,
+          body = analysisRepository.knowledge(
+            sourceKnowledge(
+              await readKnowledge({ knowledgeRoot, projectPackageRoot }),
+              sources.snapshot().sources,
+            ),
           );
         } catch {
           status = 503;
@@ -252,6 +275,7 @@ export function createHttpService({
       lifecycle?.dispose();
       await chat.close();
       await generations.close();
+      await analyses.close();
       if (database.open) database.close();
     },
   };

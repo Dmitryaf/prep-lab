@@ -1,16 +1,16 @@
-import type { Knowledge } from "../domain/knowledge/material.ts";
-import type { Topic } from "../domain/projects/types.ts";
+import type { Knowledge } from "#domain/knowledge/material.ts";
+import type { Topic } from "#domain/projects/types.ts";
 import assert from "node:assert/strict";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
 import { loadKnowledge, headings } from "./knowledge.ts";
-import { topics } from "../server/infrastructure/projects/owner.ts";
-import { projectQuestions } from "../app/entities/project/model/questions.ts";
-import { loadCommonKnowledge } from "../server/infrastructure/knowledge/common.ts";
-import { ownerCatalog } from "../server/infrastructure/projects/owner.ts";
-import { ownerPackagePath } from "../server/infrastructure/projects/catalog.ts";
-import type { ProjectCatalog } from "../domain/projects/catalog.ts";
+import { topics } from "#server/infrastructure/projects/owner.ts";
+import { projectQuestions } from "#ui/entities/project/model/questions.ts";
+import { loadCommonKnowledge } from "#server/infrastructure/knowledge/common.ts";
+import { ownerCatalog } from "#server/infrastructure/projects/owner.ts";
+import { ownerPackagePath } from "#server/infrastructure/projects/catalog.ts";
+import type { ProjectCatalog } from "#domain/projects/catalog.ts";
 
 interface ValidationBank {
   notes: Pick<Knowledge["notes"][number], "id" | "markdown" | "category">[];

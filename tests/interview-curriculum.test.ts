@@ -1,5 +1,5 @@
 import { required } from "./helpers/values.ts";
-import type { Interview } from "../domain/interview/state.ts";
+import type { Interview } from "#domain/interview/state.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { resolve } from "node:path";
@@ -8,11 +8,11 @@ import {
   projects as ownerProjects,
   ownerAvailable,
 } from "./helpers/owner-package.ts";
-import { ownerCatalog } from "../server/infrastructure/projects/owner.ts";
-import { ownerPackagePath } from "../server/infrastructure/projects/catalog.ts";
-import { loadCommonKnowledge } from "../server/infrastructure/knowledge/common.ts";
-import { projectQuestions } from "../app/entities/project/model/questions.ts";
-import { loadKnowledge } from "../server/knowledge.ts";
+import { ownerCatalog } from "#server/infrastructure/projects/owner.ts";
+import { ownerPackagePath } from "#server/infrastructure/projects/catalog.ts";
+import { loadCommonKnowledge } from "#server/infrastructure/knowledge/common.ts";
+import { projectQuestions } from "#ui/entities/project/model/questions.ts";
+import { loadKnowledge } from "#server/knowledge.ts";
 import {
   selectInterview,
   dailySession,
@@ -21,7 +21,7 @@ import {
   exportState,
   importState,
   rateQuestion,
-} from "../domain/interview/engine.ts";
+} from "#domain/interview/engine.ts";
 const knowledge = ownerAvailable
   ? loadKnowledge(resolve(ownerPackagePath(), "knowledge"))
   : loadCommonKnowledge();

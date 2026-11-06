@@ -4,13 +4,13 @@ import {
   loadState,
   validateState,
   importState,
-} from "../domain/interview/saved-state.ts";
-import { mergeLegacyState } from "../domain/interview/migration.ts";
-import { openDatabase } from "../server/infrastructure/storage/database.ts";
+} from "#domain/interview/saved-state.ts";
+import { mergeLegacyState } from "#domain/interview/migration.ts";
+import { openDatabase } from "#server/infrastructure/storage/database.ts";
 import {
   PreparationRepository,
   RevisionConflict,
-} from "../server/infrastructure/storage/preparation.ts";
+} from "#server/infrastructure/storage/preparation.ts";
 
 const empty = () => loadState({ getItem: () => null });
 const draft = {

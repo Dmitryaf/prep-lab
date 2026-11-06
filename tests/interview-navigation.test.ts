@@ -1,4 +1,4 @@
-import type { Interview } from "../domain/interview/state.ts";
+import type { Interview } from "#domain/interview/state.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -10,7 +10,7 @@ import {
   loadState,
   saveState,
   storageKey,
-} from "../domain/interview/engine.ts";
+} from "#domain/interview/engine.ts";
 
 const session = (kind: Interview["kind"]): Interview => ({
   id: kind === "daily" ? "daily:2026-11-03" : "full:test",

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { legacyLocation } from "../app/shared/lib/navigation.ts";
+import { legacyLocation } from "#ui/shared/lib/navigation.ts";
 
 test("legacy links work before and after hash-history slash normalization", () => {
   const query = new URLSearchParams({

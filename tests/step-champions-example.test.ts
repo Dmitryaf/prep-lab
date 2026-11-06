@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import vm from "node:vm";
-import { loadCommonKnowledge } from "../server/infrastructure/knowledge/common.ts";
+import { loadCommonKnowledge } from "#server/infrastructure/knowledge/common.ts";
 
 function solution() {
   const question = loadCommonKnowledge().questions.find(

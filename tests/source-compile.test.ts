@@ -1,8 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { compileSourceDocument } from "../domain/source/compile.ts";
-import type { SourceDocument } from "../domain/source/contracts.ts";
-import { supportsQuestion } from "../domain/knowledge/profile.ts";
+import { compileSourceDocument } from "#domain/source/compile.ts";
+import type { SourceDocument } from "#domain/source/contracts.ts";
+import { supportsQuestion } from "#domain/knowledge/profile.ts";
 
 const markdown =
   "---\ntitle: Проверка входа\naliases: [Граница API]\nfrontendLab:\n  category: TypeScript\n---\n# Проверка входа\n\n## Что проверяет TypeScript?\n\n**Критерии ответа:** Различаю статическую проверку и проверку входа при выполнении.\n\n> [!answer]- Ответ\n> TypeScript проверяет типы до выполнения. Для внешних данных нужна отдельная проверка значений.\n";

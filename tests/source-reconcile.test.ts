@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { reconcileText } from "../domain/source/reconcile.ts";
+import { reconcileText } from "#domain/source/reconcile.ts";
 test("an external update cannot silently replace a manual edit", () => {
   assert.deepEqual(
     reconcileText(

@@ -1,9 +1,9 @@
-import { ownerAvailable } from "../helpers/owner-package.ts";
-import { readProgress } from "../helpers/browser-progress.ts";
-import { test, expect } from "../helpers/browser.ts";
+import { ownerAvailable } from "#tests/helpers/owner-package.ts";
+import { readProgress } from "#tests/helpers/browser-progress.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
 import { mkdir } from "node:fs/promises";
-import { restoreProgressFixture } from "../helpers/browser-progress.ts";
-import { topics, projects } from "../helpers/owner-package.ts";
+import { restoreProgressFixture } from "#tests/helpers/browser-progress.ts";
+import { topics, projects } from "#tests/helpers/owner-package.ts";
 
 test("projects", async ({
   app: { base },
@@ -25,6 +25,7 @@ test("projects", async ({
   await mkdir("artifacts/vue-migration", { recursive: true });
 
   await page.goto(base + "/?projects=1");
+  await page.locator('[data-mode="topics"]').click();
   await page.locator(".topic-row").first().waitFor();
   await expect(page.locator("iframe")).toHaveCount(0);
   const v1 = { "tr-purpose": { status: "done" as const, updatedAt: "old" } };
@@ -33,6 +34,7 @@ test("projects", async ({
     v1,
   );
   await page.reload();
+  await page.locator('[data-mode="topics"]').click();
   await page.getByRole("button", { name: /Inbox Point.*тем/ }).click();
   await page.locator("#inlineSearch").fill("React");
   expect((await page.locator(".topic-row").count()) > 0).toBeTruthy();

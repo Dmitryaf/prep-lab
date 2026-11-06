@@ -6,9 +6,9 @@ import {
   lstatSync,
 } from "node:fs";
 import { resolve, sep } from "node:path";
-import type { Knowledge } from "../../../domain/knowledge/material.ts";
-import { categoryFor } from "../../../domain/knowledge/markdown.ts";
-import { compileKnowledge } from "../../../domain/knowledge/catalog.ts";
+import type { Knowledge } from "#domain/knowledge/material.ts";
+import { categoryFor } from "#domain/knowledge/markdown.ts";
+import { compileKnowledge } from "#domain/knowledge/catalog.ts";
 const folders = [
   "Собеседования/Темы",
   "Собеседования/Практика",

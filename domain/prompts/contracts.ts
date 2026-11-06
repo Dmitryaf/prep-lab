@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { documentInputSchema } from "../source/contracts.ts";
+import { documentInputSchema } from "#domain/source/contracts.ts";
 export const promptIdSchema = z.enum(["import", "project", "discussion"]);
 export type PromptId = z.infer<typeof promptIdSchema>;
 export const promptTemplateSchema = z.strictObject({

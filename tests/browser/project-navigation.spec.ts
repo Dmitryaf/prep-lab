@@ -1,5 +1,5 @@
-import { ownerAvailable } from "../helpers/owner-package.ts";
-import { test, expect } from "../helpers/browser.ts";
+import { ownerAvailable } from "#tests/helpers/owner-package.ts";
+import { test, expect } from "#tests/helpers/browser.ts";
 import { mkdirSync } from "node:fs";
 
 test("project navigation", async ({
@@ -23,6 +23,7 @@ test("project navigation", async ({
   }
 
   await page.goto(base + "/#/projects");
+  await page.locator('[data-mode="topics"]').click();
   await page.locator(".topic-row").first().waitFor();
   await page.screenshot({
     path: "artifacts/ui-refresh/projects-desktop.png",
@@ -117,6 +118,7 @@ test("project navigation", async ({
   });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(base + "/#/projects");
+  await page.locator('[data-mode="topics"]').click();
   await page.locator(".topic-row").last().click();
   await visibleTitle();
   expect(

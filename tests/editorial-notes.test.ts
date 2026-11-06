@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { headingId, renderMarkdown } from "../domain/knowledge/rendering.ts";
-import { cleanEditorialNotes } from "../domain/knowledge/editorial-notes.ts";
+import { headingId, renderMarkdown } from "#domain/knowledge/rendering.ts";
+import { cleanEditorialNotes } from "#domain/knowledge/editorial-notes.ts";
 
 test("legacy notes hide source metadata and retired-case editorial notices", () => {
   const html = renderMarkdown(`### Таблица

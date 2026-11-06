@@ -2,9 +2,9 @@ import type Database from "better-sqlite3";
 import {
   generationSchema,
   type Generation,
-} from "../../../domain/generation/contracts.ts";
+} from "#domain/generation/contracts.ts";
 import { RevisionConflict } from "./preparation.ts";
-import type { SourcePreview } from "../../../domain/source/preview.ts";
+import type { SourcePreview } from "#domain/source/preview.ts";
 export class GenerationRepository {
   private readonly database: Database.Database;
   constructor(database: Database.Database) {

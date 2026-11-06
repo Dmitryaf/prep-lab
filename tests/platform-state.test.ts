@@ -1,5 +1,5 @@
-import type { Interview } from "../domain/interview/state.ts";
-import type { Question } from "../domain/knowledge/question.ts";
+import type { Interview } from "#domain/interview/state.ts";
+import type { Question } from "#domain/knowledge/question.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -16,7 +16,7 @@ import {
   availableFollowups,
   openFollowup,
   advanceQuestion,
-} from "../domain/interview/engine.ts";
+} from "#domain/interview/engine.ts";
 const memory = () => {
   const data = new Map<string, string>();
   return {
