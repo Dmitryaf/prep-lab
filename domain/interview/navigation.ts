@@ -12,12 +12,9 @@ export function availableFollowups(session: Interview) {
   if (session.finished) return [];
   const id = session.questionIds[session.index],
     used = usedFollowups(session);
-  const question = session.snapshots[id],
-    attempt = session.attempts?.[id];
+  const question = session.snapshots[id];
   const stagedCoding =
     question?.roundFormat === "coding" && question.codingRole;
-  if (stagedCoding && !attempt?.text.trim() && !attempt?.solutionUrl.trim())
-    return [];
   if (!stagedCoding && used.length >= (session.kind === "daily" ? 1 : 2))
     return [];
   return (session.snapshots[id]?.followups || [])
@@ -34,12 +31,10 @@ export function availableFollowups(session: Interview) {
 }
 export function openFollowup(session: Interview, selectedIndex?: number) {
   const id = session.questionIds[session.index],
-    question = session.snapshots[id],
-    attempt = session.attempts?.[id];
+    question = session.snapshots[id];
   const selectable =
     question?.roundFormat === "coding" &&
     question.codingRole &&
-    (attempt?.text.trim() || attempt?.solutionUrl.trim()) &&
     !session.finished;
   const index =
     selectedIndex === undefined

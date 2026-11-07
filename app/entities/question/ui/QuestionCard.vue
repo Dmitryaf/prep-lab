@@ -40,7 +40,7 @@ const stage = computed(() =>
     </div>
     <template v-if="followup"
       ><p>{{ question.title }}</p>
-      <h2>{{ question.followups?.[followup - 1] }}</h2>
+      <h2 tabindex="-1">{{ question.followups?.[followup - 1] }}</h2>
       <MarkdownContent
         v-if="stage?.prompt"
         :text="
@@ -52,7 +52,7 @@ const stage = computed(() =>
       />
     </template>
     <template v-else
-      ><h2>{{ question.title }}</h2>
+      ><h2 tabindex="-1">{{ question.title }}</h2>
       <MarkdownContent
         v-if="question.prompt && question.prompt !== question.title"
         :text="

@@ -159,6 +159,10 @@ export function useProjectBrowser() {
     revealed.value = false;
     void router.replace("/projects");
   }
+  function reviewPrevious() {
+    reviewIndex.value = Math.max(0, reviewIndex.value - 1);
+    revealed.value = false;
+  }
   function reviewNext() {
     reviewIndex.value++;
     revealed.value = false;
@@ -199,5 +203,6 @@ export function useProjectBrowser() {
     reviewQuestion,
     selectProject,
     reviewNext,
+    reviewPrevious,
   };
 }

@@ -11,7 +11,6 @@ const { projectCards } = storeToRefs(useQuestions());
 const { questionById } = useQuestions();
 import PageHeading from "#ui/shared/ui/PageHeading.vue";
 import QuestionCard from "#ui/features/study-discussion/index.ts";
-import AnswerAttempt from "#ui/features/answer-attempt/index.ts";
 import RatingButtons from "#ui/features/manage-repeat/index.ts";
 import StudyLinks from "#ui/entities/question/ui/StudyLinks.vue";
 const route = useRoute(),
@@ -92,18 +91,41 @@ const current = computed(() =>
     : list.value[index.value % Math.max(1, list.value.length)],
 );
 function changeFilter() {
+  history.value = [];
   index.value = 0;
   revealed.value = false;
   if (route.query.question) void router.replace(practiceLocation.value);
 }
-function next(random = false) {
+const position = computed(() =>
+  route.query.question
+    ? list.value.findIndex((q) => q.id === selected.value?.id)
+    : index.value % Math.max(1, list.value.length),
+);
+const history = ref<number[]>([]);
+watch(
+  () => list.value.map((q) => q.id).join("\n"),
+  () => {
+    history.value = [];
+  },
+);
+const canPrevious = computed(
+  () => history.value.length > 0 || position.value > 0,
+);
+function moveTo(value: number) {
   revealed.value = false;
-  index.value = random
-    ? Math.floor(Math.random() * Math.max(1, list.value.length))
-    : route.query.question
-      ? list.value.findIndex((q) => q.id === selected.value?.id) + 1
-      : index.value + 1;
+  index.value = value;
   if (route.query.question) void router.push(practiceLocation.value);
+}
+function previous() {
+  moveTo(history.value.pop() ?? Math.max(0, position.value - 1));
+}
+function next(random = false) {
+  const count = list.value.length;
+  if (!count) return;
+  history.value.push(position.value);
+  const step =
+    random && count > 1 ? 1 + Math.floor(Math.random() * (count - 1)) : 1;
+  moveTo((position.value + step) % count);
 }
 </script>
 <template>
@@ -158,12 +180,16 @@ function next(random = false) {
           : `${(index % list.length) + 1} из ${list.length}`
       }}
     </div>
-    <QuestionCard :key="current.id" :question="current" :revealed="revealed">
-      <AnswerAttempt :key="current.id + ':attempt'" :question-id="current.id" />
-    </QuestionCard>
-    <div class="platform-actions">
+    <div class="platform-actions question-navigation">
       <button
-        v-if="!revealed"
+        data-action="previous-question"
+        :disabled="!canPrevious"
+        @click="previous"
+      >
+        ← Предыдущий вопрос
+      </button>
+      <button
+        :disabled="revealed"
         class="primary"
         data-action="reveal"
         @click="revealed = true"
@@ -179,10 +205,12 @@ function next(random = false) {
         Случайный вопрос
       </button>
     </div>
-    <template v-if="revealed"
-      ><RatingButtons :id="current.id" /><StudyLinks
-        :question="current" /></template
-  ></template>
+    <QuestionCard :question="current" :revealed="revealed">
+      <template v-if="revealed"
+        ><RatingButtons :id="current.id" /><StudyLinks :question="current"
+      /></template>
+    </QuestionCard>
+  </template>
   <div v-else class="platform-card">
     <p>
       {{

@@ -5,6 +5,7 @@ import {
   type ProjectCatalog,
 } from "./catalog.ts";
 import type { PromptInput } from "#domain/prompts/contracts.ts";
+import { codePreview } from "./code.ts";
 
 export function validateProjectEvidence(
   input: ProjectDraft,
@@ -119,14 +120,12 @@ export function projectFromDraft(
         line: reference.startLine,
         symbol: `${reference.startLine}–${reference.endLine}`,
         title: material.path,
-        explanation:
-          reference.explanation +
-          "\n\nПереданный фрагмент:\n\n```text\n" +
-          material.text
-            .split(/\r?\n/)
-            .slice(reference.startLine - 1, reference.endLine)
-            .join("\n") +
-          "\n```",
+        explanation: reference.explanation,
+        preview: codePreview(
+          material.text,
+          reference.startLine,
+          reference.endLine,
+        ),
       };
     });
     return {

@@ -1,4 +1,7 @@
 /* Study workspace: quiet navigation chrome and a separate reading surface. */
+html {
+  scrollbar-gutter: stable;
+}
 body.platform {
   --paper: #ffffff;
   --surface: #f6f8fc;

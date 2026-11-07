@@ -114,19 +114,19 @@ test("a sparse coding bank keeps roles and never pads with advanced or theory", 
   );
 });
 
-test("staged coding extensions require a saved nonempty attempt but never block completion", () => {
+test("staged coding extensions are available without an attempt and preserve historical answers", () => {
   const question = {
     ...task("code", "main"),
     followups: ["Добавьте отмену", "Добавьте кэш"],
   };
   const session = createSession([question], "full", {}, "vue", "coding");
-  assert.deepEqual(availableFollowups(session), []);
-  assert.equal(openFollowup(session), session);
+  assert.deepEqual(availableFollowups(session), [0, 1]);
+  assert.equal(openFollowup(session).followupIndex, 1);
   const empty = {
     ...session,
     attempts: { code: { text: "  ", solutionUrl: "", updatedAt: "today" } },
   };
-  assert.deepEqual(availableFollowups(empty), []);
+  assert.deepEqual(availableFollowups(empty), [0, 1]);
   const answered = {
     ...empty,
     attempts: { code: { ...empty.attempts.code, text: "Моё решение" } },

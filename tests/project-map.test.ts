@@ -335,5 +335,23 @@ test("eight responsibility blocks fit the overview and connections stay between 
   );
   assert(layout.height <= 560);
   assert(layout.nodes.every((node) => node.y + 84 <= 560));
-  assert.match(layout.edges[0].path, /M 244 .* C 279 .* 244 /);
+  assert.equal(layout.edges[0].path, "M 244 182 H 279 V 390 H 244");
+});
+
+test("compact root links follow the central corridor instead of crossing other modules", () => {
+  const nodes = ["root", "first", "second", "third"].map((id) => ({
+    id,
+    label: id,
+    kind: "module" as const,
+    description: "",
+    topicIds: [],
+  }));
+  const result = layoutProjectMap(
+    {
+      nodes,
+      edges: [{ from: "root", to: "third", kind: "contains", label: "part" }],
+    },
+    true,
+  );
+  assert.equal(result.edges[0].path, "M 279 108 V 286 H 244");
 });

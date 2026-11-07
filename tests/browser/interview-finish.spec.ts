@@ -55,42 +55,33 @@ test("the start page hides saved interviews without deleting them; direct links 
   expect(saved.daily).toEqual(state.daily);
 });
 
-test("early finish opens the review and keeps both saved and unsaved attempts", async ({
+test("early finish preserves historical attempts without showing their fields", async ({
   app: { base },
   page,
 }) => {
   await page.goto(base + "/#/interview");
   await page.locator("[data-action=full]:enabled").click();
-  const field = page.getByRole("textbox", { name: "Моя попытка", exact: true });
-  await field.fill("Сохранённый ответ");
-  await page
-    .getByRole("button", { name: "Сохранить попытку", exact: true })
-    .click();
-  await expect(page.locator(".answer-attempt")).toContainText(
-    "Попытка сохранена",
-  );
+  const state = await readProgress(page);
+  const session = state.sessions[state.activeSession!];
+  session.attempts = {
+    [session.questionIds[0]]: {
+      text: "Сохранённый ответ",
+      solutionUrl: "",
+      updatedAt: "2026-11-01",
+    },
+  };
+  await restoreProgressFixture(page, state);
+  await page.reload();
   await page.locator("[data-action=session-next]").click();
-  await field.fill("Черновик второго ответа");
   await page
     .getByRole("button", { name: "Завершить интервью", exact: true })
     .click();
   await expect(
     page.getByRole("heading", { name: "Разбор интервью" }),
   ).toBeVisible();
-  await expect(page.locator(".platform-result").nth(1)).toContainText(
-    "Черновик второго ответа",
-  );
-  await page
-    .getByRole("button", { name: "Сохранить попытку", exact: true })
-    .click();
-  await expect(page.locator(".platform-result").nth(1)).toContainText(
-    "Попытка сохранена",
-  );
+  await expect(page.locator(".answer-attempt")).toHaveCount(0);
   await page.reload();
-  await expect(page.locator(".platform-result").first()).toContainText(
-    "Сохранённый ответ",
-  );
-  await expect(page.locator(".platform-result").nth(1)).toContainText(
-    "Черновик второго ответа",
+  expect((await readProgress(page)).sessions[session.id].attempts).toEqual(
+    session.attempts,
   );
 });

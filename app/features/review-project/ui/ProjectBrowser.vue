@@ -40,6 +40,7 @@ const {
   reviewQuestion,
   selectProject,
   reviewNext,
+  reviewPrevious,
 } = useProjectBrowser();
 </script>
 <template>
@@ -298,13 +299,16 @@ const {
       </div>
       <template v-if="reviewQuestion"
         ><p>{{ (reviewIndex % reviews.length) + 1 }} из {{ reviews.length }}</p>
-        <QuestionCard
-          :key="reviewQuestion.id"
-          :question="reviewQuestion"
-          :revealed="revealed" />
-        <div class="platform-actions">
+        <div class="platform-actions question-navigation">
           <button
-            v-if="!revealed"
+            data-action="previous-question"
+            :disabled="reviewIndex === 0"
+            @click="reviewPrevious"
+          >
+            ← Предыдущий вопрос
+          </button>
+          <button
+            :disabled="revealed"
             data-action="reveal"
             @click="revealed = true"
           >
@@ -313,10 +317,13 @@ const {
             Следующий вопрос →
           </button>
         </div>
-        <template v-if="revealed"
-          ><RatingButtons :id="reviewQuestion.id" /><StudyLinks
-            :question="reviewQuestion" /></template
-      ></template>
+        <QuestionCard :question="reviewQuestion" :revealed="revealed">
+          <template v-if="revealed"
+            ><RatingButtons :id="reviewQuestion.id" /><StudyLinks
+              :question="reviewQuestion"
+          /></template>
+        </QuestionCard>
+      </template>
       <p v-else>Здесь пока нет вопросов. Выберите другой набор.</p>
     </template>
   </template>

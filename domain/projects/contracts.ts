@@ -1,8 +1,10 @@
 import { z } from "zod";
 import type { Topic, Project } from "./types.ts";
 import { projectMapSchema } from "./map.ts";
+import { codePreviewSchema } from "./code.ts";
 
 const codeStep = z.looseObject({
+  preview: codePreviewSchema.optional(),
   project: z.string(),
   path: z.string(),
   line: z.number(),

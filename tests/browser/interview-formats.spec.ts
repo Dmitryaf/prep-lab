@@ -38,7 +38,7 @@ test("a clean instance starts practical rounds, keeps their format on reload and
     ).toBeVisible();
     await expect(
       page.getByRole("textbox", { name: "Моя попытка", exact: true }),
-    ).toBeVisible();
+    ).toHaveCount(0);
     if (value === "coding")
       await page.screenshot({
         path: testInfo.outputPath("coding-desktop.png"),
@@ -75,7 +75,7 @@ test("a clean instance starts practical rounds, keeps their format on reload and
   await page.locator('[data-action="full"]:enabled').click();
   await expect(
     page.getByRole("textbox", { name: "Моя попытка", exact: true }),
-  ).toBeVisible();
+  ).toHaveCount(0);
   await page.screenshot({
     path: testInfo.outputPath("review-mobile.png"),
     fullPage: true,

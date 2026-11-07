@@ -1,14 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch, nextTick } from "vue";
 import type { Question } from "#domain/knowledge/question.ts";
 import QuestionCard from "#ui/entities/question/ui/QuestionCard.vue";
 import StudyDiscussion from "./StudyDiscussion.vue";
 import QuestionTopics from "#ui/entities/question/ui/QuestionTopics.vue";
 import { useMaterials } from "#ui/entities/material/model/store.ts";
 import { studyTopics } from "#domain/knowledge/study-topics.ts";
-import { usePreparation } from "#ui/entities/preparation/model/store.ts";
 const materials = useMaterials();
-const preparation = usePreparation();
 const props = defineProps<{
   question: Question;
   revealed?: boolean;
@@ -17,16 +15,38 @@ const props = defineProps<{
 }>();
 const practiceFollowup = ref(0);
 const activeFollowup = computed(() => props.followup || practiceFollowup.value);
-const canExtendPractice = computed(() => {
-  const attempt = preparation.progress.practiceAttempts?.[props.question.id];
-  return (
+const workspace = ref<HTMLElement>();
+const minimumHeight = ref<string>();
+watch(
+  () => props.question.id,
+  () => {
+    practiceFollowup.value = 0;
+  },
+);
+watch(
+  () => [props.question.id, activeFollowup.value],
+  async () => {
+    const element = workspace.value;
+    if (!element) return;
+    const top = element.getBoundingClientRect().top;
+    const visibleTop = Math.max(16, top);
+    const position = window.scrollY + top - visibleTop;
+    // Keep enough room for a shorter question without the browser clamping scrollY.
+    minimumHeight.value = `${Math.max(0, window.innerHeight - visibleTop)}px`;
+    await nextTick();
+    window.scrollTo({ top: position, behavior: "instant" });
+    element
+      .querySelector<HTMLElement>(".question-card h2")
+      ?.focus({ preventScroll: true });
+  },
+);
+const canExtendPractice = computed(
+  () =>
     !props.sessionId &&
     props.question.roundFormat === "coding" &&
     props.question.codingRole &&
-    props.question.followups?.length &&
-    (attempt?.text.trim() || attempt?.solutionUrl.trim())
-  );
-});
+    props.question.followups?.length,
+);
 const topics = computed(() =>
   studyTopics(props.question, materials.knowledge.notes),
 );
@@ -64,9 +84,15 @@ const context = computed(() =>
 );
 </script>
 <template>
-  <div class="question-workspace" :class="{ 'has-topics': topics.length }">
+  <div
+    ref="workspace"
+    class="question-workspace"
+    :class="{ 'has-topics': topics.length }"
+    :style="{ minHeight: minimumHeight }"
+  >
     <div class="question-workspace-main">
       <QuestionCard
+        :key="question.id + ':' + activeFollowup"
         :question="question"
         :revealed="revealed"
         :followup="activeFollowup"
@@ -97,6 +123,7 @@ const context = computed(() =>
 <style scoped>
 .question-workspace {
   margin-block: 20px;
+  overflow-anchor: none;
 }
 .question-workspace.has-topics {
   display: grid;

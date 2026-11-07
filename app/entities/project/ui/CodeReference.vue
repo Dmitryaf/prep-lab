@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import type { CodeStep } from "#domain/projects/types.ts";
+import CodePreview from "./CodePreview.vue";
+import { computed } from "vue";
+import { codePresentation } from "#domain/projects/code.ts";
 import { storeToRefs } from "pinia";
 import { useProjectCatalog } from "#ui/entities/project/model/catalog.ts";
 import {
@@ -11,7 +14,12 @@ const sourceUrl = (step: CodeStep, revision?: string) =>
   url(step, catalog.value.repositories, revision);
 const sourceContext = (step: CodeStep) =>
   context(step, catalog.value.sourceLabels);
-defineProps<{ step: CodeStep; revision?: string; index: number }>();
+const props = defineProps<{
+  step: CodeStep;
+  revision?: string;
+  index: number;
+}>();
+const presentation = computed(() => codePresentation(props.step));
 defineEmits<{ copy: [step: CodeStep] }>();
 </script>
 <template>
@@ -20,7 +28,7 @@ defineEmits<{ copy: [step: CodeStep] }>();
     <p v-if="sourceContext(step)" class="source-context">
       {{ sourceContext(step) }}
     </p>
-    <p>{{ step.explanation }}</p>
+    <p>{{ presentation.explanation }}</p>
     <div class="code-symbol">{{ step.symbol }}</div>
     <a
       v-if="sourceUrl(step, revision)"
@@ -40,5 +48,10 @@ defineEmits<{ copy: [step: CodeStep] }>();
         Копировать путь и функцию
       </button></template
     >
+    <CodePreview
+      v-if="presentation.preview"
+      :preview="presentation.preview"
+      :path="step.path"
+    />
   </li>
 </template>

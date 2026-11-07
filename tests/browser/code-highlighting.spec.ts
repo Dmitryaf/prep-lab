@@ -31,21 +31,10 @@ test.beforeEach(async ({ page }) => {
   );
 });
 
-test("answer editor has one visible title while retaining its accessible label", async ({
-  app: { base },
-  page,
-}) => {
+test("practice has no answer editor", async ({ app: { base }, page }) => {
   await page.goto(`${base}/#/practice?question=${question.id}`);
-  const attempt = page.locator(".answer-attempt");
-  await expect(attempt.getByText("Моя попытка", { exact: true })).toHaveCount(
-    1,
-  );
-  await page
-    .getByRole("textbox", { name: "Моя попытка", exact: true })
-    .fill("Мой ответ");
-  await expect(
-    page.getByRole("textbox", { name: "Моя попытка", exact: true }),
-  ).toHaveValue("Мой ответ");
+  await expect(page.locator(".question-card h2")).toHaveText(question.title);
+  await expect(page.locator(".answer-attempt")).toHaveCount(0);
 });
 
 test("highlighted prompts and answers keep inert markup and exact clipboard text", async ({

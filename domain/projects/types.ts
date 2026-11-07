@@ -1,5 +1,7 @@
 import type { ProjectMap } from "./map.ts";
+import type { CodePreview } from "./code.ts";
 export interface CodeStep {
+  preview?: CodePreview;
   project: string;
   path: string;
   line: number;

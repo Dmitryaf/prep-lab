@@ -8,7 +8,7 @@ import type { Question } from "#domain/knowledge/question.ts";
 
 test.use({ appOptions: { projectPackageRoot: null } });
 
-test("free practice opens an optional stage after saving the base attempt and keeps theory available", async ({
+test("free practice opens an optional stage without saving an attempt and keeps theory available", async ({
   app: { base },
   page,
 }, info) => {
@@ -18,15 +18,6 @@ test("free practice opens an optional stage after saving the base attempt and ke
   await expect(
     page.getByRole("heading", { name: title, exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: /^Усложнение 1:/ }),
-  ).toHaveCount(0);
-  await page
-    .getByRole("textbox", { name: "Моя попытка", exact: true })
-    .fill("Соберу уникальные ID, затем восстановлю исходный порядок.");
-  await page
-    .getByRole("button", { name: "Сохранить попытку", exact: true })
-    .click();
   await page.getByRole("button", { name: /^Усложнение 1:/ }).click();
   await expect(page.locator(".question-card h2")).toHaveText(
     "Кэш готовых значений",
@@ -46,7 +37,7 @@ test("free practice opens an optional stage after saving the base attempt and ke
   await page.reload();
   await expect(
     page.getByRole("textbox", { name: "Моя попытка", exact: true }),
-  ).toHaveValue("Соберу уникальные ID, затем восстановлю исходный порядок.");
+  ).toHaveCount(0);
 });
 
 test("optional coding stage keeps the saved attempt and hides both solutions until completion", async ({
@@ -79,6 +70,13 @@ test("optional coding stage keeps the saved attempt and hides both solutions unt
   };
   const state = await readProgress(page);
   const session = createSession([question], "full", {}, "react", "coding");
+  session.attempts = {
+    [question.id]: {
+      text: "return users.map(user => user.name)",
+      solutionUrl: "",
+      updatedAt: "2026-11-01",
+    },
+  };
   state.sessions[session.id] = session;
   state.activeSession = session.id;
   await restoreProgressFixture(page, state);
@@ -86,19 +84,6 @@ test("optional coding stage keeps the saved attempt and hides both solutions unt
   await expect(
     page.getByRole("heading", { name: question.title, exact: true }),
   ).toBeVisible();
-  await expect(
-    page.getByText(
-      "Сохраните попытку, чтобы открыть необязательное усложнение.",
-      { exact: true },
-    ),
-  ).toBeVisible();
-  await expect(page.locator('[data-action="session-followup"]')).toHaveCount(0);
-  await page
-    .getByRole("textbox", { name: "Моя попытка", exact: true })
-    .fill("return users.map(user => user.name)");
-  await page
-    .getByRole("button", { name: "Сохранить попытку", exact: true })
-    .click();
   await expect(page.locator('[data-action="session-followup"]')).toHaveText(
     "Усложнение 1: Поиск по имени",
   );
@@ -110,7 +95,7 @@ test("optional coding stage keeps the saved attempt and hides both solutions unt
   await expect(page.getByText(/Поиск не учитывает регистр/)).toBeVisible();
   await expect(
     page.getByRole("textbox", { name: "Моя попытка", exact: true }),
-  ).toHaveValue("return users.map(user => user.name)");
+  ).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({
     path: testInfo.outputPath("coding-stage-mobile.png"),

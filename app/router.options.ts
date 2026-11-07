@@ -3,6 +3,8 @@ import type { RouterConfig } from "nuxt/schema";
 export default {
   hashMode: true,
   scrollBehavior(to, from, saved) {
+    if (!saved && to.path === "/practice" && from.path === "/practice")
+      return false;
     if (
       !saved &&
       to.path === "/projects" &&

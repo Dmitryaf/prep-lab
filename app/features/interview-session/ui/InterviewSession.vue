@@ -27,7 +27,6 @@ import { kindLabel } from "#ui/entities/question/lib/presentation.ts";
 import { link } from "#ui/shared/lib/navigation.ts";
 import PageHeading from "#ui/shared/ui/PageHeading.vue";
 import QuestionCard from "#ui/features/study-discussion/index.ts";
-import AnswerAttempt from "#ui/features/answer-attempt/index.ts";
 import {
   interviewFormats,
   formatInfo,
@@ -60,17 +59,6 @@ const current = computed(
   () =>
     session.value?.snapshots[session.value.questionIds[session.value.index]],
 );
-const needsBaseAttempt = computed(() => {
-  const question = current.value,
-    attempt = question && session.value?.attempts?.[question.id];
-  return (
-    question?.roundFormat === "coding" &&
-    question.codingRole &&
-    question.followups?.length &&
-    !attempt?.text.trim() &&
-    !attempt?.solutionUrl.trim()
-  );
-});
 const reviewed = computed(
   () =>
     !!(
@@ -100,8 +88,7 @@ async function move(
       : action === "followup"
         ? openFollowup(session.value, stageIndex)
         : advanceQuestion(session.value, action === "skip");
-  if (next !== session.value && (await setSession(next)))
-    document.getElementById("platformMain")?.focus();
+  if (next !== session.value) await setSession(next);
 }
 function review() {
   if (!session.value || !current.value) return;
@@ -253,9 +240,7 @@ watch(() => route.fullPath, refreshDate);
         :question="session.snapshots[id]"
         :session-id="session.id"
         revealed
-      >
-        <AnswerAttempt :question-id="id" :session-id="session.id" readonly />
-      </QuestionCard>
+      />
       <RatingButtons :id="id" :session-id="session.id" /><StudyLinks
         :question="session.snapshots[id]"
       />
@@ -288,56 +273,6 @@ watch(() => route.fullPath, refreshDate);
         {{ session.questionIds.length - session.index - 1 }}</span
       >
     </div>
-    <QuestionCard
-      :key="current.id + ':' + (session.followupIndex || 0)"
-      :question="current"
-      :session-id="session.id"
-      :followup="session.followupIndex"
-      :revealed="reviewed"
-    >
-      <AnswerAttempt
-        :key="session.id + ':' + current.id"
-        :question-id="current.id"
-        :session-id="session.id"
-      />
-    </QuestionCard>
-    <p v-if="needsBaseAttempt" class="platform-muted">
-      Сохраните попытку, чтобы открыть необязательное усложнение.
-    </p>
-    <div
-      v-else-if="
-        current.roundFormat === 'coding' &&
-        current.codingRole &&
-        current.followups?.length
-      "
-      class="coding-stages"
-    >
-      <div class="platform-actions">
-        <button
-          v-for="(title, index) in current.followups"
-          :key="title"
-          data-action="session-followup"
-          :aria-pressed="session.followupIndex === index + 1"
-          :disabled="saving || session.followupIndex === index + 1"
-          @click="move('followup', index)"
-        >
-          Усложнение {{ index + 1 }}: {{ title }}
-        </button>
-      </div>
-    </div>
-    <template v-if="session.kind === 'daily'"
-      ><template v-if="reviewed"
-        ><RatingButtons :id="current.id" :session-id="session.id" /><StudyLinks
-          :question="current" /></template
-      ><button
-        v-else
-        data-action="session-review"
-        :disabled="saving"
-        @click="review"
-      >
-        Проверить ответ
-      </button></template
-    >
     <div class="platform-actions">
       <button
         data-action="session-previous"
@@ -383,6 +318,49 @@ watch(() => route.fullPath, refreshDate);
         }}</button
       ><RouterLink to="/interview">Продолжить позже</RouterLink>
     </div>
+    <QuestionCard
+      :question="current"
+      :session-id="session.id"
+      :followup="session.followupIndex"
+      :revealed="reviewed"
+    >
+      <div
+        v-if="
+          current.roundFormat === 'coding' &&
+          current.codingRole &&
+          current.followups?.length
+        "
+        class="coding-stages"
+      >
+        <div class="platform-actions">
+          <button
+            v-for="(title, index) in current.followups"
+            :key="title"
+            data-action="session-followup"
+            :aria-pressed="session.followupIndex === index + 1"
+            :disabled="saving || session.followupIndex === index + 1"
+            @click="move('followup', index)"
+          >
+            Усложнение {{ index + 1 }}: {{ title }}
+          </button>
+        </div>
+      </div>
+      <template v-if="session.kind === 'daily'"
+        ><template v-if="reviewed"
+          ><RatingButtons
+            :id="current.id"
+            :session-id="session.id" /><StudyLinks
+            :question="current" /></template
+        ><button
+          v-else
+          data-action="session-review"
+          :disabled="saving"
+          @click="review"
+        >
+          Проверить ответ
+        </button></template
+      >
+    </QuestionCard>
   </template>
 </template>
 <style scoped>

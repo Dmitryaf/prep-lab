@@ -1,8 +1,10 @@
 import { z } from "zod";
 import type { CodeStep, Project, Topic } from "./types.ts";
 import { technologyDetails } from "./technology.ts";
+import { codePreviewSchema } from "./code.ts";
 
 const referenceSchema = z.object({
+  preview: codePreviewSchema.optional(),
   project: z.string(),
   path: z.string().min(1).max(2048),
   line: z.number().int().positive(),
@@ -260,33 +262,50 @@ export function layoutProjectMap(diagram: MapDiagram, compact = false) {
         })),
       );
   const byId = new Map(nodes.map((node) => [node.id, node]));
+  let routed = 0;
   const edges = diagram.edges.map((edge) => {
     const from = byId.get(edge.from)!,
       to = byId.get(edge.to)!;
-    const x1 = compact ? from.x + 110 : from.x + 220,
-      y1 = compact ? from.y + (from.y <= to.y ? 84 : 0) : from.y + 42,
-      x2 = compact ? to.x + 110 : to.x,
-      y2 = compact ? to.y + (from.y <= to.y ? 0 : 84) : to.y + 42;
-    const bend = Math.max(30, Math.abs(x2 - x1) / 2);
-    if (compact && from.id !== root.id && to.id !== root.id) {
-      const startX = from.x === 24 ? from.x + 220 : from.x;
-      const endX = to.x === 24 ? to.x + 220 : to.x;
+    if (compact) {
+      const startX =
+        from.id === root.id ? 279 : from.x === 24 ? from.x + 220 : from.x;
+      const endX = to.id === root.id ? 279 : to.x === 24 ? to.x + 220 : to.x;
+      const startY = from.y + (from.id === root.id ? 84 : 42);
+      const endY = to.y + (to.id === root.id ? 84 : 42);
       return {
         ...edge,
-        path: `M ${startX} ${from.y + 42} C 279 ${from.y + 42}, 279 ${to.y + 42}, ${endX} ${to.y + 42}`,
+        path:
+          from.id === root.id
+            ? `M ${startX} ${startY} V ${endY} H ${endX}`
+            : to.id === root.id
+              ? `M ${startX} ${startY} H 279 V ${endY}`
+              : `M ${startX} ${startY} H 279 V ${endY} H ${endX}`,
       };
     }
+    const y1 = from.y + 42,
+      y2 = to.y + 42;
+    if (to.x - from.x === 290) {
+      const start = from.x + 220,
+        end = to.x,
+        middle = (start + end) / 2;
+      return {
+        ...edge,
+        path: `M ${start} ${y1} C ${middle} ${y1}, ${middle} ${y2}, ${end} ${y2}`,
+      };
+    }
+    // Return and long-distance links use the gaps beside cards and a lane below the diagram.
+    const lane = height + routed++ * 14;
+    const start = from.x + 220,
+      end = to.x;
     return {
       ...edge,
-      path: compact
-        ? `M ${x1} ${y1} C ${x1} ${y1 + 32}, ${x2} ${y2 - 32}, ${x2} ${y2}`
-        : `M ${x1} ${y1} C ${x1 + bend} ${y1}, ${x2 - bend} ${y2}, ${x2} ${y2}`,
+      path: `M ${start} ${y1} H ${start + 20} V ${lane} H ${end - 20} V ${y2} H ${end}`,
     };
   });
   return {
     nodes,
     edges,
     width: compact ? 560 : (Math.max(...columns.keys()) + 1) * 290,
-    height,
+    height: height + (routed ? (routed - 1) * 14 + 24 : 0),
   };
 }

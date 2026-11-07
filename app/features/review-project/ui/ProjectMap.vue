@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, nextTick, ref, watch, useId } from "vue";
+import CodePreview from "#ui/entities/project/ui/CodePreview.vue";
+import { codePresentation } from "#domain/projects/code.ts";
 import { useRoute, useRouter } from "vue-router";
 import type { CodeStep, Project, Topic } from "#domain/projects/types.ts";
 import {
@@ -22,6 +24,7 @@ const route = useRoute(),
 const viewport = ref<HTMLElement>(),
   zoom = ref(1),
   copied = ref("");
+const arrowId = useId();
 const views = [
   { id: "scenarios", title: "Сценарии" },
   { id: "structure", title: "Устройство" },
@@ -210,14 +213,14 @@ watch(
             >
               <defs>
                 <marker
-                  id="project-map-arrow"
+                  :id="arrowId"
                   markerWidth="7"
                   markerHeight="7"
-                  refX="6"
+                  refX="7"
                   refY="3.5"
                   orient="auto"
                 >
-                  <path d="M0,0 L7,3.5 L0,7" fill="#8ba0bc" />
+                  <path d="M0,0 L7,3.5 L0,7 Z" fill="context-stroke" />
                 </marker>
               </defs>
               <path
@@ -236,7 +239,7 @@ watch(
                     selected &&
                     (edge.from === selected.id || edge.to === selected.id),
                 }"
-                marker-end="url(#project-map-arrow)"
+                :marker-end="`url(#${arrowId})`"
               >
                 <title>{{ edge.label }}</title>
               </path>
@@ -344,7 +347,12 @@ watch(
             >
               {{ reference.path }}:{{ reference.line }}
             </button>
-            <MarkdownContent :text="reference.explanation" />
+            <MarkdownContent :text="codePresentation(reference).explanation" />
+            <CodePreview
+              v-if="codePresentation(reference).preview"
+              :preview="codePresentation(reference).preview!"
+              :path="reference.path"
+            />
           </div>
           <p v-if="copied" role="status">{{ copied }}</p>
         </details>

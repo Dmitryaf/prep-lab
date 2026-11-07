@@ -5,7 +5,7 @@ test.use({ appOptions: { projectPackageRoot: null } });
 const title = "Запросы через одно соединение: ответы не по порядку";
 const id = "ck:Собеседования/Практика/Асинхронные контракты#" + title;
 
-test("topics are visible before the solution and navigation preserves the unsaved attempt", async ({
+test("topics are visible before the solution and navigation preserves the selected question", async ({
   app: { base },
   page,
 }, info) => {
@@ -25,9 +25,6 @@ test("topics are visible before the solution and navigation preserves the unsave
     /Тип источника|атрибуци|предоставленн|публичного задания/i,
   );
   const initial = await readProgress(page);
-  await page
-    .getByRole("textbox", { name: "Моя попытка", exact: true })
-    .fill("Сопоставлю ответы по ID");
   await page.evaluate(() => window.scrollTo(0, 0));
   const main = await page.locator(".question-card").boundingBox();
   const sidebar = await topics.boundingBox();
@@ -44,7 +41,7 @@ test("topics are visible before the solution and navigation preserves the unsave
   await page.locator("[data-action=back]").click();
   await expect(
     page.getByRole("textbox", { name: "Моя попытка", exact: true }),
-  ).toHaveValue("Сопоставлю ответы по ID");
+  ).toHaveCount(0);
   await expect(page.locator(".platform-answer")).toHaveCount(0);
   expect(await readProgress(page)).toEqual(initial);
   await page.setViewportSize({ width: 390, height: 844 });
@@ -62,7 +59,7 @@ test("topics are visible before the solution and navigation preserves the unsave
   });
 });
 
-test("reading theory during a full interview keeps its position and attempt without revealing the answer", async ({
+test("reading theory during a full interview keeps its position without revealing the answer", async ({
   app: { base },
   page,
 }) => {
@@ -72,15 +69,12 @@ test("reading theory during a full interview keeps its position and attempt with
   const topics = page.getByRole("complementary", { name: "Полезные темы" });
   await expect(topics).toBeVisible();
   const initial = await readProgress(page);
-  await page
-    .getByRole("textbox", { name: "Моя попытка", exact: true })
-    .fill("Черновик решения");
   await topics.getByRole("link").first().click();
   await expect(page.locator(".platform-note")).toBeVisible();
   await page.locator("[data-action=back]").click();
   await expect(
     page.getByRole("textbox", { name: "Моя попытка", exact: true }),
-  ).toHaveValue("Черновик решения");
+  ).toHaveCount(0);
   expect(await readProgress(page)).toEqual(initial);
   await expect(page.locator(".platform-answer")).toHaveCount(0);
   await expect(page.locator('[data-action="session-next"]')).toBeVisible();
