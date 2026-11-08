@@ -123,7 +123,6 @@ watch(() => route.fullPath, refreshDate);
             month: "long",
           })
         }}
-        · 20–40 минут
       </div>
       <h2>Ежедневное интервью</h2>
       <p>
@@ -174,7 +173,6 @@ watch(() => route.fullPath, refreshDate);
           />
           <span class="interview-format-content">
             <strong :id="'format-title-' + item.id">{{ item.title }}</strong>
-            <span class="interview-format-duration">{{ item.duration }}</span>
             <span
               :id="'format-description-' + item.id"
               class="interview-format-description"
@@ -420,12 +418,9 @@ watch(() => route.fullPath, refreshDate);
   font-size: 16px;
   line-height: 1.4;
 }
-.interview-format-duration {
-  color: var(--accent);
-  font-size: 12px;
-  margin-block: 8px 12px;
-}
+
 .interview-format-description {
+  margin-top: 12px;
   font-size: 14px;
   line-height: 1.6;
   color: var(--muted);

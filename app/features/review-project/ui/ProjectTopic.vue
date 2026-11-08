@@ -93,7 +93,7 @@ const sections = computed(() => [
       <h1 class="topic-title" tabindex="-1">{{ topic.title }}</h1>
       <p>{{ topic.summary }}</p>
       <p class="platform-meta">
-        {{ topic.priority }} · {{ topic.minutes }} мин ·
+        {{ topic.priority }} ·
         {{
           progress.progress[topic.id]?.status === "done"
             ? "✓ Могу объяснить"

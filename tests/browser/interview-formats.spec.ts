@@ -142,9 +142,12 @@ legacyTest(
           ).toBe(true);
         }
         await page.reload();
+        await expect(
+          page.locator('[data-action="session-next"]'),
+        ).toBeVisible();
         await expect(page.locator(".platform-answer")).toHaveCount(0);
         const finish = page.locator('[data-action="session-finish"]');
-        if (await finish.isVisible()) await finish.click();
+        if (session.questionIds.length > 1) await finish.click();
         else await page.locator('[data-action="session-next"]').click();
         await expect(
           page.getByRole("heading", { name: "Разбор интервью" }),

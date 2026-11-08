@@ -28,9 +28,9 @@ const stage = computed(() =>
             ? "Необязательное усложнение"
             : "Уточняющий вопрос"
           : question.codingRole === "short"
-            ? "Короткая задача · 5–10 минут"
+            ? "Короткая задача"
             : question.codingRole === "main"
-              ? "Основная задача · 15–25 минут"
+              ? "Основная задача"
               : question.codingRole === "advanced"
                 ? "Дополнительная практика"
                 : kindLabel(question)

@@ -11,37 +11,31 @@ type ReviewItem = Pick<Topic, "id" | "project" | "priority" | "minutes"> & {
   story?: unknown;
 };
 // Pure selection and progress contracts shared by the UI and regression checks.
-export const sessions: Record<
-  string,
-  { label: string; description: string; budget?: number }
-> = {
-  custom: {
-    label: "Свободно",
-    description: "Выбери темы и объём самостоятельно.",
-  },
-  stories: {
-    label: "10 минут · истории",
-    description:
-      "По минуте на историю: какую задачу решали, что сделали и что получилось.",
-    budget: 10,
-  },
-  weak: {
-    label: "20 минут · слабые темы",
-    description:
-      "Сначала вопросы с отметкой «повторить», затем ещё не проверенные вопросы.",
-    budget: 20,
-  },
-  project: {
-    label: "40 минут · один проект",
-    description: "Разберитесь, как работают основные сценарии проекта.",
-    budget: 40,
-  },
-  exam: {
-    label: "Самопроверка",
-    description:
-      "Ответь без подсказок. Разбор и код доступны после открытия ориентира.",
-  },
-};
+export const sessions: Record<string, { label: string; description: string }> =
+  {
+    custom: {
+      label: "Свободно",
+      description: "Выбери темы и объём самостоятельно.",
+    },
+    stories: {
+      label: "Истории проектов",
+      description: "Какую задачу решали, что сделали и что получилось.",
+    },
+    weak: {
+      label: "Слабые темы",
+      description:
+        "Сначала вопросы с отметкой «повторить», затем ещё не проверенные вопросы.",
+    },
+    project: {
+      label: "Один проект",
+      description: "Разберитесь, как работают основные сценарии проекта.",
+    },
+    exam: {
+      label: "Самопроверка",
+      description:
+        "Ответь без подсказок. Разбор и код доступны после открытия ориентира.",
+    },
+  };
 
 export function selectReview<T extends ReviewItem>(
   topics: T[],
@@ -73,15 +67,7 @@ export function selectReview<T extends ReviewItem>(
     }
     return priority[a.priority] - priority[b.priority];
   });
-  const budget = sessions[session]?.budget;
-  if (!budget) return list;
-  let used = 0;
-  return list.filter((t) => {
-    const cost = session === "stories" ? 1 : t.minutes;
-    if (used + cost > budget) return false;
-    used += cost;
-    return true;
-  });
+  return list;
 }
 
 export function validatedProgress(

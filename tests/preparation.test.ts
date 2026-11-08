@@ -46,19 +46,26 @@ test("existing v1 progress round trips and preserves other projects", () => {
   );
 });
 
-test("weak session prioritizes marked topics and respects its time budget", () => {
+test("weak session prioritizes marked topics without excluding slower topics", () => {
   const progress = {
     "first-main": { status: "done" as const },
     "first-storage": { status: "again" as const },
   };
-  const list = selectReview(topics, progress, {
-    project: "first",
-    session: "weak",
-  });
+  const list = selectReview(
+    topics.map((topic) => ({ ...topic, minutes: 999 })),
+    progress,
+    {
+      project: "first",
+      session: "weak",
+    },
+  );
   assert.equal(list[0].id, "first-storage");
   assert(!list.some((t) => t.id === "first-main"));
   assert(list.every((t) => t.project === "first"));
-  assert(list.reduce((n, t) => n + t.minutes, 0) <= 20);
+  assert.equal(
+    list.length,
+    topics.filter((t) => t.project === "first" && t.id !== "first-main").length,
+  );
 });
 
 test("project session stays within project and all-project mode includes original topics", () => {
@@ -68,7 +75,10 @@ test("project session stays within project and all-project mode includes origina
     { project: "second", scope: "both", session: "project" },
   );
   assert(list.length && list.every((t) => t.project === "second"));
-  assert(list.reduce((n, t) => n + t.minutes, 0) <= 40);
+  assert.equal(
+    list.length,
+    topics.filter((t) => t.project === "second").length,
+  );
   const all = selectReview(topics, {}, { scope: "both", filter: "all" });
   assert.equal(all.length, topics.length);
   assert(
@@ -103,7 +113,7 @@ test(
       {},
       { project: "trajectory", session: "stories" },
     );
-    assert.equal(stories.length, 10);
+    assert.equal(stories.length, ownerTopics.filter((t) => t.story).length);
     assert(stories.every((t) => t.story?.short && t.project === "lanit"));
   },
 );
@@ -154,7 +164,7 @@ test("full review includes every question; quick review uses the same first-ques
   assert.notEqual(questionKey("a/b", "c"), questionKey("a", "b/c"));
 });
 
-test("question marks affect only their question, retain budgets and survive question reordering", () => {
+test("question marks affect only their question and survive question reordering", () => {
   const topic = topics[0];
   const [first, second] = questionCards([topic]);
   const marked = {
@@ -167,7 +177,12 @@ test("question marks affect only their question, retain budgets and survive ques
   });
   assert.equal(weak[0].id, second.id);
   assert(!weak.some((card) => card.id === first.id));
-  assert(weak.reduce((sum, card) => sum + card.minutes, 0) <= 20);
+  assert.equal(
+    weak.length,
+    questionCards(topics).filter(
+      (card) => card.project === topic.project && card.id !== first.id,
+    ).length,
+  );
   const fresh = selectQuestionReview([topic], marked, {
     scope: "both",
     filter: "new",
@@ -187,7 +202,11 @@ test("question marks affect only their question, retain budgets and survive ques
     session: "project",
   });
   assert(project.every((card) => card.project === topic.project));
-  assert(project.reduce((sum, card) => sum + card.minutes, 0) <= 40);
+  assert.equal(
+    project.length,
+    questionCards(topics).filter((card) => card.project === topic.project)
+      .length,
+  );
 });
 
 test("v2 round trip preserves both progress namespaces; v1 import never completes questions", () => {

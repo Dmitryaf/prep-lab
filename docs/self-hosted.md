@@ -65,7 +65,7 @@ docker compose up -d
 docker compose exec frontend-lab node --experimental-strip-types /app/admin/scripts/sources.ts allow personal "Моя база" /sources/personal
 ```
 
-Compose автоматически использует `compose.override.yaml` и при последующих запусках. На Windows в `source` укажите путь, доступный Docker Desktop. В «Своих материалах» выберите «Разрешённая папка сервера» и её название. Исходные файлы не меняются. Символические ссылки и junction не поддерживаются.
+Compose автоматически использует `compose.override.yaml` и при последующих запусках. На Windows в `source` укажите путь, доступный Docker Desktop. Для анализа в «Своих материалах» выберите «Путь к папке» и укажите `/sources/personal`. Для импорта готовых Markdown-заметок откройте «Импорт готовых материалов», выберите «Разрешённая папка сервера» и её название. Исходные файлы не меняются. Символические ссылки и junction не поддерживаются.
 
 ## Резервная копия и обновление
 
