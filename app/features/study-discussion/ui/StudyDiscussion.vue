@@ -22,17 +22,12 @@ const {
 } = useDiscussion(props);
 </script>
 <template>
-  <section class="study-chat" aria-label="Обсуждение материала с Codex">
+  <section class="study-chat" aria-label="Обсуждение материала с помощником">
     <button :aria-expanded="opened" @click="toggle">
-      {{ opened ? "Свернуть обсуждение" : "Разобраться с Codex" }}
+      {{ opened ? "Свернуть обсуждение" : "Обсудить с помощником" }}
     </button>
     <div v-if="opened" class="study-chat-panel">
-      <h3>Codex · {{ title }}</h3>
-      <p class="platform-muted">
-        Сообщения и материал отправляются в Codex через ваш аккаунт ChatGPT;
-        действуют лимиты подписки. История хранится в вашем экземпляре Frontend
-        Lab.
-      </p>
+      <h3>Помощник · {{ title }}</h3>
       <p v-if="loading" role="status">Загружаем обсуждение…</p>
       <p v-else-if="loaded && !messages.length">
         Обсуждения пока нет. Задайте вопрос или выберите действие ниже.
@@ -48,7 +43,7 @@ const {
           class="study-message"
           :class="message.role"
         >
-          <strong>{{ message.role === "user" ? "Вы" : "Codex" }}</strong>
+          <strong>{{ message.role === "user" ? "Вы" : "Помощник" }}</strong>
           <pre>{{
             message.text ||
             (message.status === "pending"
@@ -112,12 +107,10 @@ const {
           </button>
           <button
             class="primary"
-            :disabled="
-              busy || previewing || !loaded || !draft.trim() || !preparedPrompt
-            "
+            :disabled="busy || previewing || !loaded || !draft.trim()"
             type="submit"
           >
-            Отправить в ChatGPT</button
+            Отправить</button
           ><button v-if="busy" type="button" @click="stop">Остановить</button
           ><button
             type="button"
@@ -128,7 +121,7 @@ const {
           </button>
         </div>
         <section v-if="preparedPrompt" aria-label="Задание обсуждения">
-          <h4>Задание для ChatGPT</h4>
+          <h4>Задание</h4>
           <pre>{{ preparedPrompt }}</pre>
         </section>
         <p role="status">
@@ -136,7 +129,7 @@ const {
             previewing
               ? "Подготавливаем задание…"
               : busy
-                ? "Codex отвечает…"
+                ? "Помощник отвечает…"
                 : ""
           }}
         </p>

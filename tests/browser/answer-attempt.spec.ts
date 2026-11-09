@@ -135,7 +135,7 @@ test("pre-reveal discussion excludes solutions and keeps prior revealed discussi
     base + "/#/interview?session=" + encodeURIComponent(session.id),
   );
   await page
-    .getByRole("button", { name: "Разобраться с Codex", exact: true })
+    .getByRole("button", { name: "Обсудить с помощником", exact: true })
     .click();
   await expect(page.locator(".study-message")).toHaveCount(0);
   await page
@@ -153,15 +153,13 @@ test("pre-reveal discussion excludes solutions and keeps prior revealed discussi
   await expect(preview).not.toContainText("PREVIOUS_SOLUTION");
   await expect(preview).toContainText("Дай одну наводящую подсказку");
   await expect(page.locator(".study-message")).toHaveCount(0);
-  await page
-    .getByRole("button", { name: "Отправить в ChatGPT", exact: true })
-    .click();
+  await page.getByRole("button", { name: "Отправить", exact: true }).click();
   await expect(page.locator(".study-message.assistant")).toContainText(
     "Подумайте о входных данных.",
   );
   await page.locator("[data-action=session-next]").click();
   await page
-    .getByRole("button", { name: "Разобраться с Codex", exact: true })
+    .getByRole("button", { name: "Обсудить с помощником", exact: true })
     .click();
   await expect(page.locator(".study-message.assistant")).toContainText(
     "PREVIOUS_SOLUTION",
@@ -179,7 +177,7 @@ test("pre-reveal discussion excludes solutions and keeps prior revealed discussi
     base + "/#/interview?session=" + encodeURIComponent(repeated.id),
   );
   await page
-    .getByRole("button", { name: "Разобраться с Codex", exact: true })
+    .getByRole("button", { name: "Обсудить с помощником", exact: true })
     .click();
   await expect(page.locator(".study-message")).toHaveCount(0);
 });

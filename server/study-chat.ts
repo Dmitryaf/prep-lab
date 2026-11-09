@@ -114,7 +114,7 @@ export function createStudyChat({
       if (active.size && !url.pathname.endsWith("/preview")) {
         json(res, 409, {
           error:
-            "Codex уже отвечает. Дождитесь ответа или остановите текущий запрос.",
+            "Помощник уже отвечает. Дождитесь ответа или остановите текущий запрос.",
         });
         return true;
       }
@@ -151,13 +151,13 @@ export function createStudyChat({
           input.expectedPrompt !== preparedTask)
       ) {
         json(res, 409, {
-          error: "Промпт изменился. Снова просмотрите задание перед отправкой.",
+          error: "Задание изменилось. Повторите отправку.",
         });
         return true;
       }
       // Recheck after asynchronous body reading: two tabs cannot start concurrent turns.
       if (active.size) {
-        json(res, 409, { error: "Codex уже отвечает." });
+        json(res, 409, { error: "Помощник уже отвечает." });
         return true;
       }
       const data = read(key);

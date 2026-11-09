@@ -28,7 +28,7 @@ function selectFiles(event: Event) {
   <div class="source-manager">
     <h1>Свои материалы</h1>
     <RouterLink :to="{ path: '/generate', query: { scenario: 'import' } }"
-      >Подготовить материалы с ChatGPT</RouterLink
+      >Подготовить материалы с помощником</RouterLink
     >
     <p v-if="error" role="alert">{{ error }}</p>
     <p v-if="message" role="status">{{ message }}</p>

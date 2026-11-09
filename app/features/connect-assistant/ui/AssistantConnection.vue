@@ -18,7 +18,7 @@ const {
     class="assistant-connection"
     aria-labelledby="assistantConnectionTitle"
   >
-    <h2 id="assistantConnectionTitle">Подключение ChatGPT</h2>
+    <h2 id="assistantConnectionTitle">Подключение помощника</h2>
     <p v-if="error" role="alert">{{ error }}</p>
     <p v-if="message" role="status">{{ message }}</p>
     <template v-if="connection">

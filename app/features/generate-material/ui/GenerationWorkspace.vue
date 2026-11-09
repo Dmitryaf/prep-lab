@@ -118,11 +118,11 @@ const status = {
           :disabled="busy || !prompt || !validInput"
           @click="state.generate"
         >
-          Подготовить черновик с ChatGPT
+          Подготовить черновик
         </button>
       </div>
-      <section v-if="prompt" aria-label="Задание для ChatGPT">
-        <h2>Задание для ChatGPT</h2>
+      <section v-if="prompt" aria-label="Задание">
+        <h2>Задание</h2>
         <pre>{{ prompt }}</pre>
       </section>
     </section>

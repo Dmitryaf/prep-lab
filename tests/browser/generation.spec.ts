@@ -30,7 +30,7 @@ test("generation requires visible exact task, supports structured review and pre
     );
   await expect(
     page.getByRole("button", {
-      name: "Подготовить черновик с ChatGPT",
+      name: "Подготовить черновик",
       exact: true,
     }),
   ).toBeDisabled();
@@ -41,11 +41,11 @@ test("generation requires visible exact task, supports structured review and pre
     })
     .click();
   await expect(
-    page.getByRole("region", { name: "Задание для ChatGPT", exact: true }),
+    page.getByRole("region", { name: "Задание", exact: true }),
   ).toContainText("Работал над формой регистрации");
   await page
     .getByRole("button", {
-      name: "Подготовить черновик с ChatGPT",
+      name: "Подготовить черновик",
       exact: true,
     })
     .click();

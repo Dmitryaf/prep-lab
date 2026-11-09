@@ -56,18 +56,21 @@ export function useDiscussion(material: DiscussionMaterial) {
     }
   }
   async function send() {
-    if (
-      busy.value ||
-      previewing.value ||
-      !loaded.value ||
-      !draft.value.trim() ||
-      !preparedPrompt.value
-    )
+    if (busy.value || previewing.value || !loaded.value || !draft.value.trim())
       return;
     const text = draft.value,
       version = generation,
       key = material.materialKey,
-      expectedPrompt = preparedPrompt.value;
+      context = material.context,
+      expectedPrompt = preparedPrompt.value || (await preview());
+    if (
+      !expectedPrompt ||
+      version !== generation ||
+      key !== material.materialKey ||
+      text !== draft.value ||
+      context !== material.context
+    )
+      return;
     const abort = new AbortController();
     controller.value = abort;
     busy.value = true;
@@ -82,7 +85,7 @@ export function useDiscussion(material: DiscussionMaterial) {
       await sendDiscussion(
         key,
         text,
-        material.context,
+        context,
         abort.signal,
         (delta) => {
           if (version === generation) messages.value[index]!.text += delta;
@@ -123,8 +126,10 @@ export function useDiscussion(material: DiscussionMaterial) {
         version === generation &&
         text === draft.value &&
         context === material.context
-      )
+      ) {
         preparedPrompt.value = prompt;
+        return prompt;
+      }
     } catch (cause) {
       if (version === generation)
         error.value =

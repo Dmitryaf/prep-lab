@@ -172,7 +172,7 @@ export class GenerationService {
     const result = importDraftSchema.parse(raw);
     return this.repository.acceptImport(id, revision, result, () =>
       this.options.sources.preview({
-        name: "Материалы из ChatGPT",
+        name: "Материалы от помощника",
         kind: "upload",
         documents: result.documents,
       }),
