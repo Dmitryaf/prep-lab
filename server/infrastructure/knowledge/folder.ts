@@ -9,6 +9,7 @@ import { resolve, sep } from "node:path";
 import type { Knowledge } from "#domain/knowledge/material.ts";
 import { categoryFor } from "#domain/knowledge/markdown.ts";
 import { compileKnowledge } from "#domain/knowledge/catalog.ts";
+import type { PrivateNote } from "./private.ts";
 const folders = [
   "Собеседования/Темы",
   "Собеседования/Практика",
@@ -19,11 +20,6 @@ const folders = [
 const singles = [
   "Собеседования/00. Карта раздела.md",
   "Собеседования/01. Основной маршрут.md",
-  ...[
-    "06. Популярные вопросы HR",
-    "07. Вопросы HR — Назаров, часть 1",
-    "08. Вопросы HR — Назаров, часть 2",
-  ].map((s) => `HR и самопрезентация/${s}.md`),
 ];
 const excluded = new Set([
   "AGENTS.md",
@@ -45,7 +41,10 @@ export function allowedKnowledgePath(path: unknown) {
     (singles.includes(path) || folders.some((f) => path.startsWith(f + "/")))
   );
 }
-export function loadKnowledge(root: string): Knowledge {
+export function loadKnowledge(
+  root: string,
+  privateNotes: PrivateNote[] = [],
+): Knowledge {
   const base = realpathSync(resolve(root));
   if (!statSync(base).isDirectory()) throw new Error("База знаний недоступна");
   const paths = new Set<string>();
@@ -69,10 +68,20 @@ export function loadKnowledge(root: string): Knowledge {
       for (const child of readdirSync(absolute))
         if (!child.startsWith(".") && !excluded.has(child))
           walk(`${path}/${child}`);
-    } else if (entry.isFile() && allowedKnowledgePath(path)) paths.add(path);
+    } else if (
+      entry.isFile() &&
+      (allowedKnowledgePath(path) ||
+        privateNotes.some((note) => note.path === path))
+    )
+      paths.add(path);
   }
   for (const folder of folders) walk(folder);
   for (const single of singles) walk(single);
+  for (const note of privateNotes) walk(note.path);
+  if (privateNotes.some((note) => !paths.has(note.path)))
+    throw new Error(
+      "Личный материал недоступен или его путь ведёт через ссылку.",
+    );
   const notes = [...paths].sort().map((path) => {
     const markdown = readFileSync(resolve(base, path), "utf8");
     const title =
@@ -85,6 +94,7 @@ export function loadKnowledge(root: string): Knowledge {
       title,
       markdown,
       category: categoryFor(path),
+      ...privateNotes.find((note) => note.path === path),
     };
   });
   return compileKnowledge(notes);

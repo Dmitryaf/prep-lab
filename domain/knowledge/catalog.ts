@@ -1,9 +1,7 @@
 import type { Knowledge, Note } from "./material.ts";
 import { extractQuestions, headings } from "./markdown.ts";
-import { withHrHeadingAliases } from "./hr-compatibility.ts";
 
 export function compileKnowledge(notes: Note[]): Knowledge {
-  notes = notes.map(withHrHeadingAliases);
   const warnings: string[] = [];
   const questions = notes.flatMap((note) => extractQuestions(note)),
     ids = new Set(questions.map((question) => question.id));

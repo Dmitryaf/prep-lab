@@ -4,7 +4,8 @@ import assert from "node:assert/strict";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { execFileSync } from "node:child_process";
-import { loadKnowledge, headings } from "./knowledge.ts";
+import { headings } from "./knowledge.ts";
+import { loadPrivateKnowledge } from "#server/infrastructure/knowledge/private.ts";
 import { topics } from "#server/infrastructure/projects/owner.ts";
 import { projectQuestions } from "#ui/entities/project/model/questions.ts";
 import { loadCommonKnowledge } from "#server/infrastructure/knowledge/common.ts";
@@ -78,7 +79,7 @@ if (
   assert.deepEqual(common.problems, []);
   if (topics.length) {
     const owner = validateKnowledge(
-      loadKnowledge(resolve(ownerPackagePath(), "knowledge")),
+      loadPrivateKnowledge(resolve(ownerPackagePath(), "knowledge")),
       topics,
       ownerCatalog,
     );
@@ -97,7 +98,10 @@ if (
     "Git index retains noncanonical directory case",
   );
   if (root)
-    assert.deepEqual(validateKnowledge(loadKnowledge(root), []).problems, []);
+    assert.deepEqual(
+      validateKnowledge(loadPrivateKnowledge(root), []).problems,
+      [],
+    );
   console.log(
     `PASS ${common.count} common study links, core coverage and categories; explicit external roots also check Git path casing`,
   );

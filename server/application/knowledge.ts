@@ -1,11 +1,10 @@
-import { loadKnowledge } from "#server/infrastructure/knowledge/folder.ts";
+import { loadPrivateKnowledge } from "#server/infrastructure/knowledge/private.ts";
 import { lstatSync } from "node:fs";
 import { join } from "node:path";
 import { ownerPackagePath } from "#server/infrastructure/projects/catalog.ts";
 import type { Knowledge } from "#domain/knowledge/material.ts";
 import { loadCommonKnowledge } from "#server/infrastructure/knowledge/common.ts";
 import { withBundledRounds } from "#domain/knowledge/bundled-rounds.ts";
-import { refreshLegacyHr } from "#server/infrastructure/knowledge/hr-presentation.ts";
 
 export async function readKnowledge({
   knowledgeRoot = process.env.CAREER_KNOWLEDGE_ROOT,
@@ -18,8 +17,8 @@ export async function readKnowledge({
 } = {}) {
   const shared = await common();
   const withProfiles = (knowledge: Knowledge) =>
-    withBundledRounds(refreshLegacyHr(knowledge, shared), shared);
-  if (knowledgeRoot) return withProfiles(loadKnowledge(knowledgeRoot));
+    withBundledRounds(knowledge, shared);
+  if (knowledgeRoot) return withProfiles(loadPrivateKnowledge(knowledgeRoot));
   if (projectPackageRoot !== null) {
     let present = false;
     try {
@@ -36,7 +35,9 @@ export async function readKnowledge({
         throw error;
     }
     if (present)
-      return withProfiles(loadKnowledge(join(projectPackageRoot, "knowledge")));
+      return withProfiles(
+        loadPrivateKnowledge(join(projectPackageRoot, "knowledge")),
+      );
   }
   return shared;
 }
