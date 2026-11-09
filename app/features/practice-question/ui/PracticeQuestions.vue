@@ -3,6 +3,7 @@ import { storeToRefs } from "pinia";
 
 import { computed, ref, watch, toRefs } from "vue";
 import { practiceState } from "#ui/features/practice-question/model/navigation.ts";
+import { isTestingTask } from "#domain/knowledge/question.ts";
 import { useRoute, useRouter } from "vue-router";
 import { useMaterials } from "#ui/entities/material/model/store.ts";
 const { knowledge, loading } = storeToRefs(useMaterials());
@@ -17,7 +18,10 @@ const route = useRoute(),
   router = useRouter(),
   revealed = ref(false);
 const { filter, kind, index } = toRefs(practiceState);
-const selected = computed(() => questionById(route.query.question));
+const selected = computed(() => {
+  const question = questionById(route.query.question);
+  return question && !isTestingTask(question) ? question : undefined;
+});
 const advanced = computed(() =>
   selected.value
     ? selected.value.codingRole === "advanced"
@@ -29,7 +33,8 @@ const practiceLocation = computed(() => ({
 }));
 const pool = computed(() =>
   knowledge.value.questions.filter(
-    (q) => (q.codingRole === "advanced") === advanced.value,
+    (q) =>
+      !isTestingTask(q) && (q.codingRole === "advanced") === advanced.value,
   ),
 );
 watch(

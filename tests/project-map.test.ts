@@ -355,3 +355,99 @@ test("compact root links follow the central corridor instead of crossing other m
   );
   assert.equal(result.edges[0].path, "M 279 108 V 286 H 244");
 });
+
+test("root branches share an orthogonal trunk instead of fanning out in overlapping curves", () => {
+  const nodes = ["root", "first", "second", "third"].map((id) => ({
+    id,
+    label: id,
+    kind: "scenario" as const,
+    description: "",
+    topicIds: [],
+  }));
+  const layout = layoutProjectMap({
+    nodes,
+    edges: nodes.slice(1).map((node) => ({
+      from: "root",
+      to: node.id,
+      kind: "contains" as const,
+      label: "part",
+    })),
+  });
+  assert.equal(layout.edges[1].path, "M 244 66 H 279 V 178 H 314");
+  assert(layout.edges.every((edge) => !edge.path.includes("C")));
+});
+
+test("links between siblings stay beside cards and arrows meet the same endpoint", () => {
+  const nodes = ["root", "first", "second", "third"].map((id) => ({
+    id,
+    label: id,
+    kind: "scenario" as const,
+    description: "",
+    topicIds: [],
+  }));
+  const layout = layoutProjectMap({
+    nodes,
+    edges: [
+      ...nodes.slice(1).map((node) => ({
+        from: "root",
+        to: node.id,
+        kind: "contains" as const,
+        label: "part",
+      })),
+      { from: "first", to: "third", kind: "flow", label: "next" },
+    ],
+  });
+  const edge = layout.edges.at(-1)!;
+  const third = layout.nodes.find((n) => n.id === "third")!;
+  assert.deepEqual(edge.points.at(-1), { x: third.x + 220, y: third.y + 42 });
+  assert(edge.points.every((point) => point.y <= third.y + 84));
+  assert(edge.arrow.startsWith(`M ${third.x + 220} ${third.y + 42} `));
+  assert(edge.points.every((point) => point.x <= layout.width));
+});
+
+test("several incoming compact links use separate ports and avoid unrelated cards", () => {
+  const nodes = ["root", "first", "second", "third", "fourth", "fifth"].map(
+    (id) => ({
+      id,
+      label: id,
+      kind: "module" as const,
+      description: "",
+      topicIds: [],
+    }),
+  );
+  const layout = layoutProjectMap(
+    {
+      nodes,
+      edges: [
+        { from: "first", to: "fifth", kind: "flow", label: "one" },
+        { from: "second", to: "fifth", kind: "flow", label: "two" },
+        { from: "fourth", to: "fifth", kind: "flow", label: "three" },
+      ],
+    },
+    true,
+  );
+  assert.equal(
+    new Set(layout.edges.map((edge) => edge.points.at(-1)!.y)).size,
+    3,
+  );
+  for (const edge of layout.edges)
+    for (let i = 1; i < edge.points.length; i++) {
+      const a = edge.points[i - 1],
+        b = edge.points[i];
+      for (const node of layout.nodes.filter(
+        (node) => node.id !== edge.from && node.id !== edge.to,
+      )) {
+        const crosses =
+          a.x === b.x
+            ? a.x > node.x &&
+              a.x < node.x + 220 &&
+              Math.max(a.y, b.y) > node.y &&
+              Math.min(a.y, b.y) < node.y + 84
+            : a.y > node.y &&
+              a.y < node.y + 84 &&
+              Math.max(a.x, b.x) > node.x &&
+              Math.min(a.x, b.x) < node.x + 220;
+        assert(!crosses, `${edge.from} → ${edge.to} crosses ${node.id}`);
+      }
+    }
+});

@@ -19,6 +19,18 @@ export const projectMapNodeSchema = z.object({
   description: z.string().max(6000),
   topicIds: z.array(z.string()).max(80),
   codeReferences: z.array(referenceSchema).max(40).optional(),
+  steps: z
+    .array(
+      z.object({
+        id: z.string().min(1).max(120),
+        label: z.string().min(1).max(200),
+        description: z.string().max(4000),
+        topicIds: z.array(z.string()).max(80),
+      }),
+    )
+    .min(2)
+    .max(12)
+    .optional(),
 });
 export const projectMapEdgeSchema = z.object({
   from: z.string().min(1).max(200),
@@ -38,6 +50,18 @@ export const projectMapSchema = z
         code: "custom",
         message: "Узлы карты должны иметь разные ID.",
       });
+    for (const node of map.nodes) {
+      if (
+        node.steps &&
+        (node.kind !== "scenario" ||
+          new Set(node.steps.map((step) => step.id)).size !== node.steps.length)
+      )
+        context.addIssue({
+          code: "custom",
+          message:
+            "Шаги сценария должны иметь разные ID и принадлежать сценарию.",
+        });
+    }
     for (const edge of map.edges) {
       if (!ids.has(edge.from) || !ids.has(edge.to) || edge.from === edge.to)
         context.addIssue({
@@ -262,50 +286,131 @@ export function layoutProjectMap(diagram: MapDiagram, compact = false) {
         })),
       );
   const byId = new Map(nodes.map((node) => [node.id, node]));
+  type Point = { x: number; y: number };
+  const branch = (edge: ProjectMapEdge) => edge.from === root.id;
+  // Root branches share a port and trunk. Other relationships get distinct
+  // ports, so several arrows cannot cover one another at the same card edge.
+  const portY = (node: (typeof nodes)[number], edge: ProjectMapEdge) => {
+    if (branch(edge)) return node.y + 42;
+    const links = diagram.edges.filter(
+      (item) => !branch(item) && (item.from === node.id || item.to === node.id),
+    );
+    const index = links.indexOf(edge);
+    const spacing = Math.min(12, 48 / Math.max(1, links.length - 1));
+    return node.y + 42 + (index - (links.length - 1) / 2) * spacing;
+  };
+  const connection = (edge: ProjectMapEdge, input: Point[]) => {
+    const points = input
+      .map(({ x, y }) => ({
+        x: Math.round(x * 100) / 100,
+        y: Math.round(y * 100) / 100,
+      }))
+      .filter(
+        (point, index, all) =>
+          !index ||
+          point.x !== all[index - 1].x ||
+          point.y !== all[index - 1].y,
+      );
+    const tip = points.at(-1)!,
+      previous = points.at(-2)!;
+    const dx = Math.sign(tip.x - previous.x),
+      dy = Math.sign(tip.y - previous.y);
+    const base = { x: tip.x - dx * 8, y: tip.y - dy * 8 };
+    return {
+      ...edge,
+      points,
+      path: points
+        .map((point, index) =>
+          index === 0
+            ? `M ${point.x} ${point.y}`
+            : point.x === points[index - 1].x
+              ? `V ${point.y}`
+              : `H ${point.x}`,
+        )
+        .join(" "),
+      // Explicit geometry keeps the tip on the path endpoint at any zoom and
+      // stroke width. An SVG marker has its own viewport and scaling rules.
+      arrow: `M ${tip.x} ${tip.y} L ${base.x - dy * 4} ${base.y + dx * 4} L ${base.x + dy * 4} ${base.y - dx * 4} Z`,
+    };
+  };
   let routed = 0;
-  const edges = diagram.edges.map((edge) => {
+  let sideLane = 0;
+  let width = compact ? 560 : (Math.max(...columns.keys()) + 1) * 290;
+  const edges = diagram.edges.map((edge, index) => {
     const from = byId.get(edge.from)!,
       to = byId.get(edge.to)!;
     if (compact) {
       const startX =
         from.id === root.id ? 279 : from.x === 24 ? from.x + 220 : from.x;
       const endX = to.id === root.id ? 279 : to.x === 24 ? to.x + 220 : to.x;
-      const startY = from.y + (from.id === root.id ? 84 : 42);
-      const endY = to.y + (to.id === root.id ? 84 : 42);
-      return {
-        ...edge,
-        path:
-          from.id === root.id
-            ? `M ${startX} ${startY} V ${endY} H ${endX}`
-            : to.id === root.id
-              ? `M ${startX} ${startY} H 279 V ${endY}`
-              : `M ${startX} ${startY} H 279 V ${endY} H ${endX}`,
-      };
+      const startY = from.id === root.id ? from.y + 84 : portY(from, edge);
+      const endY = to.id === root.id ? to.y + 84 : portY(to, edge);
+      const lane = 279 + [0, -6, 6, -12, 12][index % 5];
+      return connection(
+        edge,
+        from.id === root.id
+          ? [
+              { x: startX, y: startY },
+              { x: startX, y: endY },
+              { x: endX, y: endY },
+            ]
+          : to.id === root.id
+            ? [
+                { x: startX, y: startY },
+                { x: endX, y: startY },
+                { x: endX, y: endY },
+              ]
+            : [
+                { x: startX, y: startY },
+                { x: lane, y: startY },
+                { x: lane, y: endY },
+                { x: endX, y: endY },
+              ],
+      );
     }
-    const y1 = from.y + 42,
-      y2 = to.y + 42;
+    const y1 = portY(from, edge),
+      y2 = portY(to, edge);
     if (to.x - from.x === 290) {
       const start = from.x + 220,
         end = to.x,
         middle = (start + end) / 2;
-      return {
-        ...edge,
-        path: `M ${start} ${y1} C ${middle} ${y1}, ${middle} ${y2}, ${end} ${y2}`,
-      };
+      return connection(edge, [
+        { x: start, y: y1 },
+        { x: middle, y: y1 },
+        { x: middle, y: y2 },
+        { x: end, y: y2 },
+      ]);
+    }
+    if (from.x === to.x) {
+      // Sibling links use the outside corridor and enter from the right. They
+      // never travel through the entire canvas below unrelated cards.
+      const end = to.x + 220,
+        lane = end + 22 + sideLane++ * 12;
+      width = Math.max(width, lane + 24);
+      return connection(edge, [
+        { x: from.x + 220, y: y1 },
+        { x: lane, y: y1 },
+        { x: lane, y: y2 },
+        { x: end, y: y2 },
+      ]);
     }
     // Return and long-distance links use the gaps beside cards and a lane below the diagram.
     const lane = height + routed++ * 14;
     const start = from.x + 220,
       end = to.x;
-    return {
-      ...edge,
-      path: `M ${start} ${y1} H ${start + 20} V ${lane} H ${end - 20} V ${y2} H ${end}`,
-    };
+    return connection(edge, [
+      { x: start, y: y1 },
+      { x: start + 20, y: y1 },
+      { x: start + 20, y: lane },
+      { x: end - 20, y: lane },
+      { x: end - 20, y: y2 },
+      { x: end, y: y2 },
+    ]);
   });
   return {
     nodes,
     edges,
-    width: compact ? 560 : (Math.max(...columns.keys()) + 1) * 290,
+    width,
     height: height + (routed ? (routed - 1) * 14 + 24 : 0),
   };
 }

@@ -1,5 +1,6 @@
 import type { Progress, Interview } from "./state.ts";
 import type { Question } from "#domain/knowledge/question.ts";
+import { isTestingTask } from "#domain/knowledge/question.ts";
 import type { Mark } from "./rating.ts";
 import { hash } from "./deterministic.ts";
 import {
@@ -15,7 +16,7 @@ export function selectInterview(
   kind: Interview["kind"],
   date: string,
   history: Pick<Interview, "questionIds">[] = [],
-  progress: Record<string, Mark> = {},
+  _progress: Record<string, Mark> = {},
   profile: StackProfile = "vue",
   format: InterviewFormat = "mixed",
 ) {
@@ -33,6 +34,7 @@ export function selectInterview(
         q.curriculumTier === "core") &&
       q.availableAnswer !== false &&
       q.interviewEligible !== false &&
+      !isTestingTask(q) &&
       q.codingRole !== "advanced" &&
       !q.parentId &&
       supportsQuestion(q, profile),
@@ -41,12 +43,15 @@ export function selectInterview(
     ["Тестирование", "Инженерные вопросы"].includes(q.category)
       ? "Архитектура, производительность и тестирование"
       : q.category;
-  const recent = new Set(history.flatMap((s) => s.questionIds));
-  const weak = (q: Question) =>
-    ["again", "partial"].includes(progress[q.id]?.status);
+  const canonical = (id: string) => id.replace(/^bundled-rounds:/, "");
+  const lastSeen = new Map<string, number>();
+  history.forEach((session, index) => {
+    for (const id of session.questionIds)
+      if (!lastSeen.has(canonical(id))) lastSeen.set(canonical(id), index);
+  });
+  const age = (q: Question) => lastSeen.get(canonical(q.id)) ?? history.length;
   const order = (a: Question, b: Question) =>
-    Number(weak(b)) - Number(weak(a)) ||
-    Number(recent.has(a.id)) - Number(recent.has(b.id)) ||
+    age(b) - age(a) ||
     hash(date + a.id) - hash(date + b.id) ||
     a.id.localeCompare(b.id);
   const chosen: Question[] = [];
@@ -74,14 +79,6 @@ export function selectInterview(
         q.criteria?.trim(),
     );
     if (format === "coding") {
-      const canonical = (id: string) => id.replace(/^bundled-rounds:/, "");
-      const recentRounds = history.map(
-        (s) => new Set(s.questionIds.map(canonical)),
-      );
-      const age = (q: Question) => {
-        const index = recentRounds.findIndex((ids) => ids.has(canonical(q.id)));
-        return index < 0 ? recentRounds.length : index;
-      };
       const categoryCount = (q: Question) =>
         chosen.filter((item) => item.category === q.category).length;
       const codingOrder = (a: Question, b: Question) =>
@@ -162,7 +159,6 @@ export function selectInterview(
       eligible.filter((question) => question.kind === "behavioral"),
       1,
     );
-  else if (chosen.length < 12) take(theory.filter(weak), 1);
   // A personal package is optional: shared material fills the remaining interview.
   take(theory, Math.max(0, (full ? 20 : 11) - chosen.length));
   return chosen;
@@ -232,7 +228,6 @@ export function dailySession(
       ([d, session]) => d < date && (session.profile || "vue") === profile,
     )
     .sort(([a], [b]) => b.localeCompare(a))
-    .slice(0, 3)
     .map(([, s]) => s);
   const session = makeSession(
     selectInterview(

@@ -1,18 +1,26 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch, useId } from "vue";
-import CodePreview from "#ui/entities/project/ui/CodePreview.vue";
-import { codePresentation } from "#domain/projects/code.ts";
+import {
+  computed,
+  ref,
+  watch,
+  onMounted,
+  onBeforeUnmount,
+  nextTick,
+} from "vue";
 import { useRoute, useRouter } from "vue-router";
-import type { CodeStep, Project, Topic } from "#domain/projects/types.ts";
+import type { Project, Topic } from "#domain/projects/types.ts";
 import {
   projectMapDiagram,
-  layoutProjectMap,
   type ProjectMapView,
   type ProjectMapNode,
 } from "#domain/projects/map.ts";
-import MarkdownContent from "#ui/entities/material/ui/MarkdownContent.vue";
-import { useProjectCatalog } from "#ui/entities/project/model/catalog.ts";
-import { sourceUrl, localCodeReference } from "#domain/projects/sources.ts";
+import {
+  mapOverviewNodes,
+  scenarioDiagram,
+  structureDiagram,
+} from "#domain/projects/map-presentation.ts";
+import ProjectMapInspector from "./ProjectMapInspector.vue";
+import ProjectMapCanvas from "./ProjectMapCanvas.vue";
 const props = defineProps<{
   project: Project;
   topics: Topic[];
@@ -20,11 +28,9 @@ const props = defineProps<{
 }>();
 const route = useRoute(),
   router = useRouter(),
-  catalog = useProjectCatalog();
-const viewport = ref<HTMLElement>(),
-  zoom = ref(1),
-  copied = ref("");
-const arrowId = useId();
+  host = ref<HTMLElement>(),
+  expanded = ref(false),
+  search = ref("");
 const views = [
   { id: "scenarios", title: "Сценарии" },
   { id: "structure", title: "Устройство" },
@@ -37,60 +43,72 @@ const view = computed<ProjectMapView>(
 const diagram = computed(() =>
   projectMapDiagram(props.project, props.topics, view.value),
 );
+const scenario = computed(() =>
+  view.value === "scenarios"
+    ? diagram.value.nodes.find(
+        (node) => node.id === route.query.mapScenario && node.steps?.length,
+      )
+    : undefined,
+);
+const graph = computed(() =>
+  scenario.value
+    ? scenarioDiagram(scenario.value)
+    : structureDiagram(diagram.value, props.project.name),
+);
+const isGraph = computed(
+  () => view.value === "structure" || Boolean(scenario.value),
+);
 const selected = computed(() =>
-  diagram.value.nodes.find((node) => node.id === route.query.mapNode),
-);
-const focusedDiagram = computed(() => {
-  if (props.project.map || view.value !== "scenarios") return diagram.value;
-  const { nodes, edges } = diagram.value;
-  const root = nodes[0];
-  const branches = edges
-    .filter((edge) => edge.from === root.id)
-    .map((edge) => edge.to);
-  const branch =
-    selected.value &&
-    (branches.includes(selected.value.id)
-      ? selected.value.id
-      : edges.find((edge) => edge.to === selected.value!.id)?.from);
-  const visible = new Set([
-    root.id,
-    ...branches,
-    ...edges.filter((edge) => edge.from === branch).map((edge) => edge.to),
-  ]);
-  return {
-    nodes: nodes.filter((node) => visible.has(node.id)),
-    edges: edges.filter(
-      (edge) => visible.has(edge.from) && visible.has(edge.to),
-    ),
-  };
-});
-const layout = computed(() =>
-  layoutProjectMap(focusedDiagram.value, view.value === "structure"),
-);
-const selectedTopics = computed(() =>
-  props.topics.filter((topic) => selected.value?.topicIds.includes(topic.id)),
-);
-const related = computed(() =>
-  diagram.value.edges.filter(
-    (edge) =>
-      (edge.from === selected.value?.id || edge.to === selected.value?.id) &&
-      (view.value !== "structure" || edge.kind !== "contains"),
+  [...diagram.value.nodes, ...(scenario.value ? graph.value.nodes : [])].find(
+    (node) => node.id === route.query.mapNode,
   ),
 );
-const details = computed(() => selected.value || diagram.value.nodes[0]);
-const topic = computed(() =>
-  selectedTopics.value.length === 1 ? selectedTopics.value[0] : undefined,
+const details = computed(
+  () => selected.value || scenario.value || diagram.value.nodes[0],
 );
-const steps = computed(() =>
-  topic.value?.pilot.explanation.steps.length
-    ? topic.value.pilot.explanation.steps
-    : topic.value?.mechanism.map((text, index) => ({
-        title: `Шаг ${index + 1}`,
-        text,
-      })) || [],
+const cards = computed(() =>
+  mapOverviewNodes(diagram.value, view.value).filter((node) =>
+    (node.label + " " + node.description)
+      .toLocaleLowerCase("ru")
+      .includes(search.value.trim().toLocaleLowerCase("ru")),
+  ),
 );
-function updateQuery(values: { mapView?: string; mapNode?: string }) {
-  void router.replace({
+const groups = computed(() => {
+  const result = new Map<string, ProjectMapNode[]>();
+  for (const node of cards.value) {
+    const group =
+      view.value === "technologies" || props.project.map
+        ? ""
+        : props.topics.find((topic) => topic.id === node.topicIds[0])?.group ||
+          "";
+    result.set(group, [...(result.get(group) || []), node]);
+  }
+  return [...result].map(([title, nodes]) => ({ title, nodes }));
+});
+const modules = computed(
+  () =>
+    structureDiagram(
+      projectMapDiagram(props.project, props.topics, "structure"),
+      props.project.name,
+    ).nodes,
+);
+function technologyModules(node: ProjectMapNode) {
+  return modules.value.filter((module) =>
+    module.topicIds.some((id) => node.topicIds.includes(id)),
+  );
+}
+function summary(text: string) {
+  const plain = text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[*`#]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (plain.length <= 180) return plain;
+  const end = plain.lastIndexOf(" ", 180);
+  return plain.slice(0, end > 100 ? end : 180) + "…";
+}
+function update(values: Record<string, string | undefined>) {
+  return router.push({
     path: "/projects",
     query: {
       ...route.query,
@@ -100,53 +118,86 @@ function updateQuery(values: { mapView?: string; mapNode?: string }) {
     },
   });
 }
-function chooseView(value: ProjectMapView) {
-  zoom.value = 1;
-  updateQuery({ mapView: value, mapNode: undefined });
+function chooseView(id: ProjectMapView) {
+  search.value = "";
+  update({ mapView: id, mapNode: undefined, mapScenario: undefined });
 }
 function chooseNode(node: ProjectMapNode) {
-  copied.value = "";
-  updateQuery({ mapNode: node.id });
+  if (node.kind === "module" && view.value !== "structure") {
+    const module = modules.value.find(
+      (item) =>
+        item.id === node.id ||
+        item.id === node.id.replace(/^group:/, "module:"),
+    );
+    if (module) {
+      search.value = "";
+      update({
+        mapView: "structure",
+        mapNode: module.id,
+        mapScenario: undefined,
+      });
+      return;
+    }
+  }
+  update({ mapNode: node.id });
 }
-async function copyReference(value: string) {
-  try {
-    await navigator.clipboard.writeText(value);
-    copied.value = "Путь скопирован";
-  } catch {
-    copied.value = "Не удалось скопировать путь";
+function openScenario(node: ProjectMapNode) {
+  update({ mapScenario: node.id, mapNode: undefined });
+}
+async function clear() {
+  const id = selected.value?.id;
+  await update({ mapNode: undefined });
+  await nextTick();
+  if (id)
+    host.value
+      ?.querySelector<HTMLElement>(`[data-map-node="${CSS.escape(id)}"]`)
+      ?.focus({ preventScroll: true });
+}
+async function fullscreen() {
+  if (expanded.value) {
+    if (document.fullscreenElement === host.value)
+      await document.exitFullscreen();
+    expanded.value = false;
+  } else {
+    try {
+      await host.value?.requestFullscreen();
+    } catch {
+      expanded.value = true;
+    }
   }
 }
-function referenceUrl(reference: CodeStep) {
-  const owner = props.topics.find((topic) =>
-    topic.pilot.code.steps.some(
-      (step) =>
-        step.project === reference.project &&
-        step.path === reference.path &&
-        step.line === reference.line,
-    ),
-  );
-  return sourceUrl(
-    reference,
-    catalog.catalog.repositories,
-    owner?.pilot.sourceRevision ||
-      catalog.projects[reference.project]?.branch ||
-      "main",
-  );
+function fullscreenChanged() {
+  expanded.value = document.fullscreenElement === host.value;
+}
+function escape(event: KeyboardEvent) {
+  if (event.key === "Escape" && expanded.value && !document.fullscreenElement)
+    expanded.value = false;
 }
 watch(
   () => [props.project.id, view.value],
-  async () => {
-    await nextTick();
-    viewport.value?.scrollTo({ top: 0, left: 0 });
+  () => {
+    search.value = "";
   },
 );
+onMounted(() => {
+  document.addEventListener("fullscreenchange", fullscreenChanged);
+  window.addEventListener("keydown", escape);
+});
+onBeforeUnmount(() => {
+  document.removeEventListener("fullscreenchange", fullscreenChanged);
+  window.removeEventListener("keydown", escape);
+});
 </script>
 <template>
-  <section class="project-map" aria-label="Визуальная карта проекта">
-    <div class="project-map-heading">
+  <section
+    ref="host"
+    class="project-map"
+    :class="{ 'is-fullscreen': expanded }"
+    aria-label="Визуальная карта проекта"
+  >
+    <header class="project-map-heading">
       <div>
         <h2>{{ project.name }}</h2>
-        <p>{{ project.pitch || project.subtitle }}</p>
       </div>
       <nav class="project-map-views" aria-label="Представление карты">
         <button
@@ -158,221 +209,146 @@ watch(
           {{ item.title }}
         </button>
       </nav>
-    </div>
-    <div class="project-map-controls">
-      <button
-        :disabled="zoom <= 0.6"
-        aria-label="Уменьшить карту"
-        @click="zoom = Math.max(0.6, zoom - 0.2)"
-      >
-        −
-      </button>
-      <button aria-label="Сбросить масштаб карты" @click="zoom = 1">
-        {{ Math.round(zoom * 100) }}%
-      </button>
-      <button
-        :disabled="zoom >= 1.6"
-        aria-label="Увеличить карту"
-        @click="zoom = Math.min(1.6, zoom + 0.2)"
-      >
-        +
-      </button>
-      <button
-        :disabled="!selected"
-        @click="updateQuery({ mapNode: undefined })"
-      >
-        Вся карта
-      </button>
+    </header>
+    <div class="map-toolbar">
+      <nav v-if="scenario" class="map-breadcrumbs" aria-label="Путь сценария">
+        <button
+          @click="update({ mapScenario: undefined, mapNode: scenario.id })"
+        >
+          ← Все сценарии</button
+        ><span>{{ scenario.label }}</span>
+      </nav>
+      <label v-else-if="!isGraph" class="map-search"
+        ><input
+          v-model="search"
+          :aria-label="
+            view === 'technologies' ? 'Поиск технологий' : 'Поиск сценариев'
+          "
+          :placeholder="
+            view === 'technologies' ? 'Найти технологию…' : 'Найти сценарий…'
+          "
+      /></label>
+      <div v-else />
+      <div class="map-toolbar-actions">
+        <button
+          :style="{ visibility: selected ? 'visible' : 'hidden' }"
+          :disabled="!selected"
+          data-action="clear-map-selection"
+          @click="clear"
+        >
+          Снять выбор</button
+        ><button
+          :aria-pressed="expanded"
+          data-action="expand-map"
+          @click="fullscreen"
+        >
+          {{ expanded ? "Свернуть карту" : "Развернуть карту" }}
+        </button>
+      </div>
     </div>
     <div class="project-map-workspace">
-      <div
-        ref="viewport"
-        class="project-map-viewport"
-        tabindex="0"
-        aria-label="Схема проекта"
-      >
-        <div
-          class="project-map-size"
-          :style="{
-            width: layout.width * zoom + 'px',
-            height: layout.height * zoom + 'px',
-          }"
-        >
-          <div
-            class="project-map-canvas"
-            :style="{
-              width: layout.width + 'px',
-              height: layout.height + 'px',
-              transform: `scale(${zoom})`,
-            }"
+      <div class="map-main">
+        <KeepAlive
+          ><ProjectMapCanvas
+            v-if="isGraph"
+            :diagram="graph"
+            :direction="view === 'structure' ? 'DOWN' : 'RIGHT'"
+            :selected="selected?.id"
+            :scope="
+              project.id + ':' + view + ':' + (scenario?.id || 'overview')
+            "
+            @choose="chooseNode"
+            @clear="clear"
+        /></KeepAlive>
+        <div v-if="!isGraph" class="map-overview" :class="'overview-' + view">
+          <section
+            v-for="group in groups"
+            :key="group.title"
+            class="map-card-group"
           >
-            <svg
-              :width="layout.width"
-              :height="layout.height"
-              aria-hidden="true"
-            >
-              <defs>
-                <marker
-                  :id="arrowId"
-                  markerWidth="7"
-                  markerHeight="7"
-                  refX="7"
-                  refY="3.5"
-                  orient="auto"
-                >
-                  <path d="M0,0 L7,3.5 L0,7 Z" fill="context-stroke" />
-                </marker>
-              </defs>
-              <path
-                v-for="(edge, index) in layout.edges.filter(
-                  (edge) =>
-                    view !== 'structure' ||
-                    (selected &&
-                      edge.kind !== 'contains' &&
-                      (edge.from === selected.id || edge.to === selected.id)),
-                )"
-                :key="index"
-                :d="edge.path"
-                class="project-map-edge"
-                :class="{
-                  'is-focused':
-                    selected &&
-                    (edge.from === selected.id || edge.to === selected.id),
-                }"
-                :marker-end="`url(#${arrowId})`"
+            <h3 v-if="groups.length > 1 && group.title">{{ group.title }}</h3>
+            <div class="map-card-grid">
+              <article
+                v-for="node in group.nodes"
+                :key="node.id"
+                class="map-overview-card"
+                :class="{ 'is-selected': selected?.id === node.id }"
               >
-                <title>{{ edge.label }}</title>
-              </path>
-            </svg>
-            <button
-              v-for="node in layout.nodes"
-              :key="node.id"
-              class="project-map-node"
-              :class="'node-' + node.kind"
-              :style="{ left: node.x + 'px', top: node.y + 'px' }"
-              :aria-pressed="selected?.id === node.id"
-              :data-map-node="node.id"
-              :data-topic-id="
-                node.topicIds.length === 1 ? node.topicIds[0] : undefined
-              "
-              @click="chooseNode(node)"
-            >
-              <span class="project-map-node-kind">{{
-                node.id.startsWith("group:")
-                  ? "Раздел"
-                  : node.id.startsWith("topic:")
-                    ? "Разбор"
-                    : node.kind === "scenario"
-                      ? "Сценарий"
-                      : node.kind === "technology"
-                        ? "Технология"
-                        : node.kind === "module"
-                          ? "Модуль"
-                          : "Система"
-              }}</span>
-              <strong>{{ node.label }}</strong>
-            </button>
-          </div>
+                <button
+                  class="map-card-select"
+                  :data-map-node="node.id"
+                  :data-topic-id="
+                    node.topicIds.length === 1 ? node.topicIds[0] : undefined
+                  "
+                  :aria-pressed="selected?.id === node.id"
+                  @click="chooseNode(node)"
+                >
+                  <strong>{{ node.label }}</strong>
+                  <p v-if="node.description">{{ summary(node.description) }}</p>
+                </button>
+                <div
+                  v-if="
+                    view === 'technologies' && technologyModules(node).length
+                  "
+                  class="map-technology-modules"
+                >
+                  <span>Связанные разделы</span
+                  ><button
+                    v-for="module in technologyModules(node).slice(0, 3)"
+                    :key="module.id"
+                    @click="
+                      update({
+                        mapView: 'structure',
+                        mapNode: module.id,
+                        mapScenario: undefined,
+                      })
+                    "
+                  >
+                    {{ module.label }} →
+                  </button>
+                </div>
+                <button
+                  v-if="node.steps?.length"
+                  class="map-card-open"
+                  @click="openScenario(node)"
+                >
+                  Показать сценарий →
+                </button>
+                <span v-else-if="node.topicIds.length" class="map-card-count"
+                  >{{ node.topicIds.length }}
+                  {{ node.topicIds.length === 1 ? "тема" : "темы" }}</span
+                >
+              </article>
+            </div>
+          </section>
+          <p v-if="!cards.length" class="platform-muted">Ничего не найдено.</p>
         </div>
       </div>
-      <aside class="project-map-detail" aria-label="Выбранный элемент карты">
-        <h3>{{ details.label }}</h3>
-        <MarkdownContent
-          v-if="details.description"
-          :text="details.description"
-        />
-        <ul v-if="related.length" class="project-map-relations">
-          <li v-for="(edge, index) in related" :key="index">
-            <button
-              @click="
-                chooseNode(diagram.nodes.find((node) => node.id === edge.from)!)
-              "
-            >
-              {{ diagram.nodes.find((node) => node.id === edge.from)?.label }}
-            </button>
-            <span>{{ edge.label }} →</span>
-            <button
-              @click="
-                chooseNode(diagram.nodes.find((node) => node.id === edge.to)!)
-              "
-            >
-              {{ diagram.nodes.find((node) => node.id === edge.to)?.label }}
-            </button>
-          </li>
-        </ul>
-        <div v-if="selectedTopics.length" class="project-map-topic-links">
-          <RouterLink
-            v-for="item in selectedTopics"
-            :key="item.id"
-            :to="topicLink(item.id)"
-            >{{
-              selectedTopics.length === 1 ? "Открыть разбор" : item.title
-            }}
-            →</RouterLink
-          >
-        </div>
-        <ol
-          v-if="steps.length && view !== 'structure'"
-          class="project-map-flow"
-          aria-label="Шаги сценария"
-        >
-          <li v-for="(step, index) in steps" :key="index">
-            <span>{{ index + 1 }}</span>
-            <div>
-              <h4>{{ step.title }}</h4>
-              <MarkdownContent :text="step.text" />
-            </div>
-          </li>
-        </ol>
-        <details
-          v-if="details.codeReferences?.length"
-          :key="details.id"
-          class="project-map-code"
-        >
-          <summary>Код · {{ details.codeReferences.length }}</summary>
-          <div
-            v-for="reference in details.codeReferences"
-            :key="reference.path + ':' + reference.line"
-          >
-            <a
-              v-if="referenceUrl(reference)"
-              :href="referenceUrl(reference)!"
-              target="_blank"
-              rel="noopener noreferrer"
-              >{{ reference.path }}:{{ reference.line }} ↗</a
-            >
-            <button
-              v-else
-              @click="copyReference(localCodeReference(reference))"
-            >
-              {{ reference.path }}:{{ reference.line }}
-            </button>
-            <MarkdownContent :text="codePresentation(reference).explanation" />
-            <CodePreview
-              v-if="codePresentation(reference).preview"
-              :preview="codePresentation(reference).preview!"
-              :path="reference.path"
-            />
-          </div>
-          <p v-if="copied" role="status">{{ copied }}</p>
-        </details>
-      </aside>
+      <ProjectMapInspector
+        v-if="details"
+        :node="details"
+        :diagram="scenario && selected ? graph : diagram"
+        :project="project"
+        :topics="topics"
+        :view="view"
+        :selected="Boolean(selected)"
+        :scenario-opened="Boolean(scenario)"
+        :related-modules="
+          details.kind === 'technology' ? technologyModules(details) : []
+        "
+        :topic-link="topicLink"
+        @choose="chooseNode"
+        @close="clear"
+        @scenario="openScenario"
+      />
     </div>
-    <p v-if="diagram.nodes.length === 1" class="platform-muted">
-      {{
-        view === "technologies"
-          ? "Технологии пока не добавлены."
-          : view === "structure"
-            ? "Устройство проекта пока не описано."
-            : "Сценарии пока не добавлены."
-      }}
-    </p>
   </section>
 </template>
 <style scoped>
 .project-map {
   min-width: 0;
   margin-top: 24px;
+  background: white;
 }
 .project-map-heading {
   display: flex;
@@ -389,8 +365,7 @@ watch(
   margin: 0;
   color: var(--muted);
 }
-.project-map-views,
-.project-map-controls {
+.project-map-views {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
@@ -400,197 +375,213 @@ watch(
   border-color: var(--accent);
   color: var(--accent);
 }
-.project-map-controls {
+.map-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   margin: 20px 0 12px;
+  min-height: 44px;
 }
-.project-map-controls button {
-  min-width: 40px;
-  padding: 7px 12px;
+.map-toolbar-actions {
+  display: flex;
+  gap: 8px;
+}
+.map-toolbar button {
+  font-size: 13px;
+  padding: 8px 12px;
+}
+.map-search input {
+  width: min(100%, 300px);
+  font-size: 14px;
+}
+.map-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+.map-breadcrumbs button {
+  white-space: nowrap;
 }
 .project-map-workspace {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-columns: minmax(0, 1fr) 370px;
   gap: 20px;
   align-items: start;
 }
-.project-map-viewport {
+.map-main {
   min-width: 0;
+  min-height: 620px;
+}
+.map-overview {
+  height: 620px;
   overflow: auto;
-  height: 560px;
+  padding-right: 4px;
   overflow-anchor: none;
+}
+.map-card-group h3 {
+  font-size: 15px;
+  margin: 0 0 12px;
+}
+.map-card-group + section {
+  margin-top: 20px;
+}
+.map-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.map-overview-card {
   border: 1px solid var(--line);
   border-radius: 12px;
-  background:
-    radial-gradient(#dbe4f2 1px, transparent 1px) 0 0 / 16px 16px,
-    #f8faff;
+  background: white;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
-.project-map-size {
-  position: relative;
+.map-overview-card.is-selected {
+  border-color: var(--accent);
+  background: #f3f6ff;
+  box-shadow: 0 0 0 1px var(--accent);
 }
-.project-map-canvas {
-  position: absolute;
-  inset: 0 auto auto 0;
-  transform-origin: top left;
+.platform .map-card-select {
+  display: block;
+  min-height: 116px;
+  border: 0;
+  border-radius: 0;
+  text-align: left;
+  padding: 18px;
+  background: transparent;
+  width: 100%;
+  font-weight: 400;
+  flex: 1;
 }
-.project-map-canvas svg {
-  position: absolute;
+.map-card-select strong {
+  display: block;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.map-card-select :deep(p) {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 10px 0 0;
+}
+.map-card-select :deep(a) {
   pointer-events: none;
 }
-.project-map-edge {
-  fill: none;
-  stroke: #9aadc5;
-  stroke-width: 1.5;
-}
-.project-map-edge.is-focused {
-  stroke: var(--accent);
-  stroke-width: 2.5;
-}
-.platform .project-map-node {
-  position: absolute;
-  width: 220px;
-  height: 84px;
-  padding: 12px 16px;
-  text-align: left;
-  background: white;
-  box-shadow: 0 2px 5px #23395b0a;
-  border-radius: 10px;
-  border: 1px solid #c9d6e8;
-  display: block;
-}
-.project-map-node strong {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  font-size: 13px;
-  line-height: 1.4;
-  overflow-wrap: anywhere;
-}
-.project-map-node-kind {
-  display: block;
-  color: var(--muted);
-  font-size: 10px;
-  margin-bottom: 5px;
-}
-.platform .project-map-node.node-technology {
-  border-left: 4px solid #9a72ca;
-}
-.platform .project-map-node.node-scenario {
-  border-left: 4px solid #5284d6;
-}
-.platform .project-map-node.node-module {
-  border-left: 4px solid #3e9b85;
-}
-.platform .project-map-node.node-system {
-  border-left: 4px solid #d49c44;
-}
-.platform .project-map-node[aria-pressed="true"] {
-  border-color: var(--accent);
-  background: #edf3ff;
-}
-.project-map-detail {
-  padding: 20px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  min-width: 0;
-  height: 560px;
-  overflow-anchor: none;
-  overflow: auto;
-}
-.project-map-detail h3 {
-  margin-top: 0;
-  overflow-wrap: anywhere;
-}
-.project-map-detail :deep(p) {
-  font-size: 14px;
-  line-height: 1.6;
-}
-.project-map-topic-links {
-  display: grid;
-  gap: 12px;
-  margin-block: 20px;
-}
-.project-map-flow {
-  padding: 0;
-  list-style: none;
-  margin-block: 24px;
-}
-.project-map-flow li {
-  display: flex;
-  gap: 12px;
-  position: relative;
-  padding-bottom: 20px;
-}
-.project-map-flow li:not(:last-child)::after {
-  content: "";
-  position: absolute;
-  top: 26px;
-  left: 12px;
-  bottom: 0;
-  border-left: 1px solid #aebfda;
-}
-.project-map-flow li > span {
-  flex: 0 0 25px;
-  height: 25px;
-  border-radius: 50%;
-  background: #dce8fa;
-  text-align: center;
-  font-size: 12px;
-  line-height: 25px;
-}
-.project-map-flow h4 {
-  margin: 2px 0 8px;
-}
-.project-map-flow :deep(p) {
-  margin-block: 4px;
-}
-.project-map-relations {
-  list-style: none;
-  padding: 0;
-  margin-block: 24px 0;
-}
-.project-map-relations li {
+.platform .map-card-open {
+  border: 0;
   border-top: 1px solid var(--line);
-  padding-block: 12px;
+  border-radius: 0;
+  background: transparent;
+  padding: 12px 18px;
+  text-align: left;
+  justify-content: flex-start;
+  font-size: 13px;
+  color: var(--accent);
 }
-.project-map-relations span {
+.map-card-count {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 0 18px 14px;
+}
+.map-technology-modules {
+  padding: 0 18px 16px;
+}
+.map-technology-modules > span {
   display: block;
   font-size: 11px;
   color: var(--muted);
+  margin-bottom: 6px;
 }
-.project-map-relations button {
-  text-align: left;
-  padding: 5px 0;
-  background: transparent;
+.platform .map-technology-modules button {
   border: 0;
-  color: var(--accent);
-}
-.project-map-code a,
-.project-map-code button {
-  overflow-wrap: anywhere;
-  text-align: left;
+  background: transparent;
+  min-height: 28px;
+  padding: 4px 0;
   font-size: 12px;
+  font-weight: 400;
+  text-align: left;
+  color: var(--accent);
+  display: block;
 }
-@media (max-width: 1100px) {
+.project-map:fullscreen,
+.project-map.is-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  margin: 0;
+  padding: 24px;
+  overflow: auto;
+  background: white;
+}
+.project-map:fullscreen .map-overview,
+.project-map.is-fullscreen .map-overview {
+  height: calc(100dvh - 210px);
+}
+.project-map:fullscreen :deep(.map-inspector),
+.project-map.is-fullscreen :deep(.map-inspector) {
+  height: calc(100dvh - 210px);
+}
+.project-map:fullscreen :deep(.project-map-viewport),
+.project-map.is-fullscreen :deep(.project-map-viewport) {
+  height: calc(100dvh - 266px);
+}
+@media (max-width: 1250px) {
+  .project-map-workspace {
+    grid-template-columns: minmax(0, 1fr) 340px;
+  }
+  .map-card-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 1000px) {
   .project-map-workspace {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .map-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .map-overview {
+    height: auto;
+    overflow: visible;
+    padding: 0;
+  }
+  .map-toolbar {
+    align-items: start;
+  }
+  .project-map-heading p {
+    max-width: 100%;
   }
 }
 @media (max-width: 600px) {
   .project-map-views {
     width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .project-map-views button {
-    flex: 1;
     padding-inline: 8px;
     font-size: 12px;
   }
-  .project-map-viewport {
-    height: 400px;
+  .map-card-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
-  .project-map-detail {
-    height: 440px;
+  .map-toolbar {
+    flex-wrap: wrap;
+  }
+  .map-toolbar-actions {
+    margin-left: auto;
+  }
+  .map-breadcrumbs {
+    flex-wrap: wrap;
+  }
+  .project-map:fullscreen,
+  .project-map.is-fullscreen {
+    padding: 12px;
   }
 }
 </style>

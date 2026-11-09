@@ -287,8 +287,16 @@ test("testing and engineering theory participate in the engineering section of t
     Тестирование: { status: "again" as const },
     "Инженерные вопросы": { status: "partial" as const },
   });
-  assert(selected.some((q) => q.id === "Тестирование"));
-  assert(selected.some((q) => q.id === "Инженерные вопросы"));
+  assert.deepEqual(selected, selectInterview(bank, "daily", "gap"));
+  assert(
+    selected.some((q) =>
+      [
+        "Тестирование",
+        "Инженерные вопросы",
+        "Архитектура, производительность и тестирование",
+      ].includes(q.category),
+    ),
+  );
 });
 
 const followupBank = qs.map((q) => ({

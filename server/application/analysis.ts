@@ -1,4 +1,5 @@
 import { randomUUID, createHash } from "node:crypto";
+import { technicalQuestionInstructions } from "#domain/knowledge/question.ts";
 import { basename } from "node:path";
 import { z } from "zod";
 import {
@@ -14,7 +15,11 @@ import {
   prepareKnowledgeOverlay,
   applyKnowledgeOverlays,
 } from "#domain/analysis/knowledge.ts";
-import { projectDraftSchema } from "#domain/projects/draft.ts";
+import {
+  projectDraftSchema,
+  projectMapInstructions,
+  projectQuestionInstructions,
+} from "#domain/projects/draft.ts";
 import {
   projectFromDraft,
   validateProjectEvidence,
@@ -347,7 +352,11 @@ export class AnalysisService {
         const previous = this.previousProject(record.job.projectId);
         const project = await this.ask(
           "project-final",
-          projectInstructions,
+          [
+            projectInstructions,
+            projectMapInstructions,
+            projectQuestionInstructions,
+          ].join("\n"),
           projectDraftSchema,
           {
             observations,
@@ -432,7 +441,7 @@ export class AnalysisService {
             );
           const result = await this.ask(
             "import-compare",
-            importInstructions,
+            importInstructions + "\n" + technicalQuestionInstructions,
             compared,
             {
               materials,

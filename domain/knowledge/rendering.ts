@@ -153,6 +153,12 @@ export function renderMarkdown(
         html += `<blockquote>${renderMarkdown(quote.join("\n"), { resolveLink })}</blockquote>`;
       continue;
     }
+    const identity = /^\*\*ID вопроса:\*\*\s*(\S[^\r\n]*)$/.exec(line);
+    if (identity) {
+      html += `<span id="${escapeHtml(headingId(identity[1]))}"></span>`;
+      i++;
+      continue;
+    }
     const h = /^(#{1,6})\s+(.+?)(?:\s+#+)?$/.exec(line);
     if (h) {
       while (headingStack.length && headingStack.at(-1)!.level >= h[1].length)

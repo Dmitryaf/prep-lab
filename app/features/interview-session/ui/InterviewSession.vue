@@ -18,6 +18,7 @@ import {
   localDate,
   dailyKey,
   availableFollowups,
+  openedFollowups,
   openFollowup,
   advanceQuestion,
   previousQuestion,
@@ -64,7 +65,6 @@ const reviewed = computed(
     !!(
       session.value &&
       current.value &&
-      session.value.kind === "daily" &&
       session.value.reviewed?.includes(current.value.id)
     ),
 );
@@ -295,10 +295,14 @@ watch(() => route.fullPath, refreshDate);
       ><button
         v-if="
           !(current.roundFormat === 'coding' && current.codingRole) &&
-          availableFollowups(session).length
+          (availableFollowups(session).length ||
+            openedFollowups(session).length)
         "
         data-action="session-followup"
-        :disabled="saving"
+        :disabled="
+          saving ||
+          (!!session.followupIndex && !availableFollowups(session).length)
+        "
         @click="move('followup')"
       >
         Уточняющий вопрос</button
@@ -343,21 +347,17 @@ watch(() => route.fullPath, refreshDate);
           </button>
         </div>
       </div>
-      <template v-if="session.kind === 'daily'"
-        ><template v-if="reviewed"
-          ><RatingButtons
-            :id="current.id"
-            :session-id="session.id" /><StudyLinks
-            :question="current" /></template
-        ><button
-          v-else
-          data-action="session-review"
-          :disabled="saving"
-          @click="review"
-        >
-          Проверить ответ
-        </button></template
+      <template v-if="reviewed"
+        ><RatingButtons :id="current.id" :session-id="session.id" /><StudyLinks
+          :question="current" /></template
+      ><button
+        v-else
+        data-action="session-review"
+        :disabled="saving"
+        @click="review"
       >
+        Проверить ответ
+      </button>
     </QuestionCard>
   </template>
 </template>

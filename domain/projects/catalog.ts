@@ -64,7 +64,12 @@ export const projectCatalogSchema = z
         ...(project.map?.nodes || []),
         ...(project.structure?.nodes || []),
       ]) {
-        if (node.topicIds.some((id) => !projectTopics.has(id)))
+        if (
+          [
+            ...node.topicIds,
+            ...(node.steps || []).flatMap((step) => step.topicIds),
+          ].some((id) => !projectTopics.has(id))
+        )
           context.addIssue({
             code: "custom",
             message: "Карта ссылается на неизвестную тему проекта.",

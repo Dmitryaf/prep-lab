@@ -85,6 +85,7 @@ test("project code opens in the topic and the map with line numbers, highlightin
   });
   await page.goto(base + "/#/projects?project=first&mapView=structure");
   await page.locator('[data-map-node="module:Сценарии"]').click();
+  await page.getByRole("tab", { name: "Материалы", exact: true }).click();
   await page.locator(".project-map-code > summary").click();
   await page.getByText("Показать код", { exact: true }).first().click();
   await expect(page.locator(".code-preview").first()).toContainText(

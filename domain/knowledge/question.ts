@@ -1,3 +1,6 @@
+export const technicalQuestionInstructions =
+  "Технический вопрос формулируй естественно и с достаточным контекстом: назови наблюдаемую ситуацию, действие или механизм. Ответ должен прямо отвечать на вопрос. Не добавляй в технический банк общие вопросы о коммуникации, найме, наставничестве, оценке сроков и управлении командой. Вопросы об API, диагностике, зависимостях и проверке кода оставляй техническими. HR-материалы сохраняй без редакторских изменений. При согласованном переименовании Markdown-вопроса сохраняй его прежний ключ через **ID вопроса:** прежний заголовок; служебный ключ не является частью вопроса или ответа.";
+
 export interface StudyLink {
   kind: "theory" | "practice";
   noteId: string;
@@ -42,3 +45,7 @@ export type PreparedQuestion = Question & {
   learningLinks: StudyLink[];
   criteria: string;
 };
+
+export function isTestingTask(question: Pick<Question, "kind" | "category">) {
+  return question.kind === "practice" && question.category === "Тестирование";
+}

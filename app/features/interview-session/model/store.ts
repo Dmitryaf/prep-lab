@@ -50,7 +50,6 @@ export const useInterview = defineStore("interview", () => {
             (session.profile || "vue") === settings.settings.profile &&
             (session.format || "mixed") === format,
         )
-        .slice(-3)
         .reverse(),
     );
     if (!session.questionIds.length) {

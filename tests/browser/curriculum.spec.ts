@@ -20,7 +20,7 @@ test("curriculum", async ({ app: { base }, page, pageErrors: errors }) => {
       "vue",
     );
     expect(bank.warnings).toEqual([]);
-    expect(bank.route.length).toBe(66);
+    expect(bank.route.length).toBe(62);
     const questions = bank.route.map((id) =>
       bank.questions.find((q) => q.id === id),
     );
@@ -71,7 +71,7 @@ test("curriculum", async ({ app: { base }, page, pageErrors: errors }) => {
         await page.goto(destination(q));
         await page.locator("[data-action=reveal]").click();
       }
-      if ([0, 15, 49, 54, 65].includes(i)) {
+      if ([0, 15, 49, 54, 61].includes(i)) {
         await page.setViewportSize({ width: 390, height: 844 });
         expect(
           await page.evaluate(
@@ -93,7 +93,9 @@ test("curriculum", async ({ app: { base }, page, pageErrors: errors }) => {
         links: q.learningLinks.length,
       });
       if ((i + 1) % 22 === 0)
-        console.log(`Checked ${i + 1}/66 cards and ${links} learning links`);
+        console.log(
+          `Checked ${i + 1}/${questions.length} cards and ${links} learning links`,
+        );
     }
     expect(await state(), "reading should not change progress").toBe(before);
     // Study → mark a gap → repeat → independent retry can be marked confident.
@@ -126,7 +128,7 @@ test("curriculum", async ({ app: { base }, page, pageErrors: errors }) => {
       ),
     );
     console.log(
-      `PASS core curriculum: 66 hidden/revealed answers, criteria, ${links} live study links, 5 narrow layouts, repeat/reload, no reading-side progress changes`,
+      `PASS core curriculum: ${questions.length} hidden/revealed answers, criteria, ${links} live study links, 5 narrow layouts, repeat/reload, no reading-side progress changes`,
     );
   } catch (error) {
     await page.screenshot({

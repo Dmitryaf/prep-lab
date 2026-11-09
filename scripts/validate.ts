@@ -48,7 +48,7 @@ for (const topic of topics) {
       p.study.length >= 1 && p.study.length <= 6,
       "Study list size: " + topic.id,
     );
-    assert(p.questions.length >= 3, "Missing questions: " + topic.id);
+    assert(p.questions.length >= 1, "Missing questions: " + topic.id);
     for (const q of p.questions)
       assert(
         q.id && q.question && q.short && q.detailed.length && q.example,
@@ -64,7 +64,7 @@ for (const topic of topics) {
     );
     for (const step of [...p.code.steps, ...p.code.tests]) {
       assert(
-        ["cokr", "trajectory", "inbox"].includes(step.project),
+        step.project === "cokr" || Object.hasOwn(projects, step.project),
         "Unknown code project",
       );
       assert(

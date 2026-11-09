@@ -123,7 +123,16 @@ test(
   "project adapters preserve map IDs and the answer belonging to each question",
   { skip: !ownerAvailable },
   () => {
-    assert.equal(projects.length, 177);
+    assert.equal(
+      projects.filter((q) =>
+        ["lanit", "trajectory", "inbox"].includes(q.project || ""),
+      ).length,
+      172,
+    );
+    assert.equal(
+      projects.length,
+      topics.reduce((count, topic) => count + topic.pilot.questions.length, 0),
+    );
     for (const q of projects) {
       assert(
         q.answer &&
@@ -167,7 +176,8 @@ test("old sessions stay frozen; new ratings and revealed daily answers survive s
   assert.deepEqual(state.daily["2026-10-27"], old);
   assert.equal(dailySession(state, [], "2026-10-28"), state);
   const next = dailySession(state, bank, "2026-10-29");
-  assert(next.daily["2026-10-29"].questionIds.includes(q));
+  assert(!next.daily["2026-10-29"].questionIds.includes(q));
+  assert.deepEqual(next.questionProgress, state.questionProgress);
   const bad = structuredClone(state);
   bad.daily["2026-10-28"].reviewed = ["unknown"];
   assert.throws(() => importState(JSON.stringify(bad), state));

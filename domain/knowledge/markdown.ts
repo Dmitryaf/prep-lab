@@ -91,6 +91,7 @@ export function categoryFor(path: string, heading: string = "") {
 }
 function separateBody(body: string) {
   let codingRole: PreparedQuestion["codingRole"];
+  let questionId: string | undefined;
   let codeFence: string | undefined;
   body = body
     .split("\n")
@@ -109,6 +110,11 @@ function separateBody(body: string) {
       if (marker) {
         codeFence = marker[1];
         return line;
+      }
+      const identity = /^\*\*ID вопроса:\*\*\s*(\S[^\r\n]*)$/.exec(line);
+      if (identity) {
+        questionId = identity[1].trim();
+        return "";
       }
       const role = /^\*\*Этап кода:\*\*\s*([^\n]*)$/.exec(line);
       if (!role) return line;
@@ -215,6 +221,7 @@ function separateBody(body: string) {
     roundFormat,
     codingRole,
     interviewEligible,
+    questionId,
   };
 }
 export function extractQuestions(
@@ -269,7 +276,7 @@ export function extractQuestions(
         ? [...h.parents.slice(1), h.title].join("#")
         : h.title;
     result.push({
-      id: `ck:${note.id}#${heading}`,
+      id: `ck:${note.id}#${split.questionId || heading}`,
       source: "knowledge",
       kind,
       category: categoryFor(note.path, h.title),

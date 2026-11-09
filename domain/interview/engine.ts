@@ -9,6 +9,7 @@ export {
 } from "./saved-state.ts";
 export {
   availableFollowups,
+  openedFollowups,
   openFollowup,
   advanceQuestion,
   finishInterview,

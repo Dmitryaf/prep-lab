@@ -13,10 +13,10 @@ import { loadState, validateState } from "#domain/interview/saved-state.ts";
 const common = loadCommonKnowledge();
 test("the complete common base contains no owner materials and retains stable question identities", () => {
   assert.equal(common.notes.length, 219);
-  assert.equal(common.questions.length, 591);
+  assert.equal(common.questions.length, 559);
   assert.equal(
     new Set(common.questions.map((question) => question.id)).size,
-    591,
+    559,
   );
   assert(
     !/Dmitryaf|МЭДО|Inbox Point|Trajectory|Landocs|Docshouse|cokr/i.test(
@@ -27,7 +27,7 @@ test("the complete common base contains no owner materials and retains stable qu
 for (const profile of ["vue", "react"] as const) {
   test(`${profile}: core routes, answers, criteria and live material links remain usable`, () => {
     const bank = knowledgeForProfile(common, profile);
-    assert.equal(bank.route.length, 66);
+    assert.equal(bank.route.length, 62);
     assert(bank.questions.length > 400);
     for (const id of bank.route) {
       const question = bank.questions.find((question) => question.id === id)!;

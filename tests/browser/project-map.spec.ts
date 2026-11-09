@@ -98,11 +98,10 @@ test("project map opens by default, reveals scenarios and retains map context af
     "aria-pressed",
     "true",
   );
-  await page.locator('[data-map-node="group:Сценарии"]').click();
   await page.locator('[data-map-node="topic:first-main"]').click();
-  await expect(page.getByRole("list", { name: "Шаги сценария" })).toContainText(
-    "Проверка формы данных.",
-  );
+  await expect(
+    page.getByRole("complementary", { name: "Выбранный элемент карты" }),
+  ).toContainText("Проверяемый учебный пример с явными границами.");
   await page
     .getByRole("link", { name: "Открыть разбор", exact: false })
     .click();
@@ -118,8 +117,9 @@ test("project map opens by default, reveals scenarios and retains map context af
     .getByRole("navigation", { name: "Представление карты" })
     .getByRole("button", { name: "Устройство", exact: true })
     .click();
-  await expect(page.locator(".project-map .node-system")).toHaveCount(1);
+  await expect(page.locator(".project-map .node-system")).toHaveCount(0);
   await page.locator('[data-map-node="module:Сценарии"]').click();
+  await page.getByRole("tab", { name: "Материалы", exact: true }).click();
   await expect(page.locator(".project-map-code")).not.toHaveAttribute("open");
   await page.locator(".project-map-code summary").click();
   await expect(page.locator(".project-map-code")).toContainText(
@@ -138,9 +138,6 @@ test("project map opens by default, reveals scenarios and retains map context af
     fullPage: true,
   });
   await page.setViewportSize({ width: 390, height: 844 });
-  await page
-    .getByRole("button", { name: "Увеличить карту", exact: true })
-    .click();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth + 1,
@@ -159,15 +156,15 @@ test("map clicks preserve the page, canvas position and existing node coordinate
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 800 });
     await page.goto(base + "/#/projects");
-    const group = page.locator('[data-map-node="group:Сценарии"]');
+    const group = page.locator('[data-map-node="topic:first-main"]');
     await group.waitFor();
     await group.scrollIntoViewIfNeeded();
     await page.evaluate(() => scrollBy(0, 80));
     const measure = () =>
       page.evaluate(() => {
-        const viewport = document.querySelector(".project-map-viewport")!;
+        const viewport = document.querySelector(".map-overview")!;
         const node = document.querySelector(
-          '[data-map-node="group:Сценарии"]',
+          '[data-map-node="topic:first-main"]',
         )!;
         return {
           pageY: scrollY,
@@ -181,6 +178,9 @@ test("map clicks preserve the page, canvas position and existing node coordinate
     await group.click();
     await expect(group).toHaveAttribute("aria-pressed", "true");
     await expect.poll(measure).toEqual(before);
+    await page
+      .getByRole("button", { name: "Закрыть сведения", exact: true })
+      .click();
     const views = page.getByRole("navigation", { name: "Представление карты" });
     for (const name of ["Устройство", "Технологии", "Сценарии"]) {
       const button = views.getByRole("button", { name, exact: true });
@@ -203,8 +203,9 @@ test("authored project map displays explicit technology relationships and opens 
     name: "Выбранный элемент карты",
   });
   await expect(detail).toContainText("Типы входных данных хранилища.");
+  await detail.getByRole("tab", { name: "Связи", exact: true }).click();
   await expect(detail).toContainText("Описывает типы через");
-  await detail.getByRole("button", { name: "Хранилище", exact: true }).click();
+  await detail.getByRole("button", { name: /^Хранилище/ }).click();
   await detail
     .getByRole("link", { name: "Открыть разбор", exact: false })
     .click();
@@ -224,13 +225,15 @@ test("structure opens six responsibility blocks and reveals relationships and co
     name: "Выбранный элемент карты",
   });
   await expect(panel).toContainText("Ввод данных: ответственность");
+  await panel.getByRole("tab", { name: "Связи", exact: true }).click();
   await expect(panel).toContainText("Сохраняет запись");
-  await expect(panel.locator(".project-map-code")).not.toHaveAttribute("open");
-  await panel.getByRole("button", { name: "Хранение", exact: true }).click();
+  await panel.getByRole("button", { name: /^Хранение/ }).click();
   await expect(page.locator('[data-map-node="block:1"]')).toHaveAttribute(
     "aria-pressed",
     "true",
   );
+  await panel.getByRole("tab", { name: "Материалы", exact: true }).click();
+  await expect(panel.locator(".project-map-code")).not.toHaveAttribute("open");
   await panel.locator(".project-map-code summary").click();
   await expect(panel.locator(".project-map-code")).toContainText(
     "src/example.ts:1",

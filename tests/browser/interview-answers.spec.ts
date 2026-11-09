@@ -165,7 +165,7 @@ test("interview answers", async ({
     );
     await page.locator("[data-action=session-next]").waitFor();
     await expect(page.locator(".platform-answer")).toHaveCount(0);
-    if (kind === "daily") {
+    {
       await page.locator("[data-action=session-review]").click();
       await page.locator(".platform-answer").waitFor();
       expect(
@@ -173,11 +173,14 @@ test("interview answers", async ({
           "Browser APIs",
         ),
       ).toBeTruthy();
-      expect((await state()).daily[session.date].snapshots[id]).toEqual(
-        current,
-      );
-    } else
-      await expect(page.locator("[data-action=session-review]")).toHaveCount(0);
+      const saved = await state();
+      expect(
+        (kind === "daily"
+          ? saved.daily[session.date]
+          : saved.sessions[session.id]
+        ).snapshots[id],
+      ).toEqual(current);
+    }
     await page.locator("[data-action=session-next]").click();
     await page
       .getByRole("heading", { name: "Разбор интервью", exact: true })

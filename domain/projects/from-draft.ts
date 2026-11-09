@@ -35,7 +35,10 @@ export function validateProjectEvidence(
     }
   if (
     draft.map?.nodes.some((node) =>
-      node.topicIndexes.some((index) => index >= draft.topics.length),
+      [
+        ...node.topicIndexes,
+        ...(node.steps || []).flatMap((step) => step.topicIndexes),
+      ].some((index) => index >= draft.topics.length),
     )
   )
     throw new Error("Карта ссылается на неизвестную тему.");
@@ -91,9 +94,17 @@ export function projectFromDraft(
     ...(draft.map
       ? {
           map: {
-            nodes: draft.map.nodes.map(({ topicIndexes, ...node }) => ({
+            nodes: draft.map.nodes.map(({ topicIndexes, steps, ...node }) => ({
               ...node,
               topicIds: topicIndexes.map((index) => topicIds[index]),
+              ...(steps
+                ? {
+                    steps: steps.map(({ topicIndexes: indexes, ...step }) => ({
+                      ...step,
+                      topicIds: indexes.map((index) => topicIds[index]),
+                    })),
+                  }
+                : {}),
             })),
             edges: draft.map.edges,
           },

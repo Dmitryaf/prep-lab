@@ -31,7 +31,12 @@ test(
   "every original topic has four blocks; public links pin a verified revision and line",
   { skip: !ownerAvailable },
   () => {
-    assert.equal(pilots.length, 50);
+    assert.equal(
+      topics.filter((topic) =>
+        ["lanit", "trajectory", "inbox"].includes(topic.project),
+      ).length,
+      50,
+    );
     assert.deepEqual(
       pilots.map((p) => p.id).sort(),
       topics.map((t) => t.id).sort(),

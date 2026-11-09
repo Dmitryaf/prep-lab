@@ -84,7 +84,7 @@ test("coding round uses completed extended tasks, excludes other formats and nev
   );
 });
 
-test("review and design rounds are bounded, deterministic and prioritize questions marked for repetition", () => {
+test("review and design rounds are bounded, deterministic and independent from repeat marks", () => {
   const bank = [
     makeQuestion("theory"),
     ...["a", "b", "c", "d"].map((id) => makeQuestion(id, "review")),
@@ -101,7 +101,10 @@ test("review and design rounds are bounded, deterministic and prioritize questio
       "review",
     );
   assert.equal(pick().length, 3);
-  assert.equal(pick()[0].id, "d");
+  assert.deepEqual(
+    pick(),
+    selectInterview(bank, "full", "day", [], {}, "vue", "review"),
+  );
   assert(pick().every((q) => q.roundFormat === "review"));
   assert.deepEqual(pick(), pick());
   assert.deepEqual(

@@ -4,10 +4,10 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
 const cleanTest = baseTest.extend({
-  appOptions: [
-    { projectPackageRoot: null, knowledgeRoot: resolve("content/common") },
-    { option: true },
-  ],
+  appOptions: {
+    projectPackageRoot: null,
+    knowledgeRoot: resolve("content/common"),
+  },
 });
 cleanTest(
   "a clean instance exposes only shared materials",

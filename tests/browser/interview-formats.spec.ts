@@ -7,7 +7,7 @@ import { projectFixture } from "#tests/fixtures/projects.ts";
 
 test.use({ appOptions: { projectPackageRoot: null } });
 
-test("a clean instance starts practical rounds, keeps their format on reload and reveals the review only at the end", async ({
+test("a clean instance starts practical rounds, preserves explicit answer reveal and shows the final review", async ({
   app: { base },
   page,
 }, testInfo) => {
@@ -47,6 +47,10 @@ test("a clean instance starts practical rounds, keeps their format on reload and
     if (value !== "coding")
       await page.locator('[data-action="session-followup"]').click();
     await expect(page.locator(".platform-answer")).toHaveCount(0);
+    await page.locator('[data-action="session-review"]').click();
+    await expect(page.locator(".platform-answer")).toHaveCount(1);
+    await page.reload();
+    await expect(page.locator(".platform-answer")).toHaveCount(1);
     for (const _id of session.questionIds) {
       await page.locator('[data-action="session-next"]').click();
     }

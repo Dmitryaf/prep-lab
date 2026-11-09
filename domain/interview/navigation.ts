@@ -1,6 +1,6 @@
 import type { Interview } from "./state.ts";
 import { hash } from "./deterministic.ts";
-function usedFollowups(session: Interview) {
+export function openedFollowups(session: Interview) {
   const id = session.questionIds[session.index];
   // Legacy sessions stepped through the original list. Keep that position intact.
   return (
@@ -11,7 +11,7 @@ function usedFollowups(session: Interview) {
 export function availableFollowups(session: Interview) {
   if (session.finished) return [];
   const id = session.questionIds[session.index],
-    used = usedFollowups(session);
+    used = openedFollowups(session);
   const question = session.snapshots[id];
   const stagedCoding =
     question?.roundFormat === "coding" && question.codingRole;
@@ -30,6 +30,7 @@ export function availableFollowups(session: Interview) {
     .map(({ index }) => index);
 }
 export function openFollowup(session: Interview, selectedIndex?: number) {
+  if (session.finished) return session;
   const id = session.questionIds[session.index],
     question = session.snapshots[id];
   const selectable =
@@ -38,18 +39,19 @@ export function openFollowup(session: Interview, selectedIndex?: number) {
     !session.finished;
   const index =
     selectedIndex === undefined
-      ? availableFollowups(session)[0]
+      ? (availableFollowups(session)[0] ?? openedFollowups(session).at(-1))
       : selectable &&
           Number.isInteger(selectedIndex) &&
           selectedIndex >= 0 &&
           selectedIndex < (question.followups?.length || 0)
         ? selectedIndex
         : undefined;
-  if (index === undefined) return session;
+  if (index === undefined || index + 1 === session.followupIndex)
+    return session;
   const next = structuredClone(session);
   next.followupChoices = {
     ...next.followupChoices,
-    [id]: [...new Set([...usedFollowups(session), index])],
+    [id]: [...new Set([...openedFollowups(session), index])],
   };
   next.followupIndex = index + 1;
   return next;
@@ -82,7 +84,7 @@ function closeFollowup(session: Interview) {
   if (session.followupIndex && !session.followupChoices?.[id])
     session.followupChoices = {
       ...session.followupChoices,
-      [id]: usedFollowups(session),
+      [id]: openedFollowups(session),
     };
   session.followupIndex = 0;
 }

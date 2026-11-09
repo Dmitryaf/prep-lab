@@ -91,9 +91,12 @@ test("platform", async ({ app: { base }, page, pageErrors: errors }) => {
       await expect(page.locator(".question-card h2")).not.toHaveText(q.title);
       const selected = await page.locator(".question-card h2").innerText();
       expect(q.followups!.includes(selected)).toBeTruthy();
-      await expect(page.locator("[data-action=session-followup]")).toHaveCount(
-        0,
-      );
+      await expect(
+        page.locator("[data-action=session-followup]"),
+      ).toBeVisible();
+      await expect(
+        page.locator("[data-action=session-followup]"),
+      ).toBeDisabled();
       await page.reload();
       await page.locator("[data-action=session-next]").waitFor();
       await expect(page.locator(".question-card h2")).toHaveText(selected);
@@ -130,7 +133,7 @@ test("platform", async ({ app: { base }, page, pageErrors: errors }) => {
     await go("practice");
     await page.locator("#practiceCategory").selectOption("route");
     expect(
-      (await page.locator("#platformMain").innerText()).includes("1 из 66"),
+      (await page.locator("#platformMain").innerText()).includes("1 из 62"),
     ).toBeTruthy();
     await page.locator("[data-action=reveal]").click();
     await page.screenshot({
@@ -321,7 +324,7 @@ test("platform", async ({ app: { base }, page, pageErrors: errors }) => {
     expect(Object.keys((await state()).daily).length).toBe(2);
     expect(errors).toEqual([]);
     console.log(
-      "PASS platform browser: daily/full, optional followups, reload, local midnight, ratings, route66, project177, internal links, shared progress, validated fixtures, keyboard, desktop/mobile, missing knowledge",
+      "PASS platform browser: daily/full, optional followups, reload, local midnight, ratings, route62, internal links, shared progress, validated fixtures, keyboard, desktop/mobile, missing knowledge",
     );
   } catch (error) {
     await page.screenshot({

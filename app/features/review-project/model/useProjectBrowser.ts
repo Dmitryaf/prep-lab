@@ -116,6 +116,9 @@ export function useProjectBrowser() {
     ...(typeof route.query.mapNode === "string"
       ? { mapNode: route.query.mapNode }
       : {}),
+    ...(typeof route.query.mapScenario === "string"
+      ? { mapScenario: route.query.mapScenario }
+      : {}),
   });
   const topicLink = (id: string) =>
     link("projects", { ...contextQuery(), projectTopic: id });
