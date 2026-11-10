@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DiscussionMaterial } from "#domain/discussion/contracts.ts";
 import { useDiscussion } from "#ui/features/study-discussion/model/useDiscussion.ts";
+import MarkdownContent from "#ui/entities/material/ui/MarkdownContent.vue";
 const props = defineProps<DiscussionMaterial>();
 const {
   opened,
@@ -44,12 +45,19 @@ const {
           :class="message.role"
         >
           <strong>{{ message.role === "user" ? "Вы" : "Помощник" }}</strong>
-          <pre>{{
-            message.text ||
-            (message.status === "pending"
-              ? "Готовит ответ…"
-              : "Ответ не получен.")
-          }}</pre>
+          <MarkdownContent
+            v-if="message.role === 'assistant' && message.text"
+            :text="message.text"
+            :follow-heading="false"
+          />
+          <div v-else class="study-message-text">
+            {{
+              message.text ||
+              (message.status === "pending"
+                ? "Готовит ответ…"
+                : "Ответ не получен.")
+            }}
+          </div>
           <small v-if="['failed', 'interrupted'].includes(message.status)"
             >Ответ не завершён</small
           >

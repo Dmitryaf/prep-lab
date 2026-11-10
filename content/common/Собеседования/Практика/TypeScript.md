@@ -14,12 +14,12 @@ updated: 2026-10-28
 >
 > - [[Собеседования/Практика/TypeScript#Тип результата getValue|Тип результата getValue]]
 > - [[Собеседования/Практика/TypeScript#Необязательные поля, кроме выбранных|Необязательные поля, кроме выбранных]]
-> - [[Собеседования/Практика/TypeScript#Type guard для неизвестных данных|Type guard для неизвестных данных]]
+> - [[Собеседования/Практика/TypeScript#Проверка типа неизвестных данных|Проверка типа неизвестных данных]]
 > - [[Собеседования/Практика/TypeScript#Тип результата асинхронной функции, которую нельзя менять|Тип результата асинхронной функции, которую нельзя менять]]
 > - [[Собеседования/Практика/TypeScript#Типизированная композиция where и sort|Типизированная композиция where и sort]]
 > - [[Собеседования/Практика/TypeScript#Расширение входных свойств Vue-компонента|Расширение входных свойств Vue-компонента]]
 > - [[Собеседования/Практика/TypeScript#Типизация меню в reduce|Типизация меню в reduce]]
-> - [[Собеседования/Практика/TypeScript#Построить utility type по шагам|Построить utility type по шагам]]
+> - [[Собеседования/Практика/TypeScript#Построить вспомогательный тип по шагам|Построить вспомогательный тип по шагам]]
 > - [[Собеседования/Практика/TypeScript#Ключи по строковому шаблону|Ключи по строковому шаблону]]
 
 ## Тип результата getValue
@@ -31,7 +31,7 @@ updated: 2026-10-28
 
 Типизируйте доступ по ключу так, чтобы ключ зависел от типа объекта, а результат — от выбранного поля. Вызов с отсутствующим ключом должен отклоняться компилятором.
 
-Пример: для `{ count: 1, label: 'ok' }` вызов `getValue(object, 'count')` возвращает число с типом number, а `'label'` — строку с типом string. Ключ `'missing'` должен дать ошибку типов. База задачи — доступ к одному полю обычного объектного типа, без вложенных путей и runtime-валидации JSON.
+Пример: для `{ count: 1, label: 'ok' }` вызов `getValue(object, 'count')` возвращает число с типом `number`, а `'label'` — строку с типом `string`. Ключ `'missing'` должен дать ошибку типов. В этой задаче нужен доступ к одному полю объекта, без вложенных путей и проверки JSON во время выполнения.
 
 ```ts
 function getValue(obj, property) {
@@ -43,12 +43,16 @@ function getValue(obj, property) {
 >
 > ```ts
 > // checked-example: typed-getter
-> function getValue<T extends object, K extends keyof T>(obj: T, property: K): T[K] {
+> function getValue<T extends object, K extends keyof T>(
+>   obj: T,
+>   property: K,
+> ): T[K] {
 >   return obj[property];
 > }
 > // Альтернатива со своим, более узким ограничением на объект:
 > const getValueRecord = <T extends Record<string, unknown>, P extends keyof T>(
->   obj: T, property: P
+>   obj: T,
+>   property: P,
 > ): T[P] => obj[property];
 > ```
 >
@@ -64,7 +68,7 @@ function getValue(obj, property) {
 **Критерии ответа:** Делаю выбранные ключи обязательными, остальные optional; сохраняю типы значений и readonly, отвергаю неизвестный ключ. Проверяю изначально optional-поле и пустой набор ключей.
 **Изучить:** [[Фронтенд/TypeScript/05. Вспомогательные типы и операторы типов|Partial, Pick, Omit и Required]]
 
-Напиши `OptionalExcept<T, K>`, который делает все поля необязательными, кроме ключей K. Выбранные поля должны стать обязательными, даже если в T были optional. Неверный ключ должен отвергаться компилятором. readonly сохраняется. Условие относится к одному объектному типу; преобразование union вариантов здесь не требуется. Проверяй с `strict` и `exactOptionalPropertyTypes`.
+Напиши `OptionalExcept<T, K>`, который делает все поля необязательными, кроме ключей `K`. Выбранные поля должны стать обязательными, даже если в `T` были необязательными. Неверный ключ должен отклоняться компилятором. Модификатор `readonly` сохраняется. Здесь рассматривается один объектный тип, а не объединение вариантов. Проверяй с `strict` и `exactOptionalPropertyTypes`.
 
 Пример: из `{ id?: string; name: string; age: number }` и ключа `'id'` получаем объект с обязательным id и необязательными name/age. Сначала разложи контракт на две части, затем составь тип.
 
@@ -74,8 +78,8 @@ function getValue(obj, property) {
 >
 > ```ts
 > // checked-example: optional-except
-> type OptionalExcept<T, K extends keyof T> =
->   Partial<Omit<T, K>> & Required<Pick<T, K>>;
+> type OptionalExcept<T, K extends keyof T> = Partial<Omit<T, K>> &
+>   Required<Pick<T, K>>;
 >
 > type User = {
 >   id?: string;
@@ -96,28 +100,33 @@ function getValue(obj, property) {
 > minimal.tenantId = 't2';
 > const allOptional: OptionalExcept<User, never> = {};
 > const allRequired: OptionalExcept<User, keyof User> = {
->   id: 'u1', tenantId: 't1', name: 'Анна', age: 20,
+>   id: 'u1',
+>   tenantId: 't1',
+>   name: 'Анна',
+>   age: 20,
 > };
 > ```
 >
-> В проверке компилятор должен принять положительные примеры и найти ошибку в каждой строке с expect-error. Сам комментарий не доказывает правильность: если ошибка исчезла, tsc сообщает о неиспользованной директиве. С `exactOptionalPropertyTypes` отсутствие optional-поля отличается от его явного значения undefined; явный union с undefined — отдельный контракт. Тип не преобразует объект, не проверяет JSON и не запрещает изменение во время выполнения.
+> Компилятор должен принять положительные примеры и найти ошибку в каждой строке с `@ts-expect-error`. Если ожидаемая ошибка исчезнет, `tsc` сообщит о неиспользованной директиве. При `exactOptionalPropertyTypes` отсутствие необязательного поля отличается от явно переданного `undefined`. Если `undefined` допустим как значение, его нужно включить в тип поля. Описание типа не преобразует объект и не проверяет JSON во время выполнения.
 >
 > **Усложнение.** Для объединения нескольких объектных типов сначала выбери: преобразовывать каждый вариант отдельно или только общие ключи. Не выдавай этот тип за автоматически корректное решение обоих случаев. Объясни, почему проверка данных во время выполнения остаётся нужна.
 
-## Type guard для неизвестных данных
+## Проверка типа неизвестных данных
+
+**ID вопроса:** Type guard для неизвестных данных
 
 **Формат раунда:** coding
 **Этап кода:** short
-**Критерии ответа:** Проверяю объект, дискриминант и конечный неотрицательный radius; отвергаю null, массив и неверный тип поля. Type predicate позволяет читать radius после проверки без as.
+**Критерии ответа:** Проверяю объект, отличительное поле и конечное неотрицательное значение `radius`; отклоняю `null`, массивы и неверные типы полей. После проверки TypeScript позволяет читать `radius` без `as`.
 **Изучить:** [[Фронтенд/TypeScript/07. API, unknown и проверка данных|Сужение unknown на границе данных]]
 
 Из JSON приходит неизвестное значение. Напиши `isCircle`, которое проверяет объект с `kind: 'circle'` и конечным неотрицательным числом radius. Массивы и null отвергаются; дополнительные поля разрешены. В этом упражнении вход — обычные JSON-данные, не Proxy и не объект с исполняемыми getters.
 
 Примеры: `{ kind: 'circle', radius: 0 }` → true; `{ kind: 'circle', radius: '2' }` и null → false. После успешного `if (isCircle(value))` компилятор должен разрешать `value.radius` как number.
 
-> [!example]- Разбор проверки и type predicate
+> [!example]- Разбор функции проверки типа
 >
-> Проверяем объект до оператора in, затем отличительное поле и значение radius. Одного наличия radius недостаточно: `{ radius: 'large' }` нельзя обещать как Circle. Type predicate сообщает компилятору результат нашей проверки, но не доказывает полноту её реализации.
+> Сначала проверяем, что получили объект, затем используем `in` и проверяем отличительное поле и значение `radius`. У объекта `{ radius: 'large' }` поле есть, но его значение не подходит для `Circle`. Запись результата `value is Circle` сообщает TypeScript, какой тип останется после успешной проверки.
 >
 > ```ts
 > // checked-example: circle-guard
@@ -135,7 +144,7 @@ function getValue(obj, property) {
 >
 > Проверки: корректный круг, нулевой радиус, null, массив, строковый радиус, отсутствие kind, отрицательный radius, NaN и Infinity. Последние два значения не приходят из корректного JSON, но могут появиться у других вызывающих функций. После успешной проверки доступ к radius должен компилироваться без as; вне проверки доступ к unknown должен отвергаться.
 
-Механизмы: [[Фронтенд/TypeScript/05. Вспомогательные типы и операторы типов|utility types]] и [[Фронтенд/TypeScript/07. API, unknown и проверка данных|проверка неизвестных данных]].
+Механизмы: [[Фронтенд/TypeScript/05. Вспомогательные типы и операторы типов|вспомогательные типы]] и [[Фронтенд/TypeScript/07. API, unknown и проверка данных|проверка неизвестных данных]].
 
 ## Тип результата асинхронной функции, которую нельзя менять
 
@@ -177,8 +186,10 @@ type Equal<X, Y> =
 >
 > ```ts
 > // checked-example: async-result
-> const getUser = async (): Promise<{ name: string; age: number }> =>
->   ({ name: 'john', age: 30 });
+> const getUser = async (): Promise<{ name: string; age: number }> => ({
+>   name: 'john',
+>   age: 30,
+> });
 > type User = Awaited<ReturnType<typeof getUser>>;
 > ```
 >
@@ -209,7 +220,7 @@ sort<Person>('age'),
 console.log(ids);
 ```
 
-**Базовый контракт для сравнения с разбором:** операции выполняются слева направо; where сравнивает указанные собственные строковые поля через Object.is; sort сортирует по возрастанию одного обязательного строкового или конечного числового поля. Смешанные типы поля запрещены этим вариантом. Исходный массив не меняется; объекты элементов не клонируются. Несколько полей и type-guard фильтр — дополнительные варианты после базового решения.
+**Базовые правила для сравнения с разбором:** операции выполняются слева направо; `where` сравнивает указанные собственные строковые поля через `Object.is`; `sort` сортирует по возрастанию одного обязательного строкового или конечного числового поля. Смешанные типы поля не допускаются. Исходный массив не меняется; объекты элементов не клонируются. Несколько полей и фильтр с функцией проверки типа — дополнительные варианты после базового решения.
 
 > [!example]- Разбор — базовое решение
 >
@@ -218,23 +229,39 @@ console.log(ids);
 > ```ts
 > // core-example: typed-query
 > type Operation<T> = (items: readonly T[]) => T[];
-> type SortKey<T> = { [K in keyof T]-?: T[K] extends string | number ? K : never }[keyof T];
+> type SortKey<T> = {
+>   [K in keyof T]-?: T[K] extends string | number ? K : never;
+> }[keyof T];
 >
 > function where<T>(condition: Partial<T>): Operation<T> {
 >   const keys = Object.keys(condition) as (keyof T)[];
->   return items => items.filter(item =>
->     keys.every(key => Object.is(item[key], condition[key])));
+>   return (items) =>
+>     items.filter((item) =>
+>       keys.every((key) => Object.is(item[key], condition[key])),
+>     );
 > }
 > function sort<T>(key: SortKey<T>): Operation<T> {
->   return items => [...items].sort((a, b) => {
->     const x = a[key], y = b[key];
->     if (typeof x === 'number' && typeof y === 'number' && Number.isFinite(x) && Number.isFinite(y)) return x - y;
->     if (typeof x === 'string' && typeof y === 'string') return x.localeCompare(y);
->     throw new TypeError('Поле должно содержать строки или конечные числа одного типа');
->   });
+>   return (items) =>
+>     [...items].sort((a, b) => {
+>       const x = a[key];
+>       const y = b[key];
+>       if (
+>         typeof x === 'number' &&
+>         typeof y === 'number' &&
+>         Number.isFinite(x) &&
+>         Number.isFinite(y)
+>       )
+>         return x - y;
+>       if (typeof x === 'string' && typeof y === 'string')
+>         return x.localeCompare(y);
+>       throw new TypeError(
+>         'Поле должно содержать строки или конечные числа одного типа',
+>       );
+>     });
 > }
 > function query<T>(...operations: Operation<T>[]): Operation<T> {
->   return items => operations.reduce((result, operation) => operation(result), [...items]);
+>   return (items) =>
+>     operations.reduce((result, operation) => operation(result), [...items]);
 > }
 > ```
 >
@@ -339,7 +366,7 @@ console.log(ids);
 > - для чисел использую numeric compare;
 > - для строк - string compare;
 > - для неизвестных типов либо кидаю ошибку, либо привожу к строке как запасной вариант;
-> - в TypeScript можно описать допустимые поля и значения через generic constraints.
+> - в TypeScript допустимые поля и значения можно описать через ограничения параметров типов.
 >
 > **Вопрос: `Object.prototype.toString.call`**
 >
@@ -450,18 +477,21 @@ if (items) {
 > ```ts
 > // checked-example: typed-menu
 > function buildMenu(items: readonly string[]): Record<string, string[]> {
->   return items.reduce<Record<string, string[]>>((menu, pathname) => {
->     const parts = pathname.split('/');
->     if (parts.length > 2 || parts.some((part) => part.length === 0)) {
->       throw new TypeError('Invalid menu path');
->     }
->     const group = parts[0];
->     if (group === undefined) throw new TypeError('Invalid menu path');
->     const articles = menu[group] ?? (menu[group] = []);
->     const article = parts[1];
->     if (article !== undefined) articles.push(article);
->     return menu;
->   }, Object.create(null) as Record<string, string[]>);
+>   return items.reduce<Record<string, string[]>>(
+>     (menu, pathname) => {
+>       const parts = pathname.split('/');
+>       if (parts.length > 2 || parts.some((part) => part.length === 0)) {
+>         throw new TypeError('Invalid menu path');
+>       }
+>       const group = parts[0];
+>       if (group === undefined) throw new TypeError('Invalid menu path');
+>       const articles = menu[group] ?? (menu[group] = []);
+>       const article = parts[1];
+>       if (article !== undefined) articles.push(article);
+>       return menu;
+>     },
+>     Object.create(null) as Record<string, string[]>,
+>   );
 > }
 > ```
 >
@@ -475,11 +505,13 @@ if (items) {
 - Как сохранить порядок групп, если имена могут быть строками '2' и '10'?
 - Где проверять неизвестные данные API, прежде чем передавать их в эту функцию?
 
-## Построить utility type по шагам
+## Построить вспомогательный тип по шагам
+
+**ID вопроса:** Построить utility type по шагам
 
 Напиши `MyPick<T, K>` и `MyPartial<T>`. Затем `If<C, Yes, No>`: для true вернуть Yes, для false — No. Попробуй объяснить каждый элемент записи обычными словами.
 
-> [!example]- Разбор mapped и conditional types
+> [!example]- Разбор отображаемых и условных типов
 >
 > ```ts
 > // checked-example: utility-basics
@@ -507,7 +539,7 @@ if (items) {
 
 Разреши ключи вида `user_...`, но запрети `order_...`. Отдельно объясни, почему строковый шаблон не проверяет произвольный текст из input.
 
-> [!example]- Разбор template literal types
+> [!example]- Разбор типов строковых шаблонов
 >
 > ```ts
 > // checked-example: template-keys

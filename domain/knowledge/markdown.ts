@@ -89,6 +89,33 @@ export function categoryFor(path: string, heading: string = "") {
   if (/SQL|Базы данных/.test(name)) return "SQL";
   return "Инженерные вопросы";
 }
+function answerMarkdown(lines: string[]) {
+  let fence: { marker: string; quoted: boolean } | undefined;
+  return lines
+    .map((line) => {
+      const quoted = /^>/.test(line);
+      const value = quoted ? line.replace(/^> ?/, "") : line;
+      const marker = /^\s*(`{3,}|~{3,})/.exec(value)?.[1];
+      if (fence) {
+        const result = fence.quoted ? value : line;
+        if (
+          marker &&
+          marker[0] === fence.marker[0] &&
+          marker.length >= fence.marker.length &&
+          quoted === fence.quoted
+        )
+          fence = undefined;
+        return result;
+      }
+      if (marker) {
+        fence = { marker, quoted };
+        return value;
+      }
+      return /^\[!(?:answer|example|question)\][-+]?/.test(value) ? "" : value;
+    })
+    .join("\n")
+    .trim();
+}
 function separateBody(body: string) {
   let codingRole: PreparedQuestion["codingRole"];
   let questionId: string | undefined;
@@ -124,6 +151,36 @@ function separateBody(body: string) {
       return "";
     })
     .join("\n");
+  const followupAnswers: NonNullable<PreparedQuestion["followupAnswers"]> = [];
+  const source = body.split("\n");
+  const main: string[] = [];
+  let stageFence: string | undefined;
+  for (let i = 0; i < source.length; i++) {
+    const marker = /^\s*(`{3,}|~{3,})/.exec(source[i])?.[1];
+    if (marker) {
+      if (!stageFence) stageFence = marker;
+      else if (
+        marker[0] === stageFence[0] &&
+        marker.length >= stageFence.length
+      )
+        stageFence = undefined;
+    }
+    const stage =
+      !stageFence && /^>\s*\[!followup\][-+]?\s+(.+)$/.exec(source[i]);
+    if (!stage) {
+      main.push(source[i]);
+      continue;
+    }
+    const answer: string[] = [];
+    while (i + 1 < source.length && /^>/.test(source[i + 1])) {
+      answer.push(source[++i].replace(/^> ?/, ""));
+    }
+    followupAnswers.push({
+      title: stage[1].trim(),
+      answer: answer.join("\n").trim(),
+    });
+  }
+  body = main.join("\n");
   const interviewEligible = /^\*\*Допуск к интервью:\*\*\s*нет\s*$/m.test(body)
     ? false
     : undefined;
@@ -206,16 +263,9 @@ function separateBody(body: string) {
   return {
     before: (at < 0 ? body : lines.slice(0, at).join("\n")).trim(),
     shortAnswer,
-    answer:
-      at < 0
-        ? ""
-        : lines
-            .slice(at)
-            .join("\n")
-            .replace(/^>\s*\[!(?:answer|example|question)\][-+]?[^\n]*\n/gm, "")
-            .replace(/^> ?/gm, "")
-            .trim(),
+    answer: at < 0 ? "" : answerMarkdown(lines.slice(at)),
     followups,
+    followupAnswers,
     learningLinks,
     criteria,
     roundFormat,
@@ -290,6 +340,7 @@ export function extractQuestions(
       noteId: note.id,
       heading,
       followups: split.followups,
+      followupAnswers: split.followupAnswers,
       learningLinks: split.learningLinks,
       criteria: split.criteria,
       ...(split.roundFormat ? { roundFormat: split.roundFormat } : {}),
@@ -311,13 +362,16 @@ export function extractQuestions(
     }
   }
   for (const q of result)
-    q.followupAnswers = result
-      .filter((child) => child.parentId === q.id)
-      .map((child) => ({
-        title: child.title,
-        answer: child.answer,
-        ...(child.prompt ? { prompt: child.prompt } : {}),
-        ...(child.criteria ? { criteria: child.criteria } : {}),
-      }));
+    q.followupAnswers = [
+      ...(q.followupAnswers || []),
+      ...result
+        .filter((child) => child.parentId === q.id)
+        .map((child) => ({
+          title: child.title,
+          answer: child.answer,
+          ...(child.prompt ? { prompt: child.prompt } : {}),
+          ...(child.criteria ? { criteria: child.criteria } : {}),
+        })),
+    ];
   return result.map(({ _start, _end, ...q }) => q);
 }

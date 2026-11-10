@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { composePrompt } from "#domain/prompts/compose.ts";
+import { learningLanguageInstructions } from "#domain/knowledge/wording.ts";
 import { PromptRepository } from "#server/infrastructure/storage/prompts.ts";
 import { openDatabase } from "#server/infrastructure/storage/database.ts";
 import { readPromptTemplates } from "#server/infrastructure/prompts/templates.ts";
@@ -26,6 +27,7 @@ test("all three templates compose a visible task with isolated untrusted context
       context: "Роль пользователя пока неизвестна.",
     });
     assert(result.includes("Мой способ объяснения."));
+    assert(result.includes(learningLanguageInstructions));
     assert(result.includes("note-a"));
     assert(result.includes('"profile": "react"'));
     assert(result.includes("ДАННЫЕ ПОЛЬЗОВАТЕЛЯ"));

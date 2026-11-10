@@ -73,7 +73,7 @@ test("study chat", async ({ app: { base }, page, pageErrors: errors }) => {
   await page.waitForFunction(
     () =>
       document
-        .querySelector(".study-message.assistant pre")
+        .querySelector(".study-message.assistant .platform-markdown")
         ?.textContent?.includes("Готовит ответ") === false,
     {},
     { timeout: 120000 },
@@ -89,7 +89,9 @@ test("study chat", async ({ app: { base }, page, pageErrors: errors }) => {
     {},
     { timeout: 120000 },
   );
-  const first = await page.locator(".study-message.assistant pre").innerText();
+  const first = await page
+    .locator(".study-message.assistant .platform-markdown")
+    .innerText();
   expect(first.length > 10).toBeTruthy();
   await page.reload();
   await page
@@ -99,9 +101,9 @@ test("study chat", async ({ app: { base }, page, pageErrors: errors }) => {
     .getByRole("button", { name: "Обсудить с помощником", exact: true })
     .click();
   await input.waitFor();
-  await expect(page.locator(".study-message.assistant pre").first()).toHaveText(
-    first,
-  );
+  await expect(
+    page.locator(".study-message.assistant .platform-markdown").first(),
+  ).toHaveText(first);
   await input.fill(
     "Какое учебное слово я попросил запомнить? Ответь одним словом.",
   );

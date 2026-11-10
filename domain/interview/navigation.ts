@@ -34,8 +34,10 @@ export function openFollowup(session: Interview, selectedIndex?: number) {
   const id = session.questionIds[session.index],
     question = session.snapshots[id];
   const selectable =
-    question?.roundFormat === "coding" &&
-    question.codingRole &&
+    ((question?.roundFormat === "coding" && question.codingRole) ||
+      (selectedIndex !== undefined &&
+        (availableFollowups(session).includes(selectedIndex) ||
+          openedFollowups(session).includes(selectedIndex)))) &&
     !session.finished;
   const index =
     selectedIndex === undefined

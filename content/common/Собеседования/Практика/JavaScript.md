@@ -343,11 +343,14 @@ function promiseAll() {}
 > function promiseAll(values) {
 >   return new Promise((resolve, reject) => {
 >     const items = Array.from(values);
->     if (items.length === 0) { resolve([]); return; }
+>     if (items.length === 0) {
+>       resolve([]);
+>       return;
+>     }
 >     const result = new Array(items.length);
 >     let remaining = items.length;
 >     items.forEach((item, index) => {
->       Promise.resolve(item).then(value => {
+>       Promise.resolve(item).then((value) => {
 >         result[index] = value;
 >         if (--remaining === 0) resolve(result);
 >       }, reject);
@@ -379,7 +382,10 @@ function promiseAll() {}
 >       return;
 >     }
 >     const items = Array.from(values);
->     if (items.length === 0) { resolve([]); return; }
+>     if (items.length === 0) {
+>       resolve([]);
+>       return;
+>     }
 >     const results = new Array(items.length);
 >     let remaining = items.length;
 >     function finish(index, result) {
@@ -388,8 +394,8 @@ function promiseAll() {}
 >     }
 >     items.forEach((item, index) => {
 >       Promise.resolve(item).then(
->         value => finish(index, { status: 'fulfilled', value }),
->         reason => finish(index, { status: 'rejected', reason }),
+>         (value) => finish(index, { status: 'fulfilled', value }),
+>         (reason) => finish(index, { status: 'rejected', reason }),
 >       );
 >     });
 >   });
@@ -434,9 +440,12 @@ promiseAny([reject(1, 300), reject(2, 100), reject(3, 200)]).catch(error => cons
 >     const items = Array.from(values);
 >     const errors = new Array(items.length);
 >     let remaining = items.length;
->     if (!remaining) { reject(new AggregateError([], 'No success')); return; }
+>     if (!remaining) {
+>       reject(new AggregateError([], 'No success'));
+>       return;
+>     }
 >     items.forEach((item, index) => {
->       Promise.resolve(item).then(resolve, error => {
+>       Promise.resolve(item).then(resolve, (error) => {
 >         errors[index] = error;
 >         if (--remaining === 0) reject(new AggregateError(errors, 'No success'));
 >       });
@@ -789,7 +798,8 @@ console.assert(JSON.stringify(copyArr) === JSON.stringify(arr));
 
 **Ошибка проверочного кода:** deepCopy() вызвана без nullProto; такой assert не проверяет сохранение null-прототипа. Предложите правильную проверку.
 
-**Уточнения:** проверка массива и объекта, typeof, instanceof и разные realms; символы, accessors, функции, Map/Set, Date и циклы.
+> [!note]- Подсказка
+> проверка массива и объекта, typeof, instanceof и разные realms; символы, accessors, функции, Map/Set, Date и циклы.
 
 > [!example]- Ограничения стандартных способов
 >
@@ -886,7 +896,6 @@ const input = [
 >   return resultString;
 > }
 >
->
 > // Результат
 > console.log(processInput(input));
 > ```
@@ -974,8 +983,12 @@ const memoize = (fn) => {
 > ```js
 > // checked-example: fetch-retry
 > async function fetchRetry(url, attempts = 3, delayMs = 300) {
->   if (!Number.isInteger(attempts) || attempts < 1 ||
->       !Number.isFinite(delayMs) || delayMs < 0) {
+>   if (
+>     !Number.isInteger(attempts) ||
+>     attempts < 1 ||
+>     !Number.isFinite(delayMs) ||
+>     delayMs < 0
+>   ) {
 >     throw new RangeError('Invalid retry settings');
 >   }
 >   for (let attempt = 1; attempt <= attempts; attempt++) {
@@ -989,13 +1002,15 @@ const memoize = (fn) => {
 >     if (response?.ok) return response.json();
 >     if (response) {
 >       error = new Error(`HTTP ${response.status}`);
->       const retryable = response.status === 408 || response.status === 429
->         || response.status >= 500;
+>       const retryable =
+>         response.status === 408 ||
+>         response.status === 429 ||
+>         response.status >= 500;
 >       if (!retryable) throw error;
 >     }
 >     if (attempt === attempts) throw error;
 >     await response?.body?.cancel();
->     await new Promise(resolve => setTimeout(resolve, delayMs));
+>     await new Promise((resolve) => setTimeout(resolve, delayMs));
 >   }
 > }
 > ```
@@ -1027,7 +1042,8 @@ emitter
   .emit('event'); // cb1
 ```
 
-Уточнения: исключение в обработчик, аргументы emit, повторная подписка, изменение подписок во время обхода.
+> [!note]- Подсказка
+> исключение в обработчик, аргументы emit, повторная подписка, изменение подписок во время обхода.
 
 > [!example]- Разбор EventEmitter
 >
@@ -1090,7 +1106,8 @@ emitter
 >   }
 >   const jobs = [...tasks];
 >   for (const job of jobs) {
->     if (typeof job !== 'function') throw new TypeError('task must be a function');
+>     if (typeof job !== 'function')
+>       throw new TypeError('task must be a function');
 >   }
 >   const results = new Array(jobs.length);
 >   let next = 0;
@@ -1120,7 +1137,7 @@ emitter
 >
 > Накладные расходы пула — O(n) времени и O(n) памяти для снимка задач/результатов, плюс до O(min(limit, n)) работников. Это не оценка работы внутри задач. `Promise.all(tasks.map(fn => fn()))` запускает всё сразу; последовательный await в одном цикле ограничивает параллелизм единицей; ожидание целой пачки удерживает освободившееся место до самой медленной задачи.
 >
-> **Усложнение.** Сделай режим all-settled с результатом `{ status, value/reason }` по каждому индексу. Реши, как отличать отказ задачи от общей отмены и кто владеет AbortController. Не меняй контракт fail-fast молча.
+> **Усложнение.** Сделай режим all-settled с результатом `{ status, value/reason }` по каждому индексу. Реши, как отличать отказ задачи от общей отмены и кто владеет AbortController. Если одна задача завершается ошибкой, отдельно оговори, продолжает ли очередь остальные задачи.
 
 ### Deduplication запросов
 
@@ -1222,7 +1239,7 @@ emitter
 >
 > - обработка resolve и reject;
 > - отсутствие зависших Promise;
-> - cleanup timers/listeners;
+> - освобождение таймеров и удаление обработчиков событий;
 > - порядок выполнения и гонки запросов;
 > - явный контракт отмены;
 > - разумное поведение при повторном вызове.
@@ -1286,8 +1303,12 @@ emitter
 > ```js
 > // checked-example: with-resolvers
 > function withResolvers() {
->   let resolve, reject;
->   const promise = new Promise((yes, no) => { resolve = yes; reject = no; });
+>   let resolve;
+>   let reject;
+>   const promise = new Promise((yes, no) => {
+>     resolve = yes;
+>     reject = no;
+>   });
 >   return { promise, resolve, reject };
 > }
 > ```

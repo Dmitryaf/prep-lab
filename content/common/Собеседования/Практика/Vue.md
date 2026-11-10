@@ -124,7 +124,7 @@ async function increment() {
 > }
 > ```
 >
-> Продолжения выполняются последовательно: первое увидит 0 и запишет 1, второе — 1 и запишет 2. Для контракта «пока запрос идёт, второй запуск запрещён» нужно другое решение: синхронный guard pending перед первым await и освобождение в finally; одного disabled у кнопки недостаточно для программного повторного вызова.
+> Продолжения выполняются последовательно: первое увидит 0 и запишет 1, второе — 1 и запишет 2. Если второй запуск нужно запрещать до завершения запроса, проверяй флаг `pending` и устанавливай его до первого `await`, а сбрасывай в `finally`. Отключения кнопки недостаточно: функцию могут вызвать программно.
 >
 > В реальном запросе отдельно обрабатывают отказ. Если после удаления компонента результат применять нельзя, функция очистки помечает текущую операцию неактивной, отменяет доступную операцию, а продолжение проверяет актуальность перед записью. Это не отменяет уже выполненное действие на сервере. Проверьте два вызова, отказ одного и уничтожение владельца до завершения.
 
@@ -359,19 +359,21 @@ friendId может меняться: не зафиксируйте случай
 > const query = ref('');
 > const visible = computed(() => {
 >   const term = query.value.trim().toLowerCase();
->   return data.value.filter(user => user.name.toLowerCase().includes(term));
+>   return data.value.filter((user) => user.name.toLowerCase().includes(term));
 > });
 > onMounted(load);
 > </script>
 > <template>
->   <label>Поиск <input v-model="query" type="search"></label>
+>   <label>Поиск <input v-model="query" type="search" /></label>
 >   <p v-if="loading" role="status">Загрузка…</p>
 >   <div v-else-if="error" role="alert">
 >     Не удалось загрузить пользователей. <button @click="load">Повторить</button>
 >   </div>
 >   <template v-else>
 >     <p v-if="!visible.length" role="status">Ничего не найдено.</p>
->     <ul><li v-for="user in visible" :key="user.id">{{ user.name }}</li></ul>
+>     <ul>
+>       <li v-for="user in visible" :key="user.id">{{ user.name }}</li>
+>     </ul>
 >   </template>
 > </template>
 > ```
@@ -390,25 +392,43 @@ friendId может меняться: не зафиксируйте случай
 > ```js
 > import { ref, toValue, watch } from 'vue';
 > function useFetch(address, request) {
->   const data = ref([]), loading = ref(false), error = ref(null);
->   watch(() => toValue(address), (url, _, onCleanup) => {
->     let active = true;
->     const controller = new AbortController();
->     onCleanup(() => { active = false; controller.abort(); });
->     data.value = []; error.value = null; loading.value = Boolean(url);
->     if (!url) return;
->     Promise.resolve().then(() => request(url, { signal: controller.signal }))
->       .then(value => { if (active) data.value = value; })
->       .catch(cause => {
->         if (active) error.value = cause instanceof Error ? cause : new Error(String(cause));
->       })
->       .finally(() => { if (active) loading.value = false; });
->   }, { immediate: true, flush: 'sync' });
+>   const data = ref([]);
+>   const loading = ref(false);
+>   const error = ref(null);
+>   watch(
+>     () => toValue(address),
+>     (url, _, onCleanup) => {
+>       let active = true;
+>       const controller = new AbortController();
+>       onCleanup(() => {
+>         active = false;
+>         controller.abort();
+>       });
+>       data.value = [];
+>       error.value = null;
+>       loading.value = Boolean(url);
+>       if (!url) return;
+>       Promise.resolve()
+>         .then(() => request(url, { signal: controller.signal }))
+>         .then((value) => {
+>           if (active) data.value = value;
+>         })
+>         .catch((cause) => {
+>           if (active)
+>             error.value =
+>               cause instanceof Error ? cause : new Error(String(cause));
+>         })
+>         .finally(() => {
+>           if (active) loading.value = false;
+>         });
+>     },
+>     { immediate: true, flush: 'sync' },
+>   );
 >   return { data, loading, error };
 > }
 > ```
 >
-> Создавай composable синхронно в setup: Vue остановит watcher при unmount и вызовет cleanup. Для редких смен адреса flush: 'sync' сразу инвалидирует предыдущую операцию; это не режим для массово меняющихся коллекций. Проверь B → A, поздний reject A, пустой адрес во время ожидания и unmount. Готовый сценарий проверок: [[Фронтенд/Инженерные основы/07. Тестирование/02. Проверка поиска с поздними ответами|стенд поиска]]. Кэш и повторы требуют отдельного согласования, не входят в этот этап.
+> Создавай композиционную функцию синхронно в `setup`: Vue остановит наблюдение и вызовет очистку при удалении компонента. При редких сменах адреса `flush: 'sync'` сразу делает предыдущую операцию неактуальной. Такой режим не подходит для коллекций с частыми изменениями. Проверь завершение B перед A, позднюю ошибку A, пустой адрес во время ожидания и удаление компонента. Готовый сценарий: [[Фронтенд/Инженерные основы/07. Тестирование/02. Проверка поиска с поздними ответами|стенд поиска]]. Кэш и повторы не входят в этот этап.
 
 ### Поиск и подсветка текста из API
 
@@ -493,7 +513,8 @@ onMounted(async () => {
 <template><pre>{{ article }}</pre></template>
 ```
 
-Уточнения: наблюдать нужный параметр, гонка ответов, ошибка и отмена. Не запускайте запрос только потому, что изменилось несвязанное поле route.
+> [!note]- Подсказка
+> наблюдать нужный параметр, гонка ответов, ошибка и отмена. Не запускайте запрос только потому, что изменилось несвязанное поле route.
 
 > [!example]- Разбор — базовое решение
 >
@@ -505,23 +526,39 @@ onMounted(async () => {
 > import { ref, watch } from 'vue';
 > import { useRoute } from 'vue-router';
 > const route = useRoute();
-> const article = ref(null), error = ref(''), loading = ref(false);
-> watch(() => route.params.article, async (id, previous, onCleanup) => {
->   const controller = new AbortController();
->   let current = true;
->   onCleanup(() => { current = false; controller.abort(); });
->   article.value = null; error.value = ''; loading.value = true;
->   try {
->     const response = await fetch('/api/articles/' + encodeURIComponent(String(id)), { signal: controller.signal });
->     if (!response.ok) throw new Error('HTTP ' + response.status);
->     const value = await response.json();
->     if (current) article.value = value;
->   } catch (reason) {
->     if (current) error.value = reason instanceof Error ? reason.message : 'Ошибка загрузки';
->   } finally {
->     if (current) loading.value = false;
->   }
-> }, { immediate: true });
+> const article = ref(null);
+> const error = ref('');
+> const loading = ref(false);
+> watch(
+>   () => route.params.article,
+>   async (id, previous, onCleanup) => {
+>     const controller = new AbortController();
+>     let current = true;
+>     onCleanup(() => {
+>       current = false;
+>       controller.abort();
+>     });
+>     article.value = null;
+>     error.value = '';
+>     loading.value = true;
+>     try {
+>       const response = await fetch(
+>         '/api/articles/' + encodeURIComponent(String(id)),
+>         { signal: controller.signal },
+>       );
+>       if (!response.ok) throw new Error('HTTP ' + response.status);
+>       const value = await response.json();
+>       if (current) article.value = value;
+>     } catch (reason) {
+>       if (current)
+>         error.value =
+>           reason instanceof Error ? reason.message : 'Ошибка загрузки';
+>     } finally {
+>       if (current) loading.value = false;
+>     }
+>   },
+>   { immediate: true },
+> );
 > </script>
 > <template>
 >   <p v-if="loading">Загрузка</p>
@@ -536,7 +573,7 @@ onMounted(async () => {
 
 **Критерии ответа:** Наблюдаю только article, загружаю сразу, проверяю HTTP и защищаю data/error/loading от старого запроса.
 
-**Изучить:** [[Фронтенд/Vue/08. Маршрутизация в Vue Router|Объяснение и примеры]]
+**Изучить:** [[Фронтенд/Vue/08. Маршрутизация в Vue Router|Объяснение и примеры]] [[Фронтенд/Vue/06. Жизненный цикл, запросы и очистка ресурсов|Загрузка при смене параметра]] [[Фронтенд/API браузера/05. Fetch, CORS и сетевые запросы/03. AbortController и race condition в запросах|Отмена и порядок ответов]]
 
 ### Обработчик прокрутки и актуальные входные свойства
 
@@ -708,7 +745,7 @@ const availableSpotTime = props.spots.map(spot => ({
 > // checked-example: vue-todos-base
 > import { ref } from 'vue';
 > function useTodos(initialData, makeId) {
->   const items = ref(initialData.map(item => ({ ...item })));
+>   const items = ref(initialData.map((item) => ({ ...item })));
 >   const text = ref('');
 >   function addItem() {
 >     const value = text.value.trim();
@@ -717,11 +754,11 @@ const availableSpotTime = props.spots.map(spot => ({
 >     text.value = '';
 >   }
 >   function toggleItem(id) {
->     const item = items.value.find(item => item.id === id);
+>     const item = items.value.find((item) => item.id === id);
 >     if (item) item.isDone = !item.isDone;
 >   }
 >   function deleteItem(id) {
->     items.value = items.value.filter(item => item.id !== id);
+>     items.value = items.value.filter((item) => item.id !== id);
 >   }
 >   return { items, text, addItem, toggleItem, deleteItem };
 > }
@@ -733,17 +770,30 @@ const availableSpotTime = props.spots.map(spot => ({
 > <script setup>
 > import { useTodos } from './useTodos.js';
 > const props = defineProps({ initialData: Array, makeId: Function });
-> const { items, text, addItem, toggleItem, deleteItem } = useTodos(props.initialData, props.makeId);
+> const { items, text, addItem, toggleItem, deleteItem } = useTodos(
+>   props.initialData,
+>   props.makeId,
+> );
 > </script>
 > <template>
 >   <form @submit.prevent="addItem">
->     <label>Новое дело <input v-model="text"></label>
+>     <label>Новое дело <input v-model="text" /></label>
 >     <button type="submit">Добавить</button>
 >   </form>
->   <ul><li v-for="item in items" :key="item.id">
->     <label><input type="checkbox" :checked="item.isDone" @change="toggleItem(item.id)">{{ item.text }}</label>
->     <button type="button" @click="deleteItem(item.id)">Удалить {{ item.text }}</button>
->   </li></ul>
+>   <ul>
+>     <li v-for="item in items" :key="item.id">
+>       <label
+>         ><input
+>           type="checkbox"
+>           :checked="item.isDone"
+>           @change="toggleItem(item.id)"
+>         />{{ item.text }}</label
+>       >
+>       <button type="button" @click="deleteItem(item.id)">
+>         Удалить {{ item.text }}
+>       </button>
+>     </li>
+>   </ul>
 > </template>
 > ```
 >
@@ -765,8 +815,16 @@ const availableSpotTime = props.spots.map(spot => ({
 > </script>
 > <template>
 >   <li>
->     <label><input type="checkbox" :checked="data.isDone" @change="emit('toggle', data.id)">{{ data.text }}</label>
->     <button type="button" @click="emit('delete', data.id)">Удалить {{ data.text }}</button>
+>     <label
+>       ><input
+>         type="checkbox"
+>         :checked="data.isDone"
+>         @change="emit('toggle', data.id)"
+>       />{{ data.text }}</label
+>     >
+>     <button type="button" @click="emit('delete', data.id)">
+>       Удалить {{ data.text }}
+>     </button>
 >   </li>
 > </template>
 > ```
@@ -838,26 +896,26 @@ Composable объявляет `ref` на уровне модуля. Два не�
 
 ### Типизированный компонент
 
-Спроектировать контракт компонента выбора: `modelValue`, событие обновления, список options, disabled state и отображение option через slot. Обсудить generic typing без чрезмерного усложнения.
+Опиши компонент выбора: входное значение `modelValue`, событие его обновления, список вариантов, отключённое состояние и слот для отображения варианта. Покажи, как связать тип выбранного значения с типом вариантов без лишнего усложнения.
 
 > [!example]- Разбор простыми словами
 >
 > Начни с конкретного типа Option: id и label. ModelValue содержит id выбранного элемента или null, событие update:modelValue передаёт тот же тип. Slot получает option для отображения. Disabled запрещает изменение, но не скрывает текущее значение.
 >
-> Generic нужен, когда разные потребители действительно передают разные типы значений. Не делай произвольный тип каждого атрибута, если это не помогает использовать компонент.
+> Параметр типа нужен, если разные потребители передают значения разных типов. Он должен сохранять полезную связь между ними. Если все варианты имеют один известный тип, достаточно обычного описания свойств.
 
 ### Store или composable
 
 Одни и те же фильтры нужны списку, счётчику и URL. Выбрать владельца состояния, способ синхронизации и защиту от циклических обновлений.
 
-Modal: [[Собеседования/Проектирование/Клиентское приложение#Слой модальных окон и всплывающих элементов|проектирование всплывающих элементов]]. Проверка загрузки, retry и сохранения: [[Собеседования/Практика/Тестирование#Форма: результат, ошибка и повтор|задача на тестирование формы]].
+Модальные окна: [[Собеседования/Проектирование/Клиентское приложение#Слой модальных окон и всплывающих элементов|проектирование всплывающих элементов]]. Проверка загрузки, повторной попытки и сохранения: [[Собеседования/Практика/Тестирование#Форма: результат, ошибка и повтор|задача на тестирование формы]].
 
 > [!example]- Критерии компонентного решения
 >
 > - понимание реактивности и жизненного цикла;
 > - явные component contracts;
 > - правильный владелец состояния;
-> - cleanup side effects;
+> - освобождение ресурсов и отмена побочных действий;
 > - обработка loading/error/empty;
 > - тестируемость и accessibility.
 

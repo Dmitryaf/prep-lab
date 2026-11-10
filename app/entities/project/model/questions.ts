@@ -40,6 +40,22 @@ export function projectQuestions(
       projectGroup: topic.group,
       availableAnswer: true,
       followups: topic.interview || [],
+      followupAnswers: (topic.interview || []).flatMap((title) => {
+        const followup = topic.pilot.questions.find(
+          (item) => item.id !== q.id && item.question === title,
+        );
+        return followup?.short.trim()
+          ? [
+              {
+                title,
+                answer: [followup.short, ...followup.detailed, followup.example]
+                  .filter(Boolean)
+                  .join("\n\n"),
+                criteria: followup.criteria,
+              },
+            ]
+          : [];
+      }),
       learningLinks: [
         ...(topic.pilot.study || []).map((n) => ({
           kind: "theory" as const,

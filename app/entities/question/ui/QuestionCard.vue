@@ -11,7 +11,10 @@ const props = defineProps<{
   question: Question;
   revealed?: boolean;
   followup?: number;
+  followupAnswer?: Question | null;
+  followupRevealed?: boolean;
 }>();
+defineEmits<{ revealFollowup: [] }>();
 const stage = computed(() =>
   props.question.followupAnswers?.find(
     (item) =>
@@ -23,24 +26,36 @@ const stage = computed(() =>
   <article class="platform-card question-card">
     <div class="platform-meta">
       {{
-        followup
-          ? question.codingRole
-            ? "Необязательное усложнение"
-            : "Уточняющий вопрос"
-          : question.codingRole === "short"
-            ? "Короткая задача"
-            : question.codingRole === "main"
-              ? "Основная задача"
-              : question.codingRole === "advanced"
-                ? "Дополнительная практика"
-                : kindLabel(question)
+        question.codingRole === "short"
+          ? "Короткая задача"
+          : question.codingRole === "main"
+            ? "Основная задача"
+            : question.codingRole === "advanced"
+              ? "Дополнительная практика"
+              : kindLabel(question)
       }}
       ·
       {{ categoryLabel(question) }}
     </div>
-    <template v-if="followup"
-      ><p>{{ question.title }}</p>
-      <h2 tabindex="-1">{{ question.followups?.[followup - 1] }}</h2>
+    <h2 tabindex="-1">{{ question.title }}</h2>
+    <MarkdownContent
+      v-if="question.prompt && question.prompt !== question.title"
+      :text="
+        question.prompt.startsWith(question.title + '\n\n')
+          ? question.prompt.slice(question.title.length + 2)
+          : question.prompt
+      "
+      :source-id="question.noteId"
+    />
+    <section
+      v-if="followup"
+      class="followup-question"
+      aria-label="Уточнение к вопросу"
+    >
+      <div class="platform-meta">
+        {{ question.codingRole ? "Дополнительный этап" : "Уточняющий вопрос" }}
+      </div>
+      <h3 tabindex="-1">{{ question.followups?.[followup - 1] }}</h3>
       <MarkdownContent
         v-if="stage?.prompt"
         :text="
@@ -50,23 +65,38 @@ const stage = computed(() =>
         "
         :source-id="question.noteId"
       />
-    </template>
-    <template v-else
-      ><h2 tabindex="-1">{{ question.title }}</h2>
-      <MarkdownContent
-        v-if="question.prompt && question.prompt !== question.title"
-        :text="
-          question.prompt.startsWith(question.title + '\n\n')
-            ? question.prompt.slice(question.title.length + 2)
-            : question.prompt
-        "
-        :source-id="question.noteId"
-    /></template>
+      <AnswerPanel
+        v-if="followupRevealed && followupAnswer?.availableAnswer"
+        :question="followupAnswer"
+      />
+      <button
+        v-else-if="followupAnswer?.availableAnswer"
+        data-action="followup-review"
+        @click="$emit('revealFollowup')"
+      >
+        Показать ответ на уточнение
+      </button>
+      <p v-else>Отдельный разбор этого уточнения пока не добавлен.</p>
+    </section>
     <AnswerPanel
-      v-if="revealed"
+      v-if="revealed && !followup"
       :question="question"
       :for-followup="!!followup"
     />
     <slot />
   </article>
 </template>
+<style scoped>
+.followup-question {
+  margin-top: 24px;
+  padding: 20px;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  background: var(--surface, #f6f8fc);
+}
+.followup-question h3 {
+  margin-block: 10px 18px;
+  font-size: 21px;
+  line-height: 1.5;
+}
+</style>

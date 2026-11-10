@@ -11,18 +11,22 @@ const props = withDefaults(
 );
 const content = computed(() => answerContent(props.question));
 const followups = computed(() =>
-  (props.question.followups || []).map((title) => {
-    const item = props.question.followupAnswers?.find((f) => f.title === title);
-    const prompt = item?.prompt || "";
-    return {
-      title,
-      answer: item?.answer,
-      criteria: item?.criteria,
-      prompt: prompt.startsWith(title + "\n\n")
-        ? prompt.slice(title.length + 2)
-        : prompt,
-    };
-  }),
+  (props.question.followups || [])
+    .map((title) => {
+      const item = props.question.followupAnswers?.find(
+        (f) => f.title === title,
+      );
+      const prompt = item?.prompt || "";
+      return {
+        title,
+        answer: item?.answer,
+        criteria: item?.criteria,
+        prompt: prompt.startsWith(title + "\n\n")
+          ? prompt.slice(title.length + 2)
+          : prompt,
+      };
+    })
+    .filter((item) => item.answer?.trim()),
 );
 </script>
 <template>
@@ -61,7 +65,7 @@ const followups = computed(() =>
       <MarkdownContent :text="content.details" :source-id="question.noteId" />
     </details>
   </section>
-  <details v-if="question.followups?.length" class="platform-card">
+  <details v-if="followups.length" class="platform-card">
     <summary>
       {{
         question.codingRole

@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { AssistantRuntime } from "#server/infrastructure/codex/runtime.ts";
+import { learningLanguageInstructions } from "#domain/knowledge/wording.ts";
 import type {
   CodexTransport,
   TransportMessage,
@@ -101,6 +102,7 @@ test("raw material stays in JSON input while only an internal task reaches devel
   const thread = probe.calls.find((call) => call.method === "thread/start")!
     .params as { developerInstructions: string };
   assert(thread.developerInstructions.includes("INTERNAL TASK"));
+  assert(thread.developerInstructions.includes(learningLanguageInstructions));
   assert(!thread.developerInstructions.includes("UNTRUSTED MATERIAL"));
   const turn = probe.calls.find((call) => call.method === "turn/start")!
     .params as { input: { text: string }[] };

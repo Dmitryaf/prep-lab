@@ -183,7 +183,16 @@ function makeSession(
     skipped: [],
     ratings: {},
     snapshots: Object.fromEntries(
-      chosen.map((q) => [q.id, structuredClone(q)]),
+      chosen.map((q) => {
+        const snapshot = structuredClone(q);
+        if (snapshot.followupAnswers !== undefined)
+          snapshot.followups = (snapshot.followups || []).filter((title) =>
+            snapshot.followupAnswers?.some(
+              (item) => item.title === title && item.answer.trim(),
+            ),
+          );
+        return [q.id, snapshot];
+      }),
     ),
   };
 }

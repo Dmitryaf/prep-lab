@@ -12,6 +12,7 @@ import {
 import { AnalysisRepository } from "#server/infrastructure/storage/analyses.ts";
 import { openDatabase } from "#server/infrastructure/storage/database.ts";
 import { extractQuestions } from "#domain/knowledge/markdown.ts";
+import { learningLanguageInstructions } from "#domain/knowledge/wording.ts";
 import type { Knowledge, Note } from "#domain/knowledge/material.ts";
 import type {
   AnalysisRequest,
@@ -164,6 +165,7 @@ test("project analysis stages complete files, accepts a map and reuses unchanged
   const calls: { phase?: string; context: Record<string, unknown> }[] = [];
   const state = setup(async ({ trustedTask, context }) => {
     const input = JSON.parse(context);
+    assert(trustedTask?.includes(learningLanguageInstructions));
     const current = phase(trustedTask);
     calls.push({ phase: current, context: input });
     if (current === "project-observe")

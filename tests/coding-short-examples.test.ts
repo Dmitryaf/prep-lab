@@ -112,7 +112,7 @@ const invalid: User = { name: 'A', age: '2' };
 });
 
 test("circle guard rejects null, arrays, wrong discriminants and invalid radii", () => {
-  const code = example("Type guard для неизвестных данных", "circle-guard");
+  const code = example("Проверка типа неизвестных данных", "circle-guard");
   assert.equal(
     run(
       code,

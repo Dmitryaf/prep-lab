@@ -35,6 +35,21 @@ for (const kind of ["daily", "full"] as const)
         "Как не сбросить индикатор нового запроса?",
         "Как воспроизвести обратный порядок ответов?",
       ],
+      followupAnswers: [
+        {
+          title: "Когда отменять запрос?",
+          answer: "При смене параметра или удалении компонента.",
+        },
+        {
+          title: "Как не сбросить индикатор нового запроса?",
+          answer:
+            "Перед записью в finally проверить номер актуального запроса.",
+        },
+        {
+          title: "Как воспроизвести обратный порядок ответов?",
+          answer: "Сначала завершить второй запрос, затем первый.",
+        },
+      ],
     };
     const other = {
       ...root,
@@ -74,10 +89,9 @@ for (const kind of ["daily", "full"] as const)
     let last = "";
     for (let index = 0; index < (kind === "daily" ? 1 : 2); index++) {
       await page.locator('[data-action="session-followup"]').click();
-      await expect(page.locator(".question-card h2")).not.toHaveText(
-        root.title,
-      );
-      last = await page.locator(".question-card h2").innerText();
+      await expect(page.locator(".question-card h2")).toHaveText(root.title);
+      await expect(page.locator(".followup-question h3")).toBeVisible();
+      last = await page.locator(".followup-question h3").innerText();
       await page.locator('[data-action="session-previous"]').click();
       await expect(page.locator(".question-card h2")).toHaveText(root.title);
     }
@@ -86,13 +100,13 @@ for (const kind of ["daily", "full"] as const)
     });
     await page.reload();
     await page.locator('[data-action="session-followup"]').click();
-    await expect(page.locator(".question-card h2")).toHaveText(last);
+    await expect(page.locator(".followup-question h3")).toHaveText(last);
     await page.locator('[data-action="session-previous"]').click();
     await page.locator('[data-action="session-next"]').click();
     await expect(page.locator(".question-card h2")).toHaveText(other.title);
     await page.locator('[data-action="session-previous"]').click();
     await page.locator('[data-action="session-followup"]').click();
-    await expect(page.locator(".question-card h2")).toHaveText(last);
+    await expect(page.locator(".followup-question h3")).toHaveText(last);
     const saved = await readProgress(page),
       current =
         kind === "daily"

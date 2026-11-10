@@ -12,9 +12,13 @@ import { useMaterials } from "#ui/entities/material/model/store.ts";
 const { noteFor } = useMaterials();
 
 import { link } from "#ui/shared/lib/navigation.ts";
-const props = withDefaults(defineProps<{ text: string; sourceId?: string }>(), {
-  sourceId: "",
-});
+const props = withDefaults(
+  defineProps<{ text: string; sourceId?: string; followHeading?: boolean }>(),
+  {
+    sourceId: "",
+    followHeading: true,
+  },
+);
 const route = useRoute();
 function resolveTarget(raw: string) {
   return resolveKnowledgeLink(
@@ -52,7 +56,7 @@ watch(
   () => [props.text, route.query.heading],
   async () => {
     await nextTick();
-    if (typeof route.query.heading === "string") {
+    if (props.followHeading && typeof route.query.heading === "string") {
       const heading = materialHeading(
         noteFor(props.sourceId) || {},
         route.query.heading,

@@ -36,6 +36,7 @@ import {
 import type { Interview } from "#domain/interview/state.ts";
 import RatingButtons from "#ui/features/manage-repeat/index.ts";
 import StudyLinks from "#ui/entities/question/ui/StudyLinks.vue";
+import { followupQuestion } from "#domain/knowledge/followup.ts";
 const route = useRoute(),
   router = useRouter(),
   date = ref(localDate());
@@ -60,6 +61,16 @@ const current = computed(
   () =>
     session.value?.snapshots[session.value.questionIds[session.value.index]],
 );
+const answeredFollowups = computed(() => {
+  if (!session.value || !current.value) return [];
+  const latest = knowledge.value.questions.find(
+    (question) => question.id === current.value?.id,
+  );
+  return availableFollowups(session.value).filter(
+    (index) =>
+      followupQuestion(current.value!, index + 1, latest)?.availableAnswer,
+  );
+});
 const reviewed = computed(
   () =>
     !!(
@@ -86,7 +97,12 @@ async function move(
     action === "previous"
       ? previousQuestion(session.value)
       : action === "followup"
-        ? openFollowup(session.value, stageIndex)
+        ? openFollowup(
+            session.value,
+            stageIndex ??
+              answeredFollowups.value[0] ??
+              openedFollowups(session.value).at(-1),
+          )
         : advanceQuestion(session.value, action === "skip");
   if (next !== session.value) await setSession(next);
 }
@@ -295,17 +311,18 @@ watch(() => route.fullPath, refreshDate);
       ><button
         v-if="
           !(current.roundFormat === 'coding' && current.codingRole) &&
-          (availableFollowups(session).length ||
-            openedFollowups(session).length)
+          (answeredFollowups.length ||
+            (!session.followupIndex && openedFollowups(session).length))
         "
         data-action="session-followup"
         :disabled="
-          saving ||
-          (!!session.followupIndex && !availableFollowups(session).length)
+          saving || (!!session.followupIndex && !answeredFollowups.length)
         "
         @click="move('followup')"
       >
-        Уточняющий вопрос</button
+        {{
+          session.followupIndex ? "Другое уточнение" : "Уточняющий вопрос"
+        }}</button
       ><button
         data-action="session-skip"
         :disabled="saving"
@@ -347,11 +364,11 @@ watch(() => route.fullPath, refreshDate);
           </button>
         </div>
       </div>
-      <template v-if="reviewed"
+      <template v-if="reviewed && !session.followupIndex"
         ><RatingButtons :id="current.id" :session-id="session.id" /><StudyLinks
           :question="current" /></template
       ><button
-        v-else
+        v-else-if="!session.followupIndex"
         data-action="session-review"
         :disabled="saving"
         @click="review"

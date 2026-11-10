@@ -60,9 +60,9 @@ test("direct send prepares the task once without a manual preview", async ({
   await input(page).fill("Объясни порядок микрозадач");
   await expect(send(page)).toBeEnabled({ timeout: 1500 });
   await send(page).click();
-  await expect(page.locator(".study-message.assistant pre")).toHaveText(
-    "Ответ для: Объясни порядок микрозадач",
-  );
+  await expect(
+    page.locator(".study-message.assistant .platform-markdown"),
+  ).toHaveText("Ответ для: Объясни порядок микрозадач");
   expect(calls.previews).toHaveLength(1);
   expect(calls.sent).toHaveLength(1);
   expect(calls.sent[0]!.postDataJSON().expectedPrompt).toContain(
@@ -72,9 +72,9 @@ test("direct send prepares the task once without a manual preview", async ({
   await page
     .getByRole("button", { name: "Обсудить с помощником", exact: true })
     .click();
-  await expect(page.locator(".study-message.assistant pre")).toHaveText(
-    "Ответ для: Объясни порядок микрозадач",
-  );
+  await expect(
+    page.locator(".study-message.assistant .platform-markdown"),
+  ).toHaveText("Ответ для: Объясни порядок микрозадач");
   await expect(send(page)).toBeDisabled();
 });
 
@@ -93,9 +93,9 @@ test("manual preview remains optional and editing its message prepares a fresh t
   ).toContainText("Первый вопрос");
   expect(calls.sent).toHaveLength(0);
   await send(page).click();
-  await expect(page.locator(".study-message.assistant pre")).toHaveText(
-    "Ответ для: Первый вопрос",
-  );
+  await expect(
+    page.locator(".study-message.assistant .platform-markdown"),
+  ).toHaveText("Ответ для: Первый вопрос");
   expect(calls.previews).toHaveLength(1);
   await input(page).fill("Второй вопрос");
   await page
@@ -110,9 +110,9 @@ test("manual preview remains optional and editing its message prepares a fresh t
   ).toHaveCount(0);
   await expect(send(page)).toBeEnabled();
   await send(page).click();
-  await expect(page.locator(".study-message.assistant pre").last()).toHaveText(
-    "Ответ для: Изменённый второй вопрос",
-  );
+  await expect(
+    page.locator(".study-message.assistant .platform-markdown").last(),
+  ).toHaveText("Ответ для: Изменённый второй вопрос");
   expect(calls.previews).toHaveLength(3);
   expect(calls.sent).toHaveLength(2);
   expect(calls.sent[1]!.postDataJSON().expectedPrompt).toContain(
@@ -143,9 +143,9 @@ test("a failed preparation keeps the draft and sends nothing until an explicit r
   expect(calls.sent).toHaveLength(0);
   await page.unroute(previewUrl);
   await send(page).click();
-  await expect(page.locator(".study-message.assistant pre")).toHaveText(
-    "Ответ для: Мой вопрос",
-  );
+  await expect(
+    page.locator(".study-message.assistant .platform-markdown"),
+  ).toHaveText("Ответ для: Мой вопрос");
   expect(calls.sent).toHaveLength(1);
 });
 
@@ -191,9 +191,9 @@ test("pending preparation blocks duplicate submits and discards a task after que
   await expect(input(page)).toHaveValue("");
   await input(page).fill("Новый вопрос");
   await send(page).click();
-  await expect(page.locator(".study-message.assistant pre")).toHaveText(
-    "Ответ для: Новый вопрос",
-  );
+  await expect(
+    page.locator(".study-message.assistant .platform-markdown"),
+  ).toHaveText("Ответ для: Новый вопрос");
   expect(calls.sent).toHaveLength(1);
   expect(JSON.parse(calls.sent[0]!.postDataJSON().context).title).toBe(
     await page.locator(".question-card h2").innerText(),
@@ -231,9 +231,9 @@ test("editing a pending message keeps the new draft and discards the old task", 
   await expect(send(page)).toBeEnabled();
   await page.unroute(previewUrl);
   await send(page).click();
-  await expect(page.locator(".study-message.assistant pre")).toHaveText(
-    "Ответ для: Новый текст",
-  );
+  await expect(
+    page.locator(".study-message.assistant .platform-markdown"),
+  ).toHaveText("Ответ для: Новый текст");
   expect(calls.sent).toHaveLength(1);
 });
 
@@ -263,9 +263,9 @@ test("a send conflict restores the message without an automatic resend", async (
   await expect(input(page)).toHaveValue("Сохранить этот текст");
   await expect(page.locator(".study-message")).toHaveCount(0);
   await send(page).click();
-  await expect(page.locator(".study-message.assistant pre")).toHaveText(
-    "Ответ для: Сохранить этот текст",
-  );
+  await expect(
+    page.locator(".study-message.assistant .platform-markdown"),
+  ).toHaveText("Ответ для: Сохранить этот текст");
   expect(calls.sent).toHaveLength(2);
   expect(calls.previews).toHaveLength(2);
 });

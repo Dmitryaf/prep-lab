@@ -58,23 +58,35 @@ updated: 2026-10-29
 > // checked-example: react-search-base
 > function filterUsers(users, query) {
 >   const term = query.trim().toLowerCase();
->   return users.filter(user => user.name.toLowerCase().includes(term));
+>   return users.filter((user) => user.name.toLowerCase().includes(term));
 > }
 > ```
 >
 > ```jsx
 > function UserSearch({ users, query, onQueryChange, onSelect }) {
 >   const visible = filterUsers(users, query);
->   return <section>
->     <label>Поиск пользователей
->       <input type="search" value={query}
->         onChange={event => onQueryChange(event.target.value)} />
->     </label>
->     {visible.length === 0 && <p role="status">Ничего не найдено.</p>}
->     <ul>{visible.map(user => <li key={user.id}>
->       <button type="button" onClick={() => onSelect(user.id)}>{user.name}</button>
->     </li>)}</ul>
->   </section>;
+>   return (
+>     <section>
+>       <label>
+>         Поиск пользователей
+>         <input
+>           type="search"
+>           value={query}
+>           onChange={(event) => onQueryChange(event.target.value)}
+>         />
+>       </label>
+>       {visible.length === 0 && <p role="status">Ничего не найдено.</p>}
+>       <ul>
+>         {visible.map((user) => (
+>           <li key={user.id}>
+>             <button type="button" onClick={() => onSelect(user.id)}>
+>               {user.name}
+>             </button>
+>           </li>
+>         ))}
+>       </ul>
+>     </section>
+>   );
 > }
 > ```
 >
@@ -119,7 +131,9 @@ updated: 2026-10-29
 >     setResult(emptySearch(key, 'loading'));
 >     const timer = setTimeout(async () => {
 >       try {
->         const users = await loadUsers(orgId, term, { signal: controller.signal });
+>         const users = await loadUsers(orgId, term, {
+>           signal: controller.signal,
+>         });
 >         if (active) setResult({ key, status: 'success', users, error: null });
 >       } catch (error) {
 >         if (active) setResult({ ...emptySearch(key, 'error'), error });
@@ -142,31 +156,59 @@ updated: 2026-10-29
 >   const response = await fetch(`/api/users?${params}`, { signal });
 >   if (!response.ok) throw new Error(`HTTP ${response.status}`);
 >   const users = await response.json();
->   if (!Array.isArray(users) || !users.every(user =>
->     user !== null && typeof user === 'object'
->     && typeof user.id === 'string' && typeof user.name === 'string'
->   ) || new Set(users.map(user => user.id)).size !== users.length) {
+>   if (
+>     !Array.isArray(users) ||
+>     !users.every(
+>       (user) =>
+>         user !== null &&
+>         typeof user === 'object' &&
+>         typeof user.id === 'string' &&
+>         typeof user.name === 'string',
+>     ) ||
+>     new Set(users.map((user) => user.id)).size !== users.length
+>   ) {
 >     throw new Error('Invalid users response');
 >   }
 >   return users;
 > }
 >
-> function UserSearch({ orgId, query, onQueryChange, onSelect,
->   loadUsers = loadUsersFromApi, delay = 300 }) {
+> function UserSearch({
+>   orgId,
+>   query,
+>   onQueryChange,
+>   onSelect,
+>   loadUsers = loadUsersFromApi,
+>   delay = 300,
+> }) {
 >   const result = useUserSearch(orgId, query, loadUsers, delay);
->   return <section>
->     <label>Поиск пользователей
->       <input type="search" value={query}
->         onChange={event => onQueryChange(event.target.value)} />
->     </label>
->     {result.status === 'loading' && <p role="status">Загрузка…</p>}
->     {result.status === 'error' && <p role="alert">Не удалось загрузить пользователей.</p>}
->     {result.status === 'success' && result.users.length === 0
->       && <p role="status">Ничего не найдено.</p>}
->     <ul>{result.users.map(user => <li key={user.id}>
->       <button type="button" onClick={() => onSelect(user.id)}>{user.name}</button>
->     </li>)}</ul>
->   </section>;
+>   return (
+>     <section>
+>       <label>
+>         Поиск пользователей
+>         <input
+>           type="search"
+>           value={query}
+>           onChange={(event) => onQueryChange(event.target.value)}
+>         />
+>       </label>
+>       {result.status === 'loading' && <p role="status">Загрузка…</p>}
+>       {result.status === 'error' && (
+>         <p role="alert">Не удалось загрузить пользователей.</p>
+>       )}
+>       {result.status === 'success' && result.users.length === 0 && (
+>         <p role="status">Ничего не найдено.</p>
+>       )}
+>       <ul>
+>         {result.users.map((user) => (
+>           <li key={user.id}>
+>             <button type="button" onClick={() => onSelect(user.id)}>
+>               {user.name}
+>             </button>
+>           </li>
+>         ))}
+>       </ul>
+>     </section>
+>   );
 > }
 > ```
 >
@@ -232,8 +274,13 @@ updated: 2026-10-29
 >   }
 >   function onPointerDown(event) {
 >     if (!event.isPrimary || event.button !== 0 || drag.current) return;
->     drag.current = { ...position, clientX: event.clientX, clientY: event.clientY,
->       id: event.pointerId, limits: measureLimits(position) };
+>     drag.current = {
+>       ...position,
+>       clientX: event.clientX,
+>       clientY: event.clientY,
+>       id: event.pointerId,
+>       limits: measureLimits(position),
+>     };
 >     event.currentTarget.setPointerCapture(event.pointerId);
 >   }
 >   function onPointerMove(event) {
@@ -250,31 +297,61 @@ updated: 2026-10-29
 >     }
 >   }
 >   function onKeyDown(event) {
->     const delta = { ArrowLeft: [-10, 0], ArrowRight: [10, 0],
->       ArrowUp: [0, -10], ArrowDown: [0, 10] }[event.key];
+>     const delta = {
+>       ArrowLeft: [-10, 0],
+>       ArrowRight: [10, 0],
+>       ArrowUp: [0, -10],
+>       ArrowDown: [0, 10],
+>     }[event.key];
 >     if (!delta || drag.current) return;
 >     event.preventDefault();
 >     const limits = measureLimits(position);
->     setPosition(previous => clampPosition({
->       x: previous.x + delta[0], y: previous.y + delta[1],
->     }, limits));
+>     setPosition((previous) =>
+>       clampPosition(
+>         {
+>           x: previous.x + delta[0],
+>           y: previous.y + delta[1],
+>         },
+>         limits,
+>       ),
+>     );
 >   }
 >
->   return <div>
->     <div ref={stageRef} style={{ width: 320, height: 200,
->       outline: '1px solid gray', overflow: 'hidden' }}>
->       <button ref={buttonRef} type="button"
->         aria-label="Перемещаемая кнопка. Используйте стрелки для перемещения"
->         onPointerDown={onPointerDown} onPointerMove={onPointerMove}
->         onPointerUp={finish} onPointerCancel={finish} onLostPointerCapture={finish}
->         onKeyDown={onKeyDown}
->         style={{ transform: `translate(${position.x}px, ${position.y}px)`,
->           touchAction: 'none', userSelect: 'none' }}>
->         Перетащи меня
->       </button>
+>   return (
+>     <div>
+>       <div
+>         ref={stageRef}
+>         style={{
+>           width: 320,
+>           height: 200,
+>           outline: '1px solid gray',
+>           overflow: 'hidden',
+>         }}
+>       >
+>         <button
+>           ref={buttonRef}
+>           type="button"
+>           aria-label="Перемещаемая кнопка. Используйте стрелки для перемещения"
+>           onPointerDown={onPointerDown}
+>           onPointerMove={onPointerMove}
+>           onPointerUp={finish}
+>           onPointerCancel={finish}
+>           onLostPointerCapture={finish}
+>           onKeyDown={onKeyDown}
+>           style={{
+>             transform: `translate(${position.x}px, ${position.y}px)`,
+>             touchAction: 'none',
+>             userSelect: 'none',
+>           }}
+>         >
+>           Перетащи меня
+>         </button>
+>       </div>
+>       <output>
+>         {Math.round(position.x)}, {Math.round(position.y)}
+>       </output>
 >     </div>
->     <output>{Math.round(position.x)}, {Math.round(position.y)}</output>
->   </div>;
+>   );
 > }
 > ```
 >
@@ -344,7 +421,7 @@ function BrokenUserSearch({ orgId, query, onQueryChange, onSelect }) {
 >
 > Индекс в key не доказывает ошибку в списке, состав и порядок которого не меняются. Обработчик, объявленный внутри map, и изменение состояния через then сами по себе не являются дефектами. Promise можно обработать корректно без переписывания на async/await. Вынос запроса в отдельный хук помогает организовать код, но корректность всё равно проверяется по поведению. React.memo/useCallback не заменяют очистку ресурсов, зависимости и защиту от устаревших данных.
 >
-> **Приёмка ревью.** Назови три наиболее существенных дефекта с пользовательским последствием, минимальную правку и независимую проверку для каждого. Затем примени все согласованные изменения и повтори весь сценарий, включая unmount и обратный порядок ответов. Не удаляй сложное требование, чтобы получить зелёный happy path.
+> **Приёмка ревью.** Назови три наиболее существенных дефекта с пользовательским последствием, минимальную правку и независимую проверку для каждого. Затем примени все согласованные изменения и повтори весь сценарий, включая unmount и обратный порядок ответов. Проверь также ошибки, отмену и смену параметров, а не только успешное выполнение.
 
 Контракты списка и эффектов: [React: keys](https://react.dev/learn/rendering-lists), [когда effect не нужен](https://react.dev/learn/you-might-not-need-an-effect), [StrictMode](https://react.dev/reference/react/StrictMode). Для повторения реши задачи без открытого разбора.
 
@@ -390,7 +467,7 @@ function BrokenUserSearch({ orgId, query, onQueryChange, onSelect }) {
 
 Измени useResize: замена callback больше не снимает и не добавляет listener. При этом resize должен вызывать последнюю применённую функцию. Проверь последовательность A → resize → B → resize и удаление компонента. Дополнительные циклы очистки в StrictMode не должны оставлять лишние слушатели.
 
-**Критерии ответа:** Подписка не зависит от identity callback; ref обновляется после применения рендера; cleanup снимает исходный listener; callback B действительно вызывается вместо A.
+**Критерии ответа:** Подписка не создаётся заново при смене функции обратного вызова; ссылка в `ref` обновляется после отрисовки; очистка удаляет исходный обработчик; вместо функции A действительно вызывается B.
 **Изучить:** [[Фронтенд/React/06. Refs и работа с DOM|Ref и актуальный callback]]
 
 > [!example]- Разбор: актуальное значение отдельно от подписки
@@ -399,7 +476,9 @@ function BrokenUserSearch({ orgId, query, onQueryChange, onSelect }) {
 > import { useEffect, useLayoutEffect, useRef } from 'react';
 > function useResize(onResize) {
 >   const latest = useRef(onResize);
->   useLayoutEffect(() => { latest.current = onResize; }, [onResize]);
+>   useLayoutEffect(() => {
+>     latest.current = onResize;
+>   }, [onResize]);
 >   useEffect(() => {
 >     const listener = () => latest.current(window.innerWidth);
 >     window.addEventListener('resize', listener);
@@ -486,7 +565,7 @@ function BrokenUserSearch({ orgId, query, onQueryChange, onSelect }) {
 
 ## Ошибка, ожидание и гидратация
 
-Три независимых случая: загрузка кода через lazy ещё не завершилась; дочерний виджет выбросил ошибку при рендере; сервер показал светлую тему, а первый рендер в браузере прочитал тёмную из localStorage. Выбери механизм интерфейса и проверку для каждого. Ещё один случай: запрос fetch запущен из useEffect внутри Suspense, но запасное содержимое fallback не появляется.
+Три независимых случая: код через `lazy` ещё не загрузился; дочерний виджет выбросил ошибку при отрисовке; сервер показал светлую тему, а браузер прочитал тёмную из `localStorage`. Выбери способ обработки каждого случая и проверку. Дополнительно объясни, почему `Suspense` не показывает запасное содержимое, если запрос `fetch` запущен внутри `useEffect`.
 
 > [!example]- Разбор
 >
@@ -496,7 +575,7 @@ function BrokenUserSearch({ orgId, query, onQueryChange, onSelect }) {
 
 ## Ревью подписки и вложенного таймера
 
-**Критерии ответа:** Проверяю смену ключа подписки, позднее событие и вложенный таймер; после cleanup старый источник не меняет интерфейс и активные ресурсы освобождены.
+**Критерии ответа:** Проверяю смену ключа подписки, позднее событие и вложенный таймер; после очистки старый источник не меняет интерфейс, таймеры и подписки освобождены.
 **Изучить:** [[Фронтенд/React/05. Эффекты и внешние системы|Механизм, пример и ограничения]]
 
 Найдите ошибки и отделите их от необязательной оптимизации. Добавление должно показывать новую строку, а «Всего» — количество строк. После события offline раз в секунду выводится актуальное количество; повторное offline не создаёт второй таймер, online останавливает его. При unmount всё освобождается. Начальное состояние этого упражнения — online; это демонстрация ресурсов, не проверка доступности сервера.
@@ -561,13 +640,19 @@ function BrokenItems() {
 >
 >   function addItem() {
 >     const id = ++nextId.current;
->     setItems(previous => [...previous, { id, title: `Строка ${id}` }]);
+>     setItems((previous) => [...previous, { id, title: `Строка ${id}` }]);
 >   }
->   return <>
->     <button onClick={addItem}>Добавить</button>
->     <p>Всего: {items.length}</p>
->     <ul>{items.map(item => <li key={item.id}>{item.title}</li>)}</ul>
->   </>;
+>   return (
+>     <>
+>       <button onClick={addItem}>Добавить</button>
+>       <p>Всего: {items.length}</p>
+>       <ul>
+>         {items.map((item) => (
+>           <li key={item.id}>{item.title}</li>
+>         ))}
+>       </ul>
+>     </>
+>   );
 > }
 > ```
 >

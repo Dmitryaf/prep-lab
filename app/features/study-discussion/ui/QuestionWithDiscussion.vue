@@ -6,6 +6,7 @@ import StudyDiscussion from "./StudyDiscussion.vue";
 import QuestionTopics from "#ui/entities/question/ui/QuestionTopics.vue";
 import { useMaterials } from "#ui/entities/material/model/store.ts";
 import { studyTopics } from "#domain/knowledge/study-topics.ts";
+import { followupQuestion } from "#domain/knowledge/followup.ts";
 const materials = useMaterials();
 const props = defineProps<{
   question: Question;
@@ -15,6 +16,19 @@ const props = defineProps<{
 }>();
 const practiceFollowup = ref(0);
 const activeFollowup = computed(() => props.followup || practiceFollowup.value);
+const followupRevealed = ref(false);
+const currentQuestion = computed(() =>
+  materials.knowledge.questions.find((q) => q.id === props.question.id),
+);
+const selectedFollowup = computed(() =>
+  followupQuestion(props.question, activeFollowup.value, currentQuestion.value),
+);
+watch(
+  () => [props.question.id, activeFollowup.value],
+  () => {
+    followupRevealed.value = false;
+  },
+);
 const workspace = ref<HTMLElement>();
 const minimumHeight = ref<string>();
 watch(
@@ -48,7 +62,16 @@ const canExtendPractice = computed(
     props.question.followups?.length,
 );
 const topics = computed(() =>
-  studyTopics(props.question, materials.knowledge.notes),
+  studyTopics(
+    {
+      ...props.question,
+      learningLinks: [
+        ...(props.question.learningLinks || []),
+        ...(currentQuestion.value?.learningLinks || []),
+      ],
+    },
+    materials.knowledge.notes,
+  ),
 );
 const materialKey = computed(() =>
   props.revealed
@@ -57,10 +80,39 @@ const materialKey = computed(() =>
       ? "interview-hint:" + JSON.stringify([props.sessionId, props.question.id])
       : "question-hint:" + props.question.id,
 );
+const discussionKey = computed(() =>
+  activeFollowup.value
+    ? !followupRevealed.value && props.sessionId
+      ? "interview-hint:" +
+        JSON.stringify([
+          props.sessionId,
+          props.question.id,
+          activeFollowup.value,
+        ])
+      : (followupRevealed.value ? "question:" : "question-hint:") +
+        JSON.stringify([props.question.id, selectedFollowup.value?.title])
+    : materialKey.value,
+);
 const context = computed(() =>
   JSON.stringify(
-    props.revealed
-      ? props.question
+    (activeFollowup.value ? followupRevealed.value : props.revealed)
+      ? {
+          question: activeFollowup.value
+            ? selectedFollowup.value
+            : props.question,
+          theory: topics.value
+            .map((topic) =>
+              materials.knowledge.notes.find(
+                (note) => note.id === topic.noteId,
+              ),
+            )
+            .filter((note) => !!note)
+            .map((note) => ({
+              title: note.title,
+              text: note.markdown.slice(0, 6000),
+            }))
+            .slice(0, 4),
+        }
       : {
           mode: "Подсказка до самостоятельного ответа. Помоги с рассуждением, не раскрывай полное решение.",
           id: props.question.id,
@@ -96,10 +148,13 @@ const context = computed(() =>
         :question="question"
         :revealed="revealed"
         :followup="activeFollowup"
+        :followup-answer="selectedFollowup"
+        :followup-revealed="followupRevealed"
+        @reveal-followup="followupRevealed = true"
         ><StudyDiscussion
-          :key="materialKey"
-          :material-key="materialKey"
-          :title="question.title"
+          :key="discussionKey"
+          :material-key="discussionKey"
+          :title="selectedFollowup?.title || question.title"
           :context="context"
       /></QuestionCard>
       <slot />

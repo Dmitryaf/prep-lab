@@ -12,15 +12,23 @@
 .study-chat-panel h3 {
   overflow-wrap: anywhere;
 }
-.study-chat-panel pre {
+.study-chat-panel form > section > pre {
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   font: inherit;
   max-height: 32rem;
   overflow: auto;
 }
-.study-chat-panel details pre {
-  font-size: 0.85rem;
+.study-message :deep(pre) {
+  white-space: pre;
+  overflow-wrap: normal;
+  max-height: 32rem;
+  overflow: auto;
+}
+.study-message-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin-block: 0.5rem;
 }
 .study-chat-panel textarea {
   display: block;
@@ -40,7 +48,7 @@
 .study-message.user {
   border-color: #476cba;
 }
-.study-message pre {
+.study-message :deep(pre) {
   margin: 0.5rem 0;
 }
 .study-chat-panel form {
