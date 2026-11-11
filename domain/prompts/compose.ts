@@ -32,7 +32,7 @@ export function composePrompt(
         ? projectDraftSchema
         : null;
   return [
-    `Frontend Lab · ${template.title} · ${template.version}`,
+    `Prep Lab · ${template.title} · ${template.version}`,
     text,
     learningLanguageInstructions,
     ...(template.id === "import" ? [technicalQuestionInstructions] : []),

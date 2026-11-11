@@ -1,0 +1,318 @@
+.intensive-workspace {
+  max-width: 1280px;
+}
+.intensive-workspace .platform-card {
+  margin-bottom: 22px;
+}
+.intensive-page-heading,
+.intensive-section-heading,
+.intensive-plan-heading,
+.intensive-question-toolbar,
+.intensive-bottom-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.intensive-page-heading {
+  margin-bottom: 18px;
+}
+.intensive-page-heading .page-heading {
+  margin: 0;
+}
+.intensive-page-heading h1 {
+  margin-bottom: 0;
+}
+.intensive-plan-heading {
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 20px;
+}
+.intensive-plan-heading p {
+  margin: 0;
+  font-size: 18px;
+}
+.intensive-plan-heading > span,
+.intensive-muted,
+.intensive-save-status,
+.intensive-section-heading > span {
+  color: var(--muted);
+  font-size: 14px;
+}
+.intensive-workspace label:not(.intensive-option) {
+  display: block;
+  margin: 16px 0 6px;
+  font-weight: 500;
+}
+.intensive-workspace input:not([type="checkbox"]):not([type="radio"]),
+.intensive-workspace textarea {
+  width: 100%;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 11px 13px;
+}
+.intensive-workspace textarea {
+  resize: vertical;
+  min-height: 110px;
+}
+.intensive-workspace details > summary {
+  cursor: pointer;
+  font-weight: 600;
+  padding: 10px 0;
+}
+.intensive-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+.intensive-option {
+  display: flex;
+  align-items: start;
+  gap: 12px;
+  cursor: pointer;
+  padding: 12px 0;
+}
+.intensive-option input {
+  accent-color: var(--accent);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin: 4px 0 0;
+}
+.intensive-option span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.intensive-option small {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 3px;
+}
+.intensive-project-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 28px;
+}
+.intensive-catalog {
+  margin-top: 18px;
+}
+.intensive-catalog > details {
+  border-top: 1px solid var(--line);
+  padding: 6px 0;
+}
+.intensive-workspace .intensive-text-button {
+  padding: 4px 0;
+  color: var(--accent);
+  border: 0;
+  background: transparent;
+  min-height: 36px;
+  font-size: 13px;
+}
+.intensive-workspace .platform-actions {
+  margin-top: 20px;
+}
+.intensive-program-list {
+  margin: 22px 0;
+}
+.intensive-program-list > li {
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.intensive-lesson-summary {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 100%;
+  vertical-align: top;
+}
+.intensive-lesson-summary span {
+  color: var(--muted);
+  font-size: 13px;
+}
+.intensive-order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.intensive-available-lessons {
+  list-style: none;
+  padding: 0 !important;
+}
+.intensive-available-lessons > li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+}
+.intensive-study-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: 26px;
+  align-items: start;
+}
+.intensive-lesson {
+  min-width: 0;
+}
+.intensive-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 22px;
+}
+.intensive-steps button {
+  flex: 1 0 auto;
+}
+.intensive-steps button[aria-current="step"] {
+  background: #edf3ff;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.intensive-question-toolbar {
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.intensive-question-toolbar .platform-actions,
+.intensive-bottom-actions .platform-actions {
+  margin: 0;
+}
+.intensive-source-link {
+  display: inline-block;
+  margin-bottom: 20px;
+}
+.intensive-reading > .platform-markdown {
+  overflow-wrap: anywhere;
+}
+.intensive-reading .platform-card {
+  padding: 20px;
+  box-shadow: none;
+}
+.intensive-result fieldset {
+  border: none;
+  padding: 0;
+  margin: 14px 0 20px;
+}
+.intensive-result h3 {
+  margin-top: 0;
+}
+.intensive-save-status {
+  min-height: 24px;
+}
+.intensive-sidebar {
+  min-width: 0;
+  position: sticky;
+  top: 24px;
+}
+.intensive-sidebar .platform-card {
+  padding: 22px;
+}
+.intensive-sidebar h2 {
+  font-size: 19px;
+}
+.intensive-queue {
+  padding: 0 !important;
+  list-style: none;
+  max-height: 58vh;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.intensive-queue li {
+  margin: 6px 0;
+}
+.intensive-queue button {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 6px;
+  text-align: left;
+  border-color: transparent;
+  font-weight: 500;
+  padding: 12px;
+  overflow-wrap: anywhere;
+}
+.intensive-queue button[aria-current="true"] {
+  border-color: var(--accent);
+  background: #edf3ff;
+  color: var(--accent);
+}
+.intensive-queue small {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
+.intensive-more {
+  width: 100%;
+  margin-top: 12px;
+}
+.intensive-tomorrow ul {
+  list-style: none;
+  padding: 0;
+}
+.intensive-tomorrow li {
+  border-top: 1px solid var(--line);
+  padding: 8px 0;
+}
+.intensive-repeat-done {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+.intensive-error {
+  border-color: #bd3535;
+}
+.intensive-workspace .visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+@media (max-width: 1100px) {
+  .intensive-study-grid {
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 18px;
+  }
+}
+@media (max-width: 850px) {
+  .intensive-study-grid {
+    grid-template-columns: 1fr;
+  }
+  .intensive-sidebar {
+    position: static;
+  }
+  .intensive-queue {
+    max-height: 360px;
+  }
+}
+@media (max-width: 540px) {
+  .intensive-form-row,
+  .intensive-project-options {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .intensive-workspace .platform-card {
+    padding: 18px;
+  }
+  .intensive-page-heading {
+    align-items: start;
+  }
+  .intensive-steps button {
+    padding-inline: 10px;
+  }
+  .intensive-workspace .platform-actions {
+    gap: 8px;
+  }
+  .intensive-question-toolbar {
+    align-items: start;
+  }
+  .intensive-available-lessons > li {
+    align-items: start;
+  }
+}

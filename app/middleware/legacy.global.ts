@@ -21,6 +21,7 @@ export default defineNuxtRouteMiddleware((to) => {
   if (to.path === "/") return navigateTo("/interview", { replace: true });
   if (
     ![
+      "/intensive",
       "/interview",
       "/practice",
       "/repeat",

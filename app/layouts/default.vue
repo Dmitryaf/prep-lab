@@ -68,6 +68,7 @@ const foundTopics = computed(() =>
   ),
 );
 const nav = [
+  ["intensive", "Интенсив"],
   ["interview", "Интервью"],
   ["practice", "Практика"],
   ["themes", "Темы"],
@@ -137,8 +138,8 @@ onUnmounted(() => {
           <circle cx="7" cy="25" r="3" fill="currentColor" />
           <circle cx="25" cy="7" r="3" fill="currentColor" /></svg
         ><span
-          >Frontend Lab<span class="platform-brand-sub"
-            >Подготовка · frontend</span
+          >Prep Lab<span class="platform-brand-sub"
+            >Подготовка к собеседованию</span
           ></span
         ></RouterLink
       >
@@ -154,8 +155,8 @@ onUnmounted(() => {
           }}</span></RouterLink
         >
       </nav>
-      <div class="platform-profile">
-        <label for="preparationProfile">Профиль подготовки</label>
+      <div v-if="route.path !== '/intensive'" class="platform-profile">
+        <label for="preparationProfile">Стек интервью</label>
         <select
           id="preparationProfile"
           :value="instanceSettings.settings.profile"

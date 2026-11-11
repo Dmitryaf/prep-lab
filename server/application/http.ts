@@ -12,6 +12,9 @@ import type { LifecycleOptions } from "#server/lifecycle.ts";
 import { openDatabase } from "#server/infrastructure/storage/database.ts";
 import { PreparationRepository } from "#server/infrastructure/storage/preparation.ts";
 import { handlePreparation } from "#server/infrastructure/http/preparation.ts";
+import { IntensiveRepository } from "#server/infrastructure/intensive/repository.ts";
+import { IntensiveService } from "#server/application/intensive/service.ts";
+import { handleIntensive } from "#server/infrastructure/intensive/http.ts";
 import { DiscussionRepository } from "#server/infrastructure/storage/discussions.ts";
 import { SettingsRepository } from "#server/infrastructure/storage/settings.ts";
 import { SourceRepository } from "#server/infrastructure/storage/sources.ts";
@@ -85,6 +88,18 @@ export function createHttpService({
   const prompts = new PromptRepository(database);
   const reviewedProjects = new ProjectRepository(database);
   const analysisRepository = new AnalysisRepository(database);
+  const intensive = new IntensiveService({
+    repository: new IntensiveRepository(database),
+    knowledge: async () =>
+      analysisRepository.knowledge(
+        sourceKnowledge(
+          await readKnowledge({ knowledgeRoot, projectPackageRoot }),
+          sources.snapshot().sources,
+        ),
+      ),
+    projects: () =>
+      reviewedProjects.catalog(readProjectCatalog(projectPackageRoot)),
+  });
   const analyses = new AnalysisService({
     repository: analysisRepository,
     knowledge: async () =>
@@ -127,6 +142,7 @@ export function createHttpService({
       return;
     }
     if (await handlePreparation(req, res, preparation)) return;
+    if (await handleIntensive(req, res, intensive)) return;
     if (await handleSettings(req, res, settings)) return;
     if (
       await handleAnalysis(req, res, analyses, () =>

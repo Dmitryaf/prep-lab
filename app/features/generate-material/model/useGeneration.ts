@@ -39,7 +39,7 @@ export function useGeneration() {
     partial = ref("");
   let controller: AbortController | undefined,
     disposed = false;
-  const availableMaterials = computed(() => materials.knowledge.notes);
+  const availableMaterials = computed(() => materials.baseKnowledge.notes);
   const transmitted = computed(() => [
     ...availableMaterials.value
       .filter((note) => selectedMaterials.value.includes(note.id))
@@ -107,10 +107,12 @@ export function useGeneration() {
     await run(async () => {
       const additions: PromptInput["materials"] = [];
       for (const file of files) {
-        if (!/\.(?:md|txt|ts|tsx|js|jsx|vue|css|json|html)$/i.test(file.name))
-          throw new Error(
-            "Выберите текст, Markdown или фрагмент frontend-кода.",
-          );
+        if (
+          !/\.(?:md|mdx|txt|ts|tsx|js|jsx|mjs|cjs|vue|svelte|css|json|html|sql|py|go|java|kt|cs|rs|rb|php|ya?ml|graphql|gql)$/i.test(
+            file.name,
+          )
+        )
+          throw new Error("Выберите текст, Markdown или файл с кодом.");
         if (file.size > 400_000)
           throw new Error(
             "Один фрагмент может содержать до 100 тысяч символов.",

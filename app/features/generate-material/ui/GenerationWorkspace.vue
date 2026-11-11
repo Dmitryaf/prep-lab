@@ -11,7 +11,6 @@ const {
   uploads,
   availableMaterials,
   transmitted,
-  input,
   validInput,
   history,
   current,
@@ -46,7 +45,6 @@ const status = {
         <option value="import">Подготовка базы по материалам</option>
         <option value="project">Разбор проекта и опыта</option>
       </select>
-      <p>Профиль задания: {{ input.profile === "vue" ? "Vue" : "React" }}</p>
       <label for="generationRequest">Задача</label
       ><textarea
         id="generationRequest"
@@ -88,7 +86,7 @@ const status = {
         id="generationFiles"
         type="file"
         multiple
-        accept=".md,.txt,.ts,.tsx,.js,.jsx,.vue,.css,.json,.html"
+        accept=".md,.mdx,.txt,.ts,.tsx,.js,.jsx,.mjs,.cjs,.vue,.svelte,.css,.json,.html,.sql,.py,.go,.java,.kt,.cs,.rs,.rb,.php,.yaml,.yml,.graphql,.gql"
         :disabled="busy"
         @change="state.addFiles"
       />
