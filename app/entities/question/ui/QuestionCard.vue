@@ -7,6 +7,7 @@ import {
 } from "#ui/entities/question/lib/presentation.ts";
 import MarkdownContent from "#ui/entities/material/ui/MarkdownContent.vue";
 import AnswerPanel from "./AnswerPanel.vue";
+import QuestionApproach from "./QuestionApproach.vue";
 const props = defineProps<{
   question: Question;
   revealed?: boolean;
@@ -47,6 +48,7 @@ const stage = computed(() =>
       "
       :source-id="question.noteId"
     />
+    <QuestionApproach v-if="!followup" :question="question" />
     <section
       v-if="followup"
       class="followup-question"
@@ -64,6 +66,15 @@ const stage = computed(() =>
             : stage.prompt
         "
         :source-id="question.noteId"
+      />
+      <QuestionApproach
+        :question="
+          followupAnswer || {
+            ...question,
+            title: question.followups?.[followup - 1] || question.title,
+          }
+        "
+        followup
       />
       <AnswerPanel
         v-if="followupRevealed && followupAnswer?.availableAnswer"
