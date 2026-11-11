@@ -1,68 +1,68 @@
 # Frontend Lab
 
-Приложение для подготовки к frontend-собеседованиям. Тренируйтесь отвечать на вопросы, разбирайте непонятные темы и возвращайтесь к тому, что стоит повторить.
+Frontend Lab is an app for preparing for frontend interviews. Practice answering questions, work through unfamiliar topics, and revisit questions you found difficult.
 
-Frontend Lab работает в браузере и запускается на вашем компьютере или собственном сервере. Внутри уже есть база по JavaScript, TypeScript, Vue, React и инженерным темам; можно добавить свои заметки и проекты.
+The app runs in your browser and can be hosted on your computer or server. It includes a built-in question bank covering JavaScript, TypeScript, Vue, React, and software engineering topics. You can add your own notes and projects.
 
-## Что можно делать
+## What you can do
 
-- **Проходить интервью** — выбирать смешанную подборку, написание кода, ревью или проектирование; отвечать по одному заданию и сверяться с разбором.
-- **Практиковаться по темам** — выбирать вопросы и задачи под профиль Vue или React.
-- **Запускать практикумы** — проверять гонки запросов и поведение React в отдельных проектах с тестами, исследовать производительность в браузерном стенде.
-- **Повторять сложное** — сохранять вопросы с отметками «Частично» и «Не смог ответить» в отдельном списке.
-- **Дополнять базу** — указать папку или загрузить материалы, сравнить их с текущими темами с помощью подключённого помощника и принять нужные дополнения. Готовые Markdown-заметки можно импортировать без помощника.
-- **Разбирать проекты** — подключать репозитории и получать разбор сценариев, устройства и технологий с визуальной картой и просмотром кода.
-- **Обсуждать темы с помощником** — задавать вопросы по материалам и получать пояснения.
+- **Take mock interviews.** Choose a mixed interview or focus on coding, code review, or design. Answer one question at a time and review the explanation.
+- **Practice by topic.** Choose questions and exercises for the Vue or React track.
+- **Run hands-on exercises.** Explore request race conditions and React behavior in standalone projects with tests, or use the browser lab to investigate performance.
+- **Revisit difficult questions.** Save questions you answered partially or couldn't answer to a review list.
+- **Add your own materials.** Select a folder or upload materials, compare them with existing topics using the connected assistant, and choose which additions to keep. You can import ready-to-use Markdown notes without connecting the assistant.
+- **Explore your projects.** Connect a repository and get an overview of its workflows, architecture, and technologies, with a visual project map and a source code viewer.
+- **Discuss topics with the assistant.** Ask questions about the study materials and get explanations.
 
-## Скриншоты
+## Screenshots
 
-### Выбор интервью
+### Interview formats
 
-![Выбор формата интервью](assets/screenshots/interview.png)
+![Mock interview format selection](assets/screenshots/interview.png)
 
-### Практические задачи
+### Practice exercises
 
-![Практическая задача и связанные темы](assets/screenshots/practice.png)
+![Practice exercise with related topics](assets/screenshots/practice.png)
 
-### Карта проекта
+### Project map
 
-![Карта устройства проекта](assets/screenshots/project-map.png)
+![Map of a project's structure](assets/screenshots/project-map.png)
 
-### Просмотр кода
+### Source code viewer
 
-![Фрагмент кода с подсветкой и номерами строк](assets/screenshots/project-code.png)
+![Source code with syntax highlighting and line numbers](assets/screenshots/project-code.png)
 
-## Быстрый запуск
+## Quick start
 
-Нужен Docker с Compose. Скачайте проект, откройте терминал в его папке и выполните:
+You'll need Docker with Compose. Download the project, open a terminal in the project directory, and run:
 
 ```sh
 docker compose up -d --build
 ```
 
-Откройте **[http://127.0.0.1:4173](http://127.0.0.1:4173)**. Первая сборка может занять несколько минут.
+Open **[http://127.0.0.1:4173](http://127.0.0.1:4173)**. The first build may take a few minutes.
 
-Остановить приложение:
+To stop the app:
 
 ```sh
 docker compose down
 ```
 
-Материалы и настройки сохраняются в локальном томе Docker. При следующем запуске они останутся на месте.
+Materials and settings are stored in a local Docker volume and are available the next time you start the app.
 
-## С чего начать
+## Your first session
 
-1. Выберите профиль подготовки: Vue или React.
-2. Начните ежедневное интервью или откройте «Практику» для отдельной темы.
-3. После попытки откройте разбор и отметьте, насколько уверенно ответили.
-4. Вернитесь к сложным вопросам в разделе «Повторить».
+1. Choose the Vue or React track.
+2. Start the daily interview, or open the practice section to work on a specific topic.
+3. After your attempt, read the explanation and rate how confident you were in your answer.
+4. Return to difficult questions in the review section.
 
-Для чтения базы, интервью и повторения подключение помощника не требуется. Подключите его отдельно, если хотите обсуждать ответы или готовить личные разборы. Результат можно просмотреть и исправить перед сохранением в базу.
+You can read the study materials, take interviews, and review questions with or without the assistant. Connect it to discuss answers or get feedback tailored to your materials. You can review and edit the result before saving it to your knowledge base.
 
-## Подробнее
+## Documentation
 
-- [Как пользоваться приложением](docs/user-guide.md)
-- [Как добавить свои заметки](docs/sources.md)
-- [Как подключить помощника](docs/assistant-connection.md)
-- [Установка, обновление и запуск без Docker](docs/self-hosted.md)
-- [Разработка и проверки](docs/development.md)
+- [User guide](docs/user-guide.md)
+- [Adding your own materials](docs/sources.md)
+- [Connecting the assistant](docs/assistant-connection.md)
+- [Installation, updates, and running without Docker](docs/self-hosted.md)
+- [Development and checks](docs/development.md)
