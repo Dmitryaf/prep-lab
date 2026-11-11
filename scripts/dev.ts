@@ -59,7 +59,7 @@ export async function createDevelopmentServer({
         httpServer,
         printUrls: () =>
           console.log(
-            `Frontend Lab: http://127.0.0.1:${(httpServer!.address() as { port: number }).port}/`,
+            `Prep Lab: http://127.0.0.1:${(httpServer!.address() as { port: number }).port}/`,
           ),
       },
       api,

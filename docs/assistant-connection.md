@@ -1,4 +1,4 @@
-# Подключение помощника Frontend Lab
+# Подключение помощника Prep Lab
 
 Встроенный адаптер использует отдельное подключение Codex CLI. Чтение базы, интервью и повторение доступны без него. Данные подключения принадлежат экземпляру; настольная сессия не используется автоматически.
 
@@ -22,9 +22,9 @@ node --experimental-strip-types server/infrastructure/codex/cli.ts status
 Импорт в том из PowerShell:
 
 ```powershell
-docker compose stop frontend-lab
-Get-Content -Raw -LiteralPath '.local/instance/assistant/credentials.json' | docker compose run --rm --no-deps -T frontend-lab node --experimental-strip-types /app/admin/server/infrastructure/codex/cli.ts import-stdin
-docker compose up -d frontend-lab
+docker compose stop app
+Get-Content -Raw -LiteralPath '.local/instance/assistant/credentials.json' | docker compose run --rm --no-deps -T app node --experimental-strip-types /app/admin/server/infrastructure/codex/cli.ts import-stdin
+docker compose up -d app
 ```
 
 Для удалённого сервера передайте файл защищённым каналом и импортируйте на сервере. Файл содержит credentials: храните его закрыто и не добавляйте в Git. Не используйте одну обновляемую сессию одновременно на нескольких серверах.

@@ -33,7 +33,7 @@ async function refreshOnce(
   force: boolean,
 ) {
   const current = store.read();
-  if (!current) throw new Error("Подключите ChatGPT к Frontend Lab.");
+  if (!current) throw new Error("Подключите ChatGPT к Prep Lab.");
   if (
     !force &&
     Date.now() + 60_000 <

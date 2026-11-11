@@ -29,7 +29,7 @@ export default defineNuxtConfig({
   ],
   app: {
     head: {
-      title: "Frontend Lab",
+      title: "Prep Lab",
       htmlAttrs: { lang: "ru" },
       bodyAttrs: { class: "platform" },
       link: [

@@ -1,7 +1,7 @@
 services:
-  frontend-lab:
+  app:
     build: .
-    image: frontend-lab:local
+    image: prep-lab:local
     init: true
     restart: unless-stopped
     ports:

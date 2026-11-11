@@ -1,4 +1,5 @@
 artifacts/
+debug.log
 lab/data/
 lab/.data/
 node_modules/

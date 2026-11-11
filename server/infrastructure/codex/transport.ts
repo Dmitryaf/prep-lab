@@ -167,7 +167,7 @@ export class StdioCodexTransport implements CodexTransport {
     await this.call("initialize", {
       clientInfo: {
         name: "frontend_lab",
-        title: "Frontend Lab",
+        title: "Prep Lab",
         version: "0.1.0",
       },
     });

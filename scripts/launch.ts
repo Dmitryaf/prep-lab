@@ -140,7 +140,7 @@ async function main() {
         "-WindowStyle",
         "Hidden",
         "-Command",
-        "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show($env:PROJECTS_MAP_ERROR, 'Frontend Lab') | Out-Null",
+        "Add-Type -AssemblyName System.Windows.Forms; [System.Windows.Forms.MessageBox]::Show($env:PROJECTS_MAP_ERROR, 'Prep Lab') | Out-Null",
       ],
       { env: { ...process.env, PROJECTS_MAP_ERROR: message }, stdio: "ignore" },
     ).catch(() => {});

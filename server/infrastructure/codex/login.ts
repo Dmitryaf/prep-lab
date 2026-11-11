@@ -102,13 +102,13 @@ export class LoginManager {
         });
         finish("ChatGPT подключён. Запросов к модели при входе не было.");
         response.end(
-          "ChatGPT подключён к Frontend Lab. Можно закрыть вкладку и вернуться в приложение.",
+          "ChatGPT подключён к Prep Lab. Можно закрыть вкладку и вернуться в приложение.",
         );
       } catch {
         response
           .writeHead(400)
           .end(
-            "Вход не завершён. Прежнее подключение сохранено. Вернитесь в Frontend Lab.",
+            "Вход не завершён. Прежнее подключение сохранено. Вернитесь в Prep Lab.",
           );
         if (flow.attempt.consumed)
           finish(
