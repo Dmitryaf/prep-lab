@@ -106,8 +106,24 @@ test(
       ).length,
       18,
     );
-    assert.equal(ownerProjects.trajectory.routes.length, 5);
-    assert.equal(ownerProjects.inbox.routes.length, 5);
+    for (const [project, prefix] of [
+      ["trajectory", "tr"],
+      ["inbox", "ip"],
+    ] as const) {
+      const routes = ownerProjects[project].routes;
+      for (let index = 1; index <= 5; index++) {
+        const route = routes.find((item) => item.id === `${prefix}-r${index}`);
+        assert(route, `Missing original route ${prefix}-r${index}`);
+        assert(route.nodes.length > 0);
+        assert(
+          route.nodes.every((id) =>
+            ownerTopics.some(
+              (topic) => topic.id === id && topic.project === project,
+            ),
+          ),
+        );
+      }
+    }
     const stories = selectReview(
       ownerTopics,
       {},

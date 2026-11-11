@@ -83,6 +83,7 @@ test("knowledge links", async ({ app: { base }, browser }) => {
     await expect(page).toHaveURL(
       (url) => !new URLSearchParams(url.hash.split("?")[1]).has("heading"),
     );
+    await expect(page.locator("#platformMain")).toBeFocused();
     await page.locator(".platform-note h1").waitFor();
     for (const [name, heading] of [
       ["Относительная заметка", "Пример"],

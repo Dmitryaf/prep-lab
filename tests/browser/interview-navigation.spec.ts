@@ -13,7 +13,7 @@ test("interview navigation", async ({
   const daily = (s: Progress) => s.daily["2026-11-03"];
   await mkdir("artifacts/interview-navigation", { recursive: true });
 
-  await page.clock.install({ time: new Date("2026-11-03T12:00:00+05:00") });
+  await page.clock.setFixedTime(new Date("2026-11-03T12:00:00+05:00"));
   await page.goto(base);
   await page.locator("[data-action=daily]:enabled").click();
   await page.locator("[data-action=session-next]").waitFor();
@@ -44,13 +44,23 @@ test("interview navigation", async ({
   if (first.snapshots[id].followups?.length) {
     await page.locator("[data-action=session-followup]").click();
     await expect(previous).toHaveText("К основному вопросу");
+    const followupTitle = await page
+      .locator(".followup-question h3")
+      .innerText();
     const choices = daily(await state()).followupChoices;
     await previous.focus();
     await page.keyboard.press("Enter");
     await expect(page.locator(".question-card h2")).toHaveText(title);
     expect(daily(await state()).followupIndex).toBe(0);
     expect(daily(await state()).followupChoices).toEqual(choices);
-    await expect(page.locator("[data-action=session-followup]")).toHaveCount(0);
+    await expect(page.locator("[data-action=session-followup]")).toBeEnabled();
+    await page.locator("[data-action=session-followup]").click();
+    await expect(page.locator(".followup-question h3")).toHaveText(
+      followupTitle,
+    );
+    expect(daily(await state()).followupChoices).toEqual(choices);
+    await previous.click();
+    await expect(page.locator(".question-card h2")).toHaveText(title);
   }
   await page.locator("[data-action=session-next]").click();
   const secondId = first.questionIds[1];

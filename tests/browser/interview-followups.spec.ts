@@ -1,10 +1,24 @@
 import { ownerAvailable } from "#tests/helpers/owner-package.ts";
 import { required } from "#tests/helpers/values.ts";
 import type { Progress } from "#domain/interview/state.ts";
+import type { Question } from "#domain/knowledge/question.ts";
 import { readProgress } from "#tests/helpers/browser-progress.ts";
 import { test, expect } from "#tests/helpers/browser.ts";
 import { mkdir } from "node:fs/promises";
 import { restoreProgressFixture } from "#tests/helpers/browser-progress.ts";
+
+function withAnsweredFollowups(question: Question) {
+  question.followups = [
+    "Первое уточнение",
+    "Второе уточнение",
+    "Третье уточнение",
+  ];
+  question.followupAnswers = question.followups.map((title) => ({
+    title,
+    answer: `Самостоятельный ответ: ${title}.`,
+    criteria: `Критерий: ${title}.`,
+  }));
+}
 
 test("interview followups", async ({
   app: { base },
@@ -20,23 +34,28 @@ test("interview followups", async ({
   const restore = (value: unknown) => restoreProgressFixture(page, value);
   await mkdir("artifacts/optional-followups", { recursive: true });
 
-  await page.clock.install({ time: new Date("2026-10-28T12:00:00+05:00") });
+  await page.clock.setFixedTime(new Date("2026-10-28T12:00:00+05:00"));
   await page.goto(base);
-  await page
-    .getByRole("heading", { name: "Ежедневное интервью", exact: true })
-    .waitFor();
+  await expect(
+    page.getByRole("heading", { name: "Ежедневное интервью", exact: true }),
+  ).toBeVisible();
   await page.locator("[data-action=daily]:enabled").click();
-  await page
-    .getByRole("heading", {
+  await expect(
+    page.getByRole("heading", {
       level: 1,
       name: "Ежедневное интервью",
       exact: true,
-    })
-    .waitFor();
-  await page.locator("[data-action=session-next]").waitFor();
+    }),
+  ).toBeVisible();
+  await expect(page.locator("[data-action=session-next]")).toBeVisible();
   const original = await state(),
     url = page.url();
   expect(daily(original).questionIds.length).toBe(11);
+  const dailyQuestion =
+    daily(original).snapshots[daily(original).questionIds[0]];
+  withAnsweredFollowups(dailyQuestion);
+  await restore(original);
+  await page.goto(url);
   // Eleven main answers complete the daily interview without a single followup or skip.
   for (let i = 0; i < 11; i++) {
     expect(daily(await state()).index).toBe(i);
@@ -55,25 +74,38 @@ test("interview followups", async ({
   // One optional followup: review, rate, study and back all preserve this exact prompt.
   await restore(original);
   await page.goto(url);
+  await expect(page.locator("[data-action=session-followup]")).toBeEnabled();
   await page.locator("[data-action=session-followup]").focus();
   await page.keyboard.press("Enter");
   await expect(page.locator("[data-action=session-followup]")).toHaveCount(0);
-  const prompt = await page.locator(".question-card h2").innerText();
+  const followup = page.locator(".followup-question");
+  const prompt = await followup.locator("h3").innerText();
+  await expect(page.locator(".question-card h2")).toHaveText(
+    dailyQuestion.title,
+  );
+  await page.locator("[data-action=followup-review]").click();
+  await expect(followup.locator(".platform-answer")).toContainText(
+    `Самостоятельный ответ: ${prompt}.`,
+  );
+  await page.locator("[data-action=session-previous]").click();
   await page.locator("[data-action=session-review]").click();
   await page.locator("[data-rating=partial]").click();
-  await expect(page.locator(".platform-answer h3")).toHaveText(
-    "Разбор основной темы",
-  );
   await page
     .getByRole("link", { name: /^Изучить тему:/ })
     .first()
     .click();
-  await page.locator(".platform-note").waitFor();
+  await expect(page.locator(".platform-note")).toBeVisible();
   await page.locator("[data-action=back]").click();
   await page.waitForURL(url);
+  await page.locator("[data-action=session-followup]").click();
+  await expect(followup.locator("h3")).toHaveText(prompt);
   await page.reload();
-  await page.locator(".platform-answer").waitFor();
-  await expect(page.locator(".question-card h2")).toHaveText(prompt);
+  await expect(followup.locator("h3")).toHaveText(prompt);
+  await expect(page.locator(".platform-answer")).toHaveCount(0);
+  await page.locator("[data-action=followup-review]").click();
+  await expect(followup.locator(".platform-answer")).toContainText(
+    `Самостоятельный ответ: ${prompt}.`,
+  );
   const saved = await state();
   await restore(saved);
   expect(await state()).toEqual(saved);
@@ -97,23 +129,34 @@ test("interview followups", async ({
   expect(daily(await state()).index).toBe(1);
   expect(daily(await state()).skipped).toEqual([]);
   await page.setViewportSize({ width: 1440, height: 1000 });
-  // Full interview: two optional prompts only, no answers before completion.
+  // Full interview: two optional prompts, each with an independently opened answer.
   await page.goto(base);
   await page.locator("[data-action=full]:enabled").click();
-  await page.locator("[data-action=session-next]").waitFor();
+  await expect(page.locator("[data-action=session-next]")).toBeVisible();
   const fullState = await state(),
     full = required(Object.values(fullState.sessions).at(-1)),
     fullURL = page.url();
+  withAnsweredFollowups(full.snapshots[full.questionIds[0]]);
+  await restore(fullState);
+  await page.goto(fullURL);
   await page.locator("[data-action=session-followup]").click();
   await state();
-  const one = await page.locator(".question-card h2").innerText();
+  const one = await followup.locator("h3").innerText();
   await page.locator("[data-action=session-followup]").click();
   await expect(page.locator("[data-action=session-followup]")).toHaveCount(0);
-  const two = await page.locator(".question-card h2").innerText();
+  const two = await followup.locator("h3").innerText();
   expect(one).not.toBe(two);
+  await expect(page.locator(".platform-answer")).toHaveCount(0);
+  await page.locator("[data-action=followup-review]").click();
+  await expect(followup.locator(".platform-answer")).toContainText(
+    `Самостоятельный ответ: ${two}.`,
+  );
   await page.reload();
-  await page.locator("[data-action=session-next]").waitFor();
-  await expect(page.locator(".question-card h2")).toHaveText(two);
+  await expect(page.locator("[data-action=session-next]")).toBeVisible();
+  await expect(followup.locator("h3")).toHaveText(two);
+  await expect(page.locator(".question-card h2")).toHaveText(
+    full.snapshots[full.questionIds[0]].title,
+  );
   await expect(page.locator("[data-action=session-review]")).toHaveCount(0);
   await expect(page.locator(".platform-answer")).toHaveCount(0);
   await page.screenshot({
@@ -137,6 +180,7 @@ test("interview followups", async ({
     s.index = index;
     const id = s.questionIds[index],
       q = required(s.snapshots[id]);
+    withAnsweredFollowups(q);
     expect(q.followups!.length >= 3).toBeTruthy();
     s.followupIndex = 3;
     s.ratings[id] = "partial";
@@ -147,8 +191,9 @@ test("interview followups", async ({
     }
     await restore(old);
     await page.goto(kind === "daily" ? url : fullURL);
-    await page.locator("[data-action=session-next]").waitFor();
-    await expect(page.locator(".question-card h2")).toHaveText(q.followups![2]);
+    await expect(page.locator("[data-action=session-next]")).toBeVisible();
+    await expect(page.locator(".question-card h2")).toHaveText(q.title);
+    await expect(followup.locator("h3")).toHaveText(q.followups![2]);
     await expect(page.locator("[data-action=session-followup]")).toHaveCount(0);
     if (kind === "full")
       expect(

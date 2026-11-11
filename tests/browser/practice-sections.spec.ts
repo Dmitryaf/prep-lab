@@ -1,6 +1,7 @@
 import { test, expect } from "#tests/helpers/browser.ts";
 import { knowledgeForProfile } from "#domain/knowledge/profile.ts";
 import type { Knowledge } from "#domain/knowledge/material.ts";
+import { isTestingTask } from "#domain/knowledge/question.ts";
 
 test.use({ appOptions: { projectPackageRoot: null } });
 
@@ -17,8 +18,9 @@ test("advanced practice is separate, survives navigation and keeps existing ques
   const counter = page.locator("#platformMain .platform-meta").first();
   for (const profile of ["vue", "react"] as const) {
     const bank = knowledgeForProfile(knowledge, profile);
-    const advanced = bank.questions.filter((q) => q.codingRole === "advanced");
-    const standard = bank.questions.filter((q) => q.codingRole !== "advanced");
+    const available = bank.questions.filter((q) => !isTestingTask(q));
+    const advanced = available.filter((q) => q.codingRole === "advanced");
+    const standard = available.filter((q) => q.codingRole !== "advanced");
     expect(advanced.length).toBeGreaterThan(0);
     await page.locator("#preparationProfile").selectOption(profile);
     await sections

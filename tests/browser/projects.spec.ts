@@ -16,6 +16,14 @@ test("projects", async ({
     "Совместимость личного пакета проверяется только при его наличии.",
   );
   const state = () => readProgress(page);
+  const expectedRoutes = Object.values(projects).reduce(
+    (count, project) => count + project.routes.length,
+    0,
+  );
+  const expectedQuestions = topics.flatMap((topic) => topic.pilot.questions);
+  const quickQuestions = topics.filter(
+    (topic) => topic.pilot.questions.length > 0,
+  ).length;
   const open = async (id: string) => {
     await page.goto(base + "/#/projects?projectTopic=" + id);
     await expect(page.locator(".topic-title")).toHaveText(
@@ -76,7 +84,7 @@ test("projects", async ({
     const full = page.locator("details.code-full");
     if (await full.count()) {
       expect(await full.getAttribute("open")).toBe(null);
-      await full.locator("summary").click();
+      await full.locator(":scope > summary").click();
       await expect(full.locator(".code-step")).toHaveCount(
         topic.pilot.code.steps.length,
       );
@@ -85,7 +93,7 @@ test("projects", async ({
           await expect(full.locator(`[data-index="${index}"]`)).toHaveCount(1);
     }
   }
-  // All 17 routes and all 177 review questions remain reachable in the same app.
+  // Every route and review question from the current owner catalog stays reachable.
   await page.goto(base + "/#/projects");
   await page.locator("[data-action=mode][data-mode=map]").click();
   let routes = 0;
@@ -99,15 +107,17 @@ test("projects", async ({
       routes++;
     }
   }
-  expect(routes).toBe(17);
+  expect(routes).toBe(expectedRoutes);
   await page.locator("[data-action=mode][data-mode=review]").click();
   await page.getByLabel("Охват", { exact: true }).selectOption("both");
   await page.getByLabel("Набор", { exact: true }).selectOption("all");
   expect(
-    (await page.locator("#platformMain").innerText()).includes("1 из 177"),
+    (await page.locator("#platformMain").innerText()).includes(
+      `1 из ${expectedQuestions.length}`,
+    ),
   ).toBeTruthy();
   const seen = new Set();
-  for (let i = 0; i < 177; i++) {
+  for (let i = 0; i < expectedQuestions.length; i++) {
     const title = await page.locator(".question-card h2").innerText();
     seen.add(title);
     await expect(page.locator(".platform-answer")).toHaveCount(0);
@@ -115,10 +125,14 @@ test("projects", async ({
     await expect(page.locator(".platform-answer")).toBeVisible();
     await page.locator("[data-action=next-question]").click();
   }
-  expect(seen.size > 140).toBeTruthy();
+  expect(seen).toEqual(
+    new Set(expectedQuestions.map((question) => question.question)),
+  );
   await page.locator("#reviewMode").selectOption("quick");
   expect(
-    (await page.locator("#platformMain").innerText()).includes("1 из 50"),
+    (await page.locator("#platformMain").innerText()).includes(
+      `1 из ${quickQuestions}`,
+    ),
   ).toBeTruthy();
   // Copy a corporate source: both clipboard and deliberate denial / fallback.
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -174,6 +188,6 @@ test("projects", async ({
   );
   expect(errors).toEqual([]);
   console.log(
-    "PASS native Vue map: 50 four-block topics, 177 review questions, quick50, routes17, v1/validated fixtures, clipboard/fallback, old links, desktop/mobile, no iframe",
+    `PASS native Vue map: ${topics.length} four-block topics, ${expectedQuestions.length} review questions, quick${quickQuestions}, routes${routes}, v1/validated fixtures, clipboard/fallback, old links, desktop/mobile, no iframe`,
   );
 });

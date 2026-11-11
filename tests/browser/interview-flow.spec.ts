@@ -103,7 +103,7 @@ test("interview flow", async ({ app: { base }, page, pageErrors: errors }) => {
       section,
     );
   }
-  // C: full interview has all requested groups; answers hidden until it finishes.
+  // C: full interview has all requested groups; answers stay hidden until explicitly opened or the interview finishes.
   await page.goto(base);
   await page.locator("[data-action=full]:enabled").click();
   await page.locator("[data-action=session-next]").waitFor();
@@ -120,7 +120,7 @@ test("interview flow", async ({ app: { base }, page, pageErrors: errors }) => {
         .map((question) => question.projectGroup),
     ).size,
   ).toBeGreaterThanOrEqual(2);
-  await expect(page.locator("[data-action=session-review]")).toHaveCount(0);
+  await expect(page.locator("[data-action=session-review]")).toBeVisible();
   let steps = 0;
   while (await page.locator("[data-action=session-next]").count()) {
     expect(++steps <= 20).toBeTruthy();

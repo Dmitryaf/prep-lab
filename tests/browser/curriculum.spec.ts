@@ -3,6 +3,7 @@ import { required } from "#tests/helpers/values.ts";
 import type { Knowledge } from "#domain/knowledge/material.ts";
 import type { Progress } from "#domain/interview/state.ts";
 import { knowledgeForProfile } from "#domain/knowledge/profile.ts";
+import { isTestingTask } from "#domain/knowledge/question.ts";
 
 import { test, expect } from "#tests/helpers/browser.ts";
 import { mkdir, writeFile } from "node:fs/promises";
@@ -28,6 +29,8 @@ test("curriculum", async ({ app: { base }, page, pageErrors: errors }) => {
     await page.locator("[data-action=daily]:enabled").waitFor();
     const before = await state();
     let links = 0;
+    let readingOnly = 0;
+    let narrowLayouts = 0;
     const checked = [];
     for (let i = 0; i < questions.length; i++) {
       const q = required(questions[i]);
@@ -38,7 +41,38 @@ test("curriculum", async ({ app: { base }, page, pageErrors: errors }) => {
         q.title,
       ).toBeTruthy();
       await page.goto(destination(q));
-      await page.getByRole("heading", { name: q.title, exact: true }).waitFor();
+      if (isTestingTask(q)) {
+        await expect(page.locator("#platformMain")).toHaveAttribute(
+          "aria-busy",
+          "false",
+        );
+        await expect(page.locator(".question-card")).toHaveCount(0);
+        await page.goto(
+          base +
+            "/#/themes?" +
+            new URLSearchParams({
+              note: required(q.noteId),
+              heading: q.heading || q.title,
+            }),
+        );
+        await expect(
+          page
+            .locator(".platform-note")
+            .getByRole("heading", { name: q.title, exact: true }),
+        ).toBeVisible();
+        readingOnly++;
+        checked.push({
+          id: q.id,
+          title: q.title,
+          presentation: "material",
+          criteria: true,
+          links: 0,
+        });
+        continue;
+      }
+      await expect(
+        page.getByRole("heading", { name: q.title, exact: true }),
+      ).toBeVisible();
       await expect(page.locator(".platform-answer"), q.title).toHaveCount(0);
       await page.locator("[data-action=reveal]").click();
       const answer = await page.locator(".platform-answer").innerText();
@@ -58,7 +92,7 @@ test("curriculum", async ({ app: { base }, page, pageErrors: errors }) => {
             exact: true,
           })
           .click();
-        await page.locator(".platform-note").waitFor();
+        await expect(page.locator(".platform-note")).toBeVisible();
         const r = new URLSearchParams(
           new URL(page.url()).hash.split("?")[1] || "",
         );
@@ -84,6 +118,7 @@ test("curriculum", async ({ app: { base }, page, pageErrors: errors }) => {
           fullPage: true,
         });
         await page.setViewportSize({ width: 1440, height: 1000 });
+        narrowLayouts++;
       }
       checked.push({
         id: q.id,
@@ -128,7 +163,7 @@ test("curriculum", async ({ app: { base }, page, pageErrors: errors }) => {
       ),
     );
     console.log(
-      `PASS core curriculum: ${questions.length} hidden/revealed answers, criteria, ${links} live study links, 5 narrow layouts, repeat/reload, no reading-side progress changes`,
+      `PASS core curriculum: ${questions.length - readingOnly} hidden/revealed answers, ${readingOnly} reading-only tasks, criteria, ${links} live study links, ${narrowLayouts} narrow layouts, repeat/reload, no reading-side progress changes`,
     );
   } catch (error) {
     await page.screenshot({

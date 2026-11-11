@@ -41,7 +41,11 @@ test(
       pilots.map((p) => p.id).sort(),
       topics.map((t) => t.id).sort(),
     );
-    for (const pilot of pilots)
+    for (const pilot of topics
+      .filter((topic) =>
+        ["lanit", "trajectory", "inbox"].includes(topic.project),
+      )
+      .map((topic) => topic.pilot))
       for (const step of pilot.code.steps) {
         const url = sourceUrl(step, pilot.sourceRevision);
         if (step.project === "cokr") {

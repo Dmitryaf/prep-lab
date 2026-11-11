@@ -44,8 +44,25 @@ test("a clean instance starts practical rounds, preserves explicit answer reveal
         path: testInfo.outputPath("coding-desktop.png"),
         fullPage: true,
       });
-    if (value !== "coding")
-      await page.locator('[data-action="session-followup"]').click();
+    if (value !== "coding") {
+      const current = session.snapshots[session.questionIds[session.index]];
+      const answeredFollowups = (current.followups || []).filter((title) =>
+        current.followupAnswers?.some(
+          (answer) => answer.title === title && answer.answer.trim(),
+        ),
+      );
+      const followup = page.locator('[data-action="session-followup"]');
+      if (answeredFollowups.length) {
+        await expect(followup).toBeEnabled();
+        await followup.click();
+        await expect(page.locator(".followup-question h3")).toHaveText(
+          answeredFollowups[0],
+        );
+        await expect(page.locator(".platform-answer")).toHaveCount(0);
+        await page.locator('[data-action="session-previous"]').click();
+        await expect(page.locator(".followup-question")).toHaveCount(0);
+      } else await expect(followup).toHaveCount(0);
+    }
     await expect(page.locator(".platform-answer")).toHaveCount(0);
     await page.locator('[data-action="session-review"]').click();
     await expect(page.locator(".platform-answer")).toHaveCount(1);

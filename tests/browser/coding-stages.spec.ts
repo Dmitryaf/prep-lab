@@ -19,9 +19,11 @@ test("free practice opens an optional stage without saving an attempt and keeps 
     page.getByRole("heading", { name: title, exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: /^Усложнение 1:/ }).click();
-  await expect(page.locator(".question-card h2")).toHaveText(
-    "Кэш готовых значений",
-  );
+  await expect(page.locator(".question-card h2")).toHaveText(title);
+  const stage = page.getByRole("region", { name: "Уточнение к вопросу" });
+  await expect(
+    stage.getByRole("heading", { name: "Кэш готовых значений", exact: true }),
+  ).toBeVisible();
   await expect(page.locator(".platform-answer")).toHaveCount(0);
   await expect(
     page.getByRole("complementary", { name: "Полезные темы" }),
@@ -34,6 +36,7 @@ test("free practice opens an optional stage without saving an attempt and keeps 
     .getByRole("button", { name: "К основной задаче", exact: true })
     .click();
   await expect(page.locator(".question-card h2")).toHaveText(title);
+  await expect(stage).toHaveCount(0);
   await page.reload();
   await expect(
     page.getByRole("textbox", { name: "Моя попытка", exact: true }),

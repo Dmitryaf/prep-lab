@@ -179,7 +179,9 @@ test("interview answers", async ({
           ? saved.daily[session.date]
           : saved.sessions[session.id]
         ).snapshots[id],
-      ).toEqual(current);
+        // A new session excludes unanswered draft followups before it is saved.
+        // The historical snapshot must retain exactly that prepared question.
+      ).toEqual(session.snapshots[id]);
     }
     await page.locator("[data-action=session-next]").click();
     await page

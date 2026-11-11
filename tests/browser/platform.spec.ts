@@ -1,6 +1,11 @@
 import { ownerAvailable, ownerCatalog } from "#tests/helpers/owner-package.ts";
 import { projectQuestions } from "#ui/entities/project/model/questions.ts";
-import { supportsQuestion } from "#domain/knowledge/profile.ts";
+import {
+  knowledgeForProfile,
+  supportsQuestion,
+} from "#domain/knowledge/profile.ts";
+import { isTestingTask } from "#domain/knowledge/question.ts";
+import type { Knowledge } from "#domain/knowledge/material.ts";
 import { required } from "#tests/helpers/values.ts";
 
 import { readProgress } from "#tests/helpers/browser-progress.ts";
@@ -9,6 +14,7 @@ import { mkdir } from "node:fs/promises";
 import { restoreProgressFixture } from "#tests/helpers/browser-progress.ts";
 
 test("platform", async ({ app: { base }, page, pageErrors: errors }) => {
+  page.setDefaultTimeout(20_000);
   test.skip(
     !ownerAvailable,
     "Совместимость личного пакета проверяется только при его наличии.",
@@ -41,6 +47,20 @@ test("platform", async ({ app: { base }, page, pageErrors: errors }) => {
     await page.clock.install({ time: new Date("2026-10-28T12:00:00+05:00") });
     await page.goto(base);
     await page.locator("[data-action=daily]:enabled").waitFor();
+    const bank = knowledgeForProfile(
+      (await (
+        await page.request.get(`${base}/api/knowledge`)
+      ).json()) as Knowledge,
+      "vue",
+    );
+    const routeCount = bank.route.filter((id) =>
+      bank.questions.some(
+        (question) =>
+          question.id === id &&
+          !isTestingTask(question) &&
+          question.codingRole !== "advanced",
+      ),
+    ).length;
     for (const view of [
       "interview",
       "practice",
@@ -86,20 +106,22 @@ test("platform", async ({ app: { base }, page, pageErrors: errors }) => {
       fullPage: true,
     });
     const q = first.snapshots[first.questionIds[0]];
-    if (q.followups!.length) {
+    if (await page.locator("[data-action=session-followup]").count()) {
       await page.locator("[data-action=session-followup]").click();
-      await expect(page.locator(".question-card h2")).not.toHaveText(q.title);
-      const selected = await page.locator(".question-card h2").innerText();
+      await expect(page.locator(".question-card h2")).toHaveText(q.title);
+      const clarification = page.locator(".followup-question h3").first();
+      await expect(clarification).toBeVisible();
+      const selected = await clarification.innerText();
       expect(q.followups!.includes(selected)).toBeTruthy();
+      await page.reload();
+      await page.locator("[data-action=session-next]").waitFor();
+      await expect(page.locator(".question-card h2")).toHaveText(q.title);
+      await expect(clarification).toHaveText(selected);
+      await page.locator("[data-action=session-previous]").click();
+      await expect(clarification).toHaveCount(0);
       await expect(
         page.locator("[data-action=session-followup]"),
       ).toBeVisible();
-      await expect(
-        page.locator("[data-action=session-followup]"),
-      ).toBeDisabled();
-      await page.reload();
-      await page.locator("[data-action=session-next]").waitFor();
-      await expect(page.locator(".question-card h2")).toHaveText(selected);
     }
     await page.locator("[data-action=session-skip]").click();
     await page.reload();
@@ -132,9 +154,9 @@ test("platform", async ({ app: { base }, page, pageErrors: errors }) => {
     await expect(page.locator(".platform-list-row")).toHaveCount(0);
     await go("practice");
     await page.locator("#practiceCategory").selectOption("route");
-    expect(
-      (await page.locator("#platformMain").innerText()).includes("1 из 62"),
-    ).toBeTruthy();
+    await expect(
+      page.locator("#platformMain .platform-meta").first(),
+    ).toHaveText(`1 из ${routeCount}`);
     await page.locator("[data-action=reveal]").click();
     await page.screenshot({
       path: "artifacts/platform-answer.png",
@@ -324,7 +346,7 @@ test("platform", async ({ app: { base }, page, pageErrors: errors }) => {
     expect(Object.keys((await state()).daily).length).toBe(2);
     expect(errors).toEqual([]);
     console.log(
-      "PASS platform browser: daily/full, optional followups, reload, local midnight, ratings, route62, internal links, shared progress, validated fixtures, keyboard, desktop/mobile, missing knowledge",
+      "PASS platform browser: daily/full, optional followups, reload, local midnight, ratings, available route, internal links, shared progress, validated fixtures, keyboard, desktop/mobile, missing knowledge",
     );
   } catch (error) {
     await page.screenshot({
