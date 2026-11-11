@@ -29,9 +29,12 @@ export function libraryNotes(notes: Note[], originals: Note[] = notes): Note[] {
         !(
           current &&
           note.id === labIndex &&
-          [legacyLabIndex, legacyDownloadableLabIndex, text(current)].includes(
-            text(note),
-          )
+          [
+            legacyLabIndex,
+            legacyDownloadableLabIndex,
+            text(current),
+            text(current).replaceAll("Prep Lab", "Frontend Lab"),
+          ].includes(text(note))
         ),
     )
     .map((note) => {

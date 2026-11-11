@@ -337,7 +337,7 @@ test("clean standalone bundles the full common base without a vault or owner pac
     assert.equal(response.status, 200);
     const bank = await response.json();
     assert.equal(bank.notes.length, 219);
-    assert.equal(bank.questions.length, 559);
+    assert.equal(bank.questions.length, 582);
     assert.equal(bank.route.length, 62);
     assert.deepEqual(bank.warnings, []);
     assert(

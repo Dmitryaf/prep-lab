@@ -151,3 +151,28 @@ test("both known common lab revisions yield to the current index, while changed 
     );
   }
 });
+
+test("a product rename does not duplicate an unchanged personal lab index", () => {
+  const current = note(
+    "bundled-rounds/" + labId,
+    "Практикумы",
+    "# Практикумы\n\nСтенды работают отдельно от Prep Lab.",
+  );
+  const previous = note(
+    labId,
+    "Практикумы",
+    current.markdown.replace("Prep Lab", "Frontend Lab"),
+  );
+  assert.deepEqual(
+    libraryNotes([previous, current]).map((item) => item.id),
+    [current.id],
+  );
+  const edited = {
+    ...previous,
+    markdown: previous.markdown + "\nМоё упражнение.",
+  };
+  assert.deepEqual(
+    libraryNotes([edited, current]).map((item) => item.id),
+    [edited.id, current.id],
+  );
+});
