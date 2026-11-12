@@ -264,6 +264,57 @@ updated: 2026-10-29
 - Теперь сохраняйте прежний список при обновлении в той же организации. Как отличить устаревшие данные и не показать их в другой организации?
 - Ответы A и B завершились в обратном порядке, а A отклонён. Напишите проверку результата и индикатора загрузки.
 
+> [!followup]- Теперь сохраняйте прежний список при обновлении в той же организации. Как отличить устаревшие данные и не показать их в другой организации?
+>
+> Храни последний успешный результат вместе с его владельцем: `{ orgId, term, users }`, а состояние текущего запроса — отдельно. Сохранять список разрешено только при совпадении его `orgId` с текущим prop. Это проверяют прямо при render, чтобы старые пользователи не мелькнули до выполнения cleanup/effect.
+>
+> Для того же `orgId` и нового непустого term прежние строки можно показать с подписью «Результаты предыдущего поиска; обновляем». Даже при совпадающем term фоновый refresh может быть pending, поэтому одного сравнения строк недостаточно для статуса обновления. Пустой после trim запрос по исходному контракту сразу скрывает список.
+>
+> Каждая попытка имеет отдельную идентичность: поздние success, error и завершение не меняют актуальную операцию. После ошибки нового поиска прежние строки остаются явно устаревшими, рядом доступен повтор; выбор таких строк должен быть отдельно разрешён контрактом.
+>
+> Проверка: успешный поиск в организации A → новый запрос A → переход в B с тем же term → поздний ответ A. В B ни прежний список, ни его ошибка не показываются.
+
+> [!followup]- Ответы A и B завершились в обратном порядке, а A отклонён. Напишите проверку результата и индикатора загрузки.
+>
+> После успеха B экран должен сохранить его пользователей, а поздний отказ A не должен показать ошибку или изменить загрузку. Управляемые Promise воспроизводят порядок без реальной сети. Ниже Vitest и React Testing Library; компонент и тексты соответствуют основному примеру.
+>
+> ```jsx
+> import { act } from 'react';
+> import { render, screen } from '@testing-library/react';
+> import { expect, it, vi } from 'vitest';
+> import { UserSearch } from './UserSearch';
+>
+> it('сохраняет B после позднего отказа A', async () => {
+>   vi.useFakeTimers();
+>   let rejectA, resolveB;
+>   const a = new Promise((_, reject) => { rejectA = reject; });
+>   const b = new Promise(resolve => { resolveB = resolve; });
+>   const loadUsers = vi.fn((_org, term) => term === 'A' ? a : b);
+>   const props = { orgId: 'org', loadUsers,
+>     onQueryChange: vi.fn(), onSelect: vi.fn() };
+>   const view = render(<UserSearch {...props} query="A" />);
+>   try {
+>     await act(async () => { vi.advanceTimersByTime(300); });
+>     view.rerender(<UserSearch {...props} query="B" />);
+>     await act(async () => { vi.advanceTimersByTime(300); });
+>     expect(loadUsers).toHaveBeenCalledTimes(2);
+>     expect(screen.getByText('Загрузка…')).not.toBeNull();
+>     await act(async () => { resolveB([{ id: 'b', name: 'Bob' }]); });
+>     expect(screen.getByRole('button', { name: 'Bob' })).not.toBeNull();
+>     expect(screen.queryByText('Загрузка…')).toBeNull();
+>     await act(async () => { rejectA(new Error('Поздний отказ A')); });
+>     expect(screen.getByRole('button', { name: 'Bob' })).not.toBeNull();
+>     expect(screen.queryByRole('alert')).toBeNull();
+>     expect(screen.queryByText('Загрузка…')).toBeNull();
+>   } finally {
+>     view.unmount();
+>     vi.useRealTimers();
+>   }
+> });
+> ```
+>
+> Загрузчик намеренно игнорирует AbortSignal. Дополнительно нужен обратный порядок: отклонить A, пока B ещё pending, и проверить, что индикатор B остался. Только этот дополнительный случай обнаруживает старый `finally`, преждевременно снимающий загрузку.
+
 ### Подгрузка следующей страницы без потери списка
 
 Расширь поиск: `loadPage(filter, cursor, { signal })` возвращает `{ items: [{id, name}], next: string | null }`. Первый cursor — undefined, null в ответе означает конец. filter — строка, загрузчик имеет стабильную ссылку. Повторный ID не добавляется. При ошибке следующей страницы прочитанное остаётся, повтор использует тот же cursor. При смене filter нужна новая сессия списка; поздние ответы старой сессии игнорируются даже при неработающей отмене. Переданный загрузчик отвечает за HTTP-ошибки и проверку формы JSON.
@@ -543,6 +594,75 @@ function BrokenUserSearch({ orgId, query, onQueryChange, onSelect }) {
 > Второе: убрать застывший rows, сделать query управляемым входом и связать загрузку с orgId/query. В этот путь входят очистка таймера, отмена и запрет старым success/catch/finally менять состояние, кодирование параметров через URLSearchParams, проверка HTTP-статуса и ожидаемой структуры списка в JSON, обработка отказа. Результат хранится вместе с ключом запроса и показывается только при совпадении ключа с текущими параметрами. Проверяю внешнюю смену query, переход A → B с обратным порядком ответов и удаление компонента до таймера. Отдельно проверяю query со знаком & и HTTP 200 с null вместо списка.
 >
 > Это два связных исправления поведения, а не обещание уложиться в две строки. Декомпозицию и дополнительную мемоизацию можно отложить. Клавиатурную недоступность div и нестабильную идентичность строк нельзя назвать безвредными: они остаются явными дефектами. Если срок позволяет лишь косметически поправить два места, выпуск этого компонента следует ограничить, а не объявлять остальные риски устранёнными. [Жизненный цикл эффекта](https://react.dev/reference/react/useEffect).
+
+> [!followup]- Загрузчик игнорирует AbortSignal. Покажите тест, который обнаружит старые success, catch и finally.
+>
+> Нужен загрузчик с управляемыми Promise, который намеренно не подписывается на `signal`. Проверка одного позднего ответа недостаточна: старый `finally` заметен, пока B ещё загружается, а перезапись успешного B — после его завершения. Поэтому проверяем оба порядка и оба исхода A.
+>
+> Ниже тест исправленного `UserSearch` с внедрённым `loadUsers`. Использованы Vitest, React Testing Library; `Загрузка…` — текст индикатора, ошибка выводится с role="alert".
+>
+> ```jsx
+> import { act } from 'react';
+> import { render, screen, cleanup } from '@testing-library/react';
+> import { afterEach, expect, it, vi } from 'vitest';
+> import { UserSearch } from './UserSearch';
+>
+> function deferred() {
+>   let resolve, reject;
+>   const promise = new Promise((ok, fail) => {
+>     resolve = ok;
+>     reject = fail;
+>   });
+>   return { promise, resolve, reject };
+> }
+> afterEach(() => { cleanup(); vi.useRealTimers(); });
+>
+> for (const outcome of ['resolve', 'reject']) {
+>   for (const order of ['A-first', 'B-first']) {
+>     it(`${outcome}, ${order}: A не меняет состояние B`, async () => {
+>       vi.useFakeTimers();
+>       const a = deferred(), b = deferred();
+>       const loadUsers = vi.fn((_org, term, _options) =>
+>         term === 'A' ? a.promise : b.promise);
+>       const props = { orgId: 'org-1', loadUsers,
+>         onQueryChange: vi.fn(), onSelect: vi.fn() };
+>       const view = render(<UserSearch {...props} query="A" />);
+>       await act(async () => { vi.advanceTimersByTime(300); });
+>       expect(loadUsers).toHaveBeenCalledTimes(1);
+>       view.rerender(<UserSearch {...props} query="B" />);
+>       await act(async () => { vi.advanceTimersByTime(300); });
+>       expect(loadUsers).toHaveBeenCalledTimes(2);
+>       expect(screen.getByText('Загрузка…')).not.toBeNull();
+>
+>       const finishA = () => act(async () => {
+>         if (outcome === 'resolve') a.resolve([{ id: 'a', name: 'Alice' }]);
+>         else a.reject(new Error('Ошибка A'));
+>       });
+>       const finishB = () => act(async () => {
+>         b.resolve([{ id: 'b', name: 'Bob' }]);
+>       });
+>       if (order === 'A-first') {
+>         await finishA();
+>         expect(screen.getByText('Загрузка…')).not.toBeNull();
+>         expect(screen.queryByRole('alert')).toBeNull();
+>         expect(screen.queryByRole('button', { name: 'Alice' }))
+>           .toBeNull();
+>         await finishB();
+>       } else {
+>         await finishB();
+>         await finishA();
+>       }
+>       expect(screen.getByRole('button', { name: 'Bob' })).not.toBeNull();
+>       expect(screen.queryByRole('button', { name: 'Alice' }))
+>         .toBeNull();
+>       expect(screen.queryByRole('alert')).toBeNull();
+>       expect(screen.queryByText('Загрузка…')).toBeNull();
+>     });
+>   }
+> }
+> ```
+>
+> Четыре сценария обнаруживают изменение списка, появление старой ошибки и преждевременное снятие загрузки. Отдельные проверки нужны для смены организации, пустой строки и unmount: этот тест доказывает только защиту состояния B от завершений A. Ожидание обновлений оформлено через [асинхронный act](https://react.dev/reference/react/act).
 
 ## Resize: свежий callback без повторной подписки
 

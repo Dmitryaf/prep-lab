@@ -11,6 +11,7 @@ import { DiscussionRepository } from "#server/infrastructure/storage/discussions
 import { loadState } from "#domain/interview/saved-state.ts";
 import { SourceRepository } from "#server/infrastructure/storage/sources.ts";
 import { GenerationRepository } from "#server/infrastructure/storage/generations.ts";
+import { loadCommonKnowledge } from "#server/infrastructure/knowledge/common.ts";
 
 test("standalone prompt assets, saved overrides and interrupted draft history survive restart without inference", async () => {
   const directory = await mkdtemp(join(tmpdir(), "frontend-lab-prompts-api-"));
@@ -345,9 +346,27 @@ test("clean standalone bundles the full common base without a vault or owner pac
     const response = await fetch(server.base + "/api/knowledge");
     assert.equal(response.status, 200);
     const bank = await response.json();
-    assert.equal(bank.notes.length, 219);
-    assert.equal(bank.questions.length, 582);
-    assert.equal(bank.route.length, 62);
+    const expected = loadCommonKnowledge();
+    assert.deepEqual(
+      bank.notes.map((note: { id: string }) => note.id).sort(),
+      expected.notes.map((note) => note.id).sort(),
+    );
+    assert.deepEqual(
+      bank.questions.map((question: { id: string }) => question.id).sort(),
+      expected.questions.map((question) => question.id).sort(),
+    );
+    assert.deepEqual(bank.route, expected.route);
+    for (const question of expected.questions) {
+      const delivered = bank.questions.find(
+        (item: { id: string }) => item.id === question.id,
+      );
+      assert.deepEqual(delivered.followups, question.followups, question.id);
+      assert.deepEqual(
+        delivered.followupAnswers ?? [],
+        JSON.parse(JSON.stringify(question.followupAnswers ?? [])),
+        question.id,
+      );
+    }
     const thisQuestion = bank.questions.find(
       (q: { title: string }) => q.title === "От чего зависит this?",
     );
@@ -359,7 +378,8 @@ test("clean standalone bundles the full common base without a vault or owner pac
       bank.questions.filter(
         (q: { interviewDiagnostic?: boolean }) => q.interviewDiagnostic,
       ).length,
-      3,
+      expected.questions.filter((question) => question.interviewDiagnostic)
+        .length,
     );
     assert.deepEqual(bank.warnings, []);
     assert(
