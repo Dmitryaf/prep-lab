@@ -83,6 +83,7 @@ const stage = computed(() =>
       />
       <button
         v-else-if="followupAnswer?.availableAnswer"
+        class="primary"
         data-action="followup-review"
         @click="$emit('revealFollowup')"
       >
@@ -95,6 +96,7 @@ const stage = computed(() =>
       :question="question"
       :for-followup="!!followup"
     />
+    <slot name="actions" />
     <slot />
   </article>
 </template>

@@ -82,6 +82,9 @@ for (const kind of ["daily", "full"] as const)
       (q) => q.title === "Как устроена реактивность Vue 3?",
     )!;
     const session = createSession([current], kind);
+    // Historical snapshots predate the curated followups of new sessions.
+    session.snapshots[current.id] = structuredClone(current);
+    delete session.snapshots[current.id].interviewFollowups;
     session.snapshots[current.id].followupAnswers = [];
     session.snapshots[current.id].answer = "Исторический основной ответ";
     session.snapshots[current.id].shortAnswer = "Исторический основной ответ";

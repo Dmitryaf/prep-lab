@@ -291,98 +291,121 @@ watch(() => route.fullPath, refreshDate);
         {{ session.questionIds.length - session.index - 1 }}</span
       >
     </div>
-    <div class="platform-actions">
-      <button
-        data-action="session-previous"
-        :disabled="saving || (session.index === 0 && !session.followupIndex)"
-        @click="move('previous')"
-      >
-        {{
-          session.followupIndex ? "К основному вопросу" : "Предыдущий вопрос"
-        }}
-      </button>
-      <button
-        class="primary"
-        data-action="session-next"
-        :disabled="saving"
-        @click="move('next')"
-      >
-        {{
-          session.index === session.questionIds.length - 1
-            ? "Завершить интервью"
-            : "Следующий вопрос"
-        }}</button
-      ><button
-        v-if="
-          !(current.roundFormat === 'coding' && current.codingRole) &&
-          (answeredFollowups.length ||
-            (!session.followupIndex && openedFollowups(session).length))
-        "
-        data-action="session-followup"
-        :disabled="
-          saving || (!!session.followupIndex && !answeredFollowups.length)
-        "
-        @click="move('followup')"
-      >
-        {{
-          session.followupIndex ? "Другое уточнение" : "Уточняющий вопрос"
-        }}</button
-      ><button
-        data-action="session-skip"
-        :disabled="saving"
-        @click="move('skip')"
-      >
-        {{
-          current.roundFormat === "coding" &&
-          current.codingRole &&
-          session.followupIndex
-            ? "Пропустить усложнение"
-            : "Пропустить вопрос"
-        }}</button
-      ><RouterLink to="/interview">Продолжить позже</RouterLink>
-    </div>
     <QuestionCard
       :question="current"
       :session-id="session.id"
       :followup="session.followupIndex"
       :revealed="reviewed"
     >
-      <div
-        v-if="
-          current.roundFormat === 'coding' &&
-          current.codingRole &&
-          current.followups?.length
-        "
-        class="coding-stages"
-      >
-        <div class="platform-actions">
+      <template #actions="{ revealed: stageRevealed }">
+        <div class="platform-actions interview-answer-actions">
           <button
-            v-for="(title, index) in current.followups"
-            :key="title"
-            data-action="session-followup"
-            :aria-pressed="session.followupIndex === index + 1"
-            :disabled="saving || session.followupIndex === index + 1"
-            @click="move('followup', index)"
+            v-if="!session.followupIndex && !reviewed"
+            class="primary"
+            data-action="session-review"
+            :disabled="saving"
+            @click="review"
           >
-            Усложнение {{ index + 1 }}: {{ title }}
+            Проверить ответ
+          </button>
+          <button
+            :class="{ primary: stageRevealed }"
+            data-action="session-next"
+            :disabled="saving"
+            @click="move('next')"
+          >
+            {{
+              session.index === session.questionIds.length - 1
+                ? "Завершить интервью"
+                : "Следующий вопрос"
+            }}
           </button>
         </div>
-      </div>
-      <template v-if="reviewed && !session.followupIndex"
-        ><RatingButtons :id="current.id" :session-id="session.id" /><StudyLinks
-          :question="current" /></template
-      ><button
-        v-else-if="!session.followupIndex"
-        data-action="session-review"
-        :disabled="saving"
-        @click="review"
-      >
-        Проверить ответ
-      </button>
+        <template v-if="reviewed && !session.followupIndex">
+          <RatingButtons :id="current.id" :session-id="session.id" />
+          <StudyLinks :question="current" />
+        </template>
+        <div
+          v-if="
+            current.roundFormat === 'coding' &&
+            current.codingRole &&
+            current.followups?.length
+          "
+          class="coding-stages"
+        >
+          <div class="platform-actions">
+            <button
+              v-for="(title, index) in current.followups"
+              :key="title"
+              data-action="session-followup"
+              :aria-pressed="session.followupIndex === index + 1"
+              :disabled="saving || session.followupIndex === index + 1"
+              @click="move('followup', index)"
+            >
+              Усложнение {{ index + 1 }}: {{ title }}
+            </button>
+          </div>
+        </div>
+        <div class="platform-actions interview-secondary-actions">
+          <button
+            data-action="session-previous"
+            :disabled="
+              saving || (session.index === 0 && !session.followupIndex)
+            "
+            @click="move('previous')"
+          >
+            {{
+              session.followupIndex
+                ? "К основному вопросу"
+                : "Предыдущий вопрос"
+            }}
+          </button>
+          <button
+            v-if="
+              !(current.roundFormat === 'coding' && current.codingRole) &&
+              (answeredFollowups.length ||
+                (!session.followupIndex && openedFollowups(session).length))
+            "
+            data-action="session-followup"
+            :disabled="
+              saving || (!!session.followupIndex && !answeredFollowups.length)
+            "
+            @click="move('followup')"
+          >
+            {{
+              session.followupIndex ? "Другое уточнение" : "Уточняющий вопрос"
+            }}</button
+          ><button
+            data-action="session-skip"
+            :disabled="saving"
+            @click="move('skip')"
+          >
+            {{
+              current.roundFormat === "coding" &&
+              current.codingRole &&
+              session.followupIndex
+                ? "Пропустить усложнение"
+                : "Пропустить вопрос"
+            }}</button
+          ><RouterLink to="/interview">Продолжить позже</RouterLink>
+        </div>
+      </template>
     </QuestionCard>
   </template>
 </template>
 <style scoped>
+.interview-answer-actions {
+  margin-block: 18px;
+}
+.interview-secondary-actions {
+  gap: 8px;
+  margin-block: 16px;
+  font-size: 14px;
+}
+.interview-secondary-actions button {
+  padding: 7px 10px;
+  font-size: inherit;
+}
 .interview-setup {
   padding-block: 30px;
   border-top: 1px solid var(--line);

@@ -152,12 +152,20 @@ const context = computed(() =>
         :followup-answer="selectedFollowup"
         :followup-revealed="followupRevealed"
         @reveal-followup="canLeaveVoice() && (followupRevealed = true)"
-        ><StudyDiscussion
+      >
+        <template #actions>
+          <slot
+            name="actions"
+            :revealed="activeFollowup ? followupRevealed : revealed"
+          />
+        </template>
+        <StudyDiscussion
           :key="discussionKey"
           :material-key="discussionKey"
           :title="selectedFollowup?.title || question.title"
           :context="context"
-      /></QuestionCard>
+        />
+      </QuestionCard>
       <slot />
       <div v-if="canExtendPractice && !revealed" class="platform-actions">
         <button
