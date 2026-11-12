@@ -31,9 +31,9 @@ test("interview, practice and project blocks have no estimated completion times"
   });
   await page.locator('input[value="coding"]').check();
   await page.locator('[data-action="full"]:enabled').click();
-  await expect(page.locator(".question-card .platform-meta")).not.toContainText(
-    estimate,
-  );
+  await expect(
+    page.locator(".question-card > .platform-meta"),
+  ).not.toContainText(estimate);
   await page.goto(base + "/#/projects?projectTopic=first-main");
   await expect(page.locator(".topic-title")).toHaveText("Контракт операции");
   await expect(page.locator(".topic-intro > .platform-meta")).not.toContainText(

@@ -166,3 +166,68 @@ test("startup recovers pending answer as interrupted without sending it again", 
     },
   );
 });
+
+test("explicit discussion mode preserves the existing hint history and preview contract", async () => {
+  let calls = 0;
+  await fixture(
+    async ({ trustedTask, messages }) => {
+      calls++;
+      if (calls === 1)
+        assert.match(trustedTask!, /Дай одну наводящую подсказку/);
+      else {
+        assert.match(trustedTask!, /Сначала ответь на текущий вопрос/);
+        assert.doesNotMatch(trustedTask!, /Дай одну наводящую подсказку/);
+        assert.ok(messages.some((message) => message.text === "Первый ответ"));
+      }
+      return calls === 1 ? "Первый ответ" : "Прямое объяснение";
+    },
+    async ({ base }) => {
+      const key = "interview-hint:" + JSON.stringify(["session", "question"]);
+      const post = (suffix: string, input: object) =>
+        fetch(
+          base + "/api/study-chat" + suffix + "?key=" + encodeURIComponent(key),
+          {
+            method: "POST",
+            headers: { Origin: base, "Content-Type": "application/json" },
+            body: JSON.stringify(input),
+          },
+        );
+      assert.equal(
+        (
+          await post("", {
+            context: "scoped slots",
+            message: "Помоги",
+            discussionMode: "invalid",
+          })
+        ).status,
+        400,
+      );
+      await (
+        await post("", { context: "scoped slots", message: "Помоги" })
+      ).text();
+      const input = {
+        context: "scoped slots",
+        message: "Объясни",
+        discussionMode: "discussion",
+      };
+      const preview = await (await post("/preview", input)).json();
+      assert.match(preview.prompt, /Сначала ответь на текущий вопрос/);
+      assert.equal(
+        (await post("", { ...input, expectedPrompt: "old" })).status,
+        409,
+      );
+      const response = await post("", {
+        ...input,
+        expectedPrompt: preview.prompt,
+      });
+      assert.equal(response.status, 200);
+      assert.match(await response.text(), /"done":true/);
+      const history = await (
+        await fetch(base + "/api/study-chat?key=" + encodeURIComponent(key))
+      ).json();
+      assert.equal(history.messages.length, 4);
+      assert.equal(history.messages.at(-1).text, "Прямое объяснение");
+      assert.equal(calls, 2);
+    },
+  );
+});

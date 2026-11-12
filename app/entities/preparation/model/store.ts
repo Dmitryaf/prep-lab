@@ -29,6 +29,8 @@ export const usePreparation = defineStore("preparation", () => {
   let initializing: Promise<void> | undefined;
   function apply(envelope: { state: Progress; revision: number }) {
     if (envelope.revision < revision.value) return;
+    // Focus refresh must not replace the question tree when nothing changed.
+    if (ready.value && envelope.revision === revision.value) return;
     progress.value = envelope.state;
     revision.value = envelope.revision;
   }

@@ -76,9 +76,7 @@ test("interview followups", async ({
   expect(daily(await state()).ratings).toEqual({});
   await expectCompactReview(page, daily(await state()));
   await page.locator('[data-action="result-toggle"]').first().click();
-  expect(
-    (await page.getByText("Уточнения и разбор", { exact: true }).count()) > 0,
-  ).toBeTruthy();
+  await expect(page.getByRole("tab", { name: /^Уточнения/ })).toBeVisible();
   // One optional followup: review, rate, study and back all preserve this exact prompt.
   await restore(original);
   await page.goto(url);
@@ -228,7 +226,7 @@ test("interview followups", async ({
     );
     await expect(page.locator(".question-card h2")).toHaveText(q.title);
     const meta = await page
-      .locator(".question-card .platform-meta")
+      .locator(".question-card > .platform-meta")
       .innerText();
     expect(
       meta.startsWith(

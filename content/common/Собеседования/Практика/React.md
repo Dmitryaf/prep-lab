@@ -38,6 +38,44 @@ updated: 2026-10-29
 >
 > Поле передаёт value в input, а из onChange вызывает onValueChange с новой строкой. Родитель меняет state; children содержит приветствие из того же state. Полная [[Фронтенд/React/02. Props, callbacks и композиция#Контракт компонента|реализация]] используется непосредственно в тестах стенда. Проверь ввод, очистку, внешнюю замену и смену children. Внешний rerender сам по себе не должен вызывать onValueChange.
 
+### Typography: тег и допустимые свойства
+
+Сделай компонент Typography: по умолчанию span, `as="a"` разрешает href, `as="button"` — disabled и обработчик клика. Сохрани children, className и остальные свойства выбранного тега; не передавай as в DOM. Для этого контракта достаточно трёх вариантов. Произвольные custom components и ref не требуются.
+
+**Критерии ответа:** Типы отклоняют href у span/button; элемент сохраняет семантику выбранного тега и принимает его события. Пропуск as выбирает span. Компонент не превращает disabled-ссылку в неработающую кнопку.
+**Изучить:** [[Фронтенд/React/02. Props, callbacks и композиция|Контракт props]], [[Фронтенд/TypeScript/03. Объединения типов и сужение|Сужение типов]]
+
+> [!example]- Разбор ограниченного полиморфного компонента
+>
+> ```tsx
+> // checked-example: react-typography
+> import type { ComponentPropsWithoutRef } from 'react';
+> type TypographyProps =
+>   | ({ as?: 'span'; href?: never } & ComponentPropsWithoutRef<'span'>)
+>   | ({ as: 'a' } & ComponentPropsWithoutRef<'a'>)
+>   | ({ as: 'button'; href?: never } & ComponentPropsWithoutRef<'button'>);
+> function Typography(props: TypographyProps) {
+>   if (props.as === 'a') {
+>     const { as, ...rest } = props;
+>     return <a {...rest} />;
+>   }
+>   if (props.as === 'button') {
+>     const { as, ...rest } = props;
+>     return <button {...rest} />;
+>   }
+>   const { as, ...rest } = props;
+>   return <span {...rest} />;
+> }
+> const link = <Typography as="a" href="/articles">Статьи</Typography>;
+> const button = <Typography as="button" type="button" disabled>Отправить</Typography>;
+> // @ts-expect-error: href требует as="a"
+> const invalid = <Typography href="/articles">Статьи</Typography>;
+> // @ts-expect-error: у button нет href
+> const invalidButton = <Typography as="button" href="/articles" />;
+> ```
+>
+> Отличительное поле as сужает весь контракт, а не только имя тега. Запрет href через never важен для ветки с необязательным as: без него проверка объединения может принять href при пропущенном as. children входит в нативные props и попадает в rest. Если нужна библиотека с произвольным `as`, следующим этапом обсуждают generic ElementType, исключение конфликтующих собственных props и тип ref; не расширяй API без такого требования. Это тот же принцип явного выбора контракта, что у кнопки-ссылки во Vue.
+
 ## Поиск: от списка до гонок запросов
 
 **Формат раунда:** Написание кода
@@ -225,6 +263,73 @@ updated: 2026-10-29
 **Уточнения**
 - Теперь сохраняйте прежний список при обновлении в той же организации. Как отличить устаревшие данные и не показать их в другой организации?
 - Ответы A и B завершились в обратном порядке, а A отклонён. Напишите проверку результата и индикатора загрузки.
+
+### Подгрузка следующей страницы без потери списка
+
+Расширь поиск: `loadPage(filter, cursor, { signal })` возвращает `{ items: [{id, name}], next: string | null }`. Первый cursor — undefined, null в ответе означает конец. filter — строка, загрузчик имеет стабильную ссылку. Повторный ID не добавляется. При ошибке следующей страницы прочитанное остаётся, повтор использует тот же cursor. При смене filter нужна новая сессия списка; поздние ответы старой сессии игнорируются даже при неработающей отмене. Переданный загрузчик отвечает за HTTP-ошибки и проверку формы JSON.
+
+**Критерии ответа:** Один активный запрос на сессию, append вместо замены, повтор после ошибки, явный конец; смена фильтра не смешивает данные. Проверяются обратный порядок ответов, двойной клик и StrictMode.
+**Изучить:** [[Фронтенд/React/10. Запросы и серверное состояние|Состояние запроса]], [[Фронтенд/React/04. Рендер и идентичность|Идентичность и key]]
+
+> [!example]- Разбор загрузки следующей страницы
+>
+> ```jsx
+> // checked-example: react-load-more
+> import { useCallback, useEffect, useRef, useState } from 'react';
+>
+> function PagedUsers({ filter, loadPage }) {
+>   return <PageSession key={filter} filter={filter} loadPage={loadPage} />;
+> }
+> function PageSession({ filter, loadPage }) {
+>   const [view, setView] = useState({ items: [], next: undefined, status: 'loading', error: '' });
+>   const nextCursor = useRef(undefined);
+>   const active = useRef(null);
+>   const loadMore = useCallback(async () => {
+>     if (active.current || nextCursor.current === null) return;
+>     const operation = { controller: new AbortController(), alive: true };
+>     active.current = operation;
+>     setView(old => ({ ...old, status: 'loading', error: '' }));
+>     try {
+>       const page = await loadPage(filter, nextCursor.current, { signal: operation.controller.signal });
+>       if (!operation.alive) return;
+>       nextCursor.current = page.next;
+>       setView(old => {
+>         const seen = new Set(old.items.map(item => item.id));
+>         const added = page.items.filter(item => {
+>           if (seen.has(item.id)) return false;
+>           seen.add(item.id); return true;
+>         });
+>         return { items: [...old.items, ...added], next: page.next, status: 'ready', error: '' };
+>       });
+>     } catch (error) {
+>       if (operation.alive) setView(old => ({ ...old, status: 'error', error: 'Не удалось загрузить страницу.' }));
+>     } finally {
+>       if (active.current === operation) active.current = null;
+>     }
+>   }, [filter, loadPage]);
+>   useEffect(() => {
+>     loadMore();
+>     return () => {
+>       if (active.current) {
+>         active.current.alive = false;
+>         active.current.controller.abort();
+>         active.current = null;
+>       }
+>     };
+>   }, [loadMore]);
+>   return <section aria-label="Пользователи" aria-busy={view.status === 'loading'}>
+>     <ul>{view.items.map(item => <li key={item.id}>{item.name}</li>)}</ul>
+>     {view.error && <p role="alert">{view.error}</p>}
+>     {view.status === 'loading' && <p role="status">Загрузка…</p>}
+>     {view.next === null ? <p role="status">Все результаты загружены.</p> :
+>       <button type="button" disabled={view.status === 'loading'} onClick={loadMore}>
+>         {view.status === 'error' ? 'Повторить' : 'Загрузить ещё'}
+>       </button>}
+>   </section>;
+> }
+> ```
+>
+> Ref блокирует повторный запуск синхронно, не дожидаясь React-рендера. Cursor продвигается только после успеха. Key меняется только вместе с фильтром: ключ от длины списка размонтировал бы компонент при каждой подгрузке. При append сохраняются прежние строки и их ключи, поэтому мы не вызываем scrollTo и не заменяем список индикатором. В этом контракте совпавший ID сохраняет прежний объект; для обновления публикации понадобится отдельное правило merge. Если API отдаёт `info.next`, адаптер загрузчика переводит его в поле next. Подгрузка не ограничивает память: для очень длинной сессии отдельно проектируют окно данных и восстановление позиции.
 
 ## Drag: точка захвата, границы и отмена
 
@@ -588,6 +693,10 @@ function BrokenUserSearch({ orgId, query, onQueryChange, onSelect }) {
 > Зафиксируй одинаковые данные и последовательность ввода. Сначала найди дорогую часть. Если существенны props/Context, сократи область состояния, раздели контексты, стабилизируй нужный контракт и сравни один изменённый фактор. При долгом layout проверь размер DOM и геометрию; добавление useMemo не лечит эту причину. Virtualization/pagination требуют проверки поведения списка и доступности. useDeferredValue помогает приоритизировать отображение, но не является debounce запроса.
 
 Механизм: [[Фронтенд/React/12. Производительность|производительность]].
+
+> [!followup]- Почему children может не перерисоваться при изменении состояния обёртки?
+>
+> Если JSX создан родителем, который сейчас не рендерится, обёртка получает тот же объект children. React может пропустить работу этого поддерева. Если родитель снова создаёт JSX или элемент создаётся внутри обёртки, такой причины для пропуска уже нет. Собственный state и Context дочернего компонента продолжают обновлять его. Проверь две кнопки: локальную у обёртки и у её родителя. [[Фронтенд/React/12. Производительность#Стабильный children и локальное состояние обёртки|Исполняемый пример и границы]].
 
 ## Ошибка, ожидание и гидратация
 

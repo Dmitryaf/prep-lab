@@ -13,16 +13,35 @@ import { loadState, validateState } from "#domain/interview/saved-state.ts";
 const common = loadCommonKnowledge();
 test("the complete common base contains no owner materials and retains stable question identities", () => {
   assert.equal(common.notes.length, 219);
-  assert.equal(common.questions.length, 582);
+  assert.equal(common.questions.length, 586);
   assert.equal(
     new Set(common.questions.map((question) => question.id)).size,
-    582,
+    586,
   );
   assert(
     !/Dmitryaf|МЭДО|Inbox Point|Trajectory|Landocs|Docshouse|cokr/i.test(
       JSON.stringify(common),
     ),
   );
+});
+test("research variants extend existing questions without adding mandatory route entries", () => {
+  for (const title of [
+    "Typography: тег и допустимые свойства",
+    "Подгрузка следующей страницы без потери списка",
+    "Типизированный Promise.all для массива и кортежа",
+    "Полный раунд ленты: от требований до выпуска",
+  ]) {
+    const question = common.questions.find((item) => item.title === title);
+    assert(question?.parentId && question.answer && question.criteria, title);
+    assert(question.learningLinks.length > 0, title);
+    assert(!common.route.includes(question.id), title);
+    assert(
+      Object.values(common.profiles || {}).every(
+        (route) => !route.includes(question.id),
+      ),
+      title,
+    );
+  }
 });
 for (const profile of ["vue", "react"] as const) {
   test(`${profile}: core routes, answers, criteria and live material links remain usable`, () => {

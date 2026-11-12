@@ -35,6 +35,7 @@ import { AnalysisRepository } from "#server/infrastructure/storage/analyses.ts";
 import { handleAnalysis } from "#server/infrastructure/http/analysis.ts";
 import type { Answer } from "#server/types.ts";
 import { discussionPrompt } from "./discussion-prompt.ts";
+import { projectDiscussionContext } from "./discussion-context.ts";
 import { handleConnection } from "#server/infrastructure/http/connection.ts";
 import { CredentialStore } from "#server/infrastructure/codex/credentials.ts";
 import { handleSettings } from "#server/infrastructure/http/settings.ts";
@@ -43,6 +44,7 @@ import {
   ownerPackagePath,
 } from "#server/infrastructure/projects/catalog.ts";
 export interface ServerOptions {
+  publicRoot?: string;
   credentialDirectory?: string;
   generationAnswer?: Answer;
   knowledgeRoot?: string;
@@ -52,7 +54,6 @@ export interface ServerOptions {
   projectPackageRoot?: string | null;
   speech?: Parameters<typeof createSpeechHandler>[0];
 }
-const root = resolve(process.cwd(), ".output/public");
 const types: Record<string, string> = {
   ".html": "text/html",
   ".js": "text/javascript",
@@ -62,6 +63,7 @@ const types: Record<string, string> = {
   ".zip": "application/zip",
 };
 export function createHttpService({
+  publicRoot = resolve(process.cwd(), ".output/public"),
   speech,
   credentialDirectory,
   generationAnswer = answerWithCodex,
@@ -71,6 +73,7 @@ export function createHttpService({
   databasePath = ":memory:",
   projectPackageRoot = ownerPackagePath(),
 }: ServerOptions = {}) {
+  const root = resolve(publicRoot);
   const handleSpeech = createSpeechHandler(speech);
   const database = openDatabase(databasePath);
   const history =
@@ -82,6 +85,12 @@ export function createHttpService({
       async () => readPromptTemplates(),
       () => prompts,
       () => settings.read().settings.profile,
+      projectDiscussionContext({
+        catalog: () =>
+          reviewedProjects.catalog(readProjectCatalog(projectPackageRoot)),
+        roots: () => sources.roots(),
+        analyses: () => analysisRepository.list(),
+      }),
     ),
     ...studyChatOptions,
     ...(history ? { history } : {}),

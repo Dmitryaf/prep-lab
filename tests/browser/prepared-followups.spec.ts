@@ -120,10 +120,8 @@ test("nested theory retains its identity and exposes all four new explanations i
   );
   await expect(page.locator(".question-card h2")).toHaveText(question.title);
   await page.locator('[data-action="reveal"]').click();
-  const details = page.locator("details.platform-card").filter({
-    has: page.locator("summary", { hasText: "Уточнения и разбор" }),
-  });
-  await details.locator("summary").click();
+  const details = page.locator(".answer-followups");
+  await page.getByRole("tab", { name: /^Уточнения/ }).click();
   expect(question.followupAnswers).toHaveLength(4);
   for (const item of question.followupAnswers || []) {
     await expect(details).toContainText(item.title);

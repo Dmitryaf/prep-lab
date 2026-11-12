@@ -77,15 +77,10 @@ test("interview answers", async ({
     text.split("Почему таймер ждёт?").length - 1,
     "followups appear only once",
   ).toBe(1);
-  const supplement = page
-    .locator(".platform-answer details")
-    .filter({ has: page.locator("summary", { hasText: "Дополнительно" }) });
-  await supplement.locator("summary").focus();
-  await page.keyboard.press("Enter");
-  expect(await supplement.getAttribute("open")).toBe("");
-  expect(
-    (await supplement.innerText()).includes("Пример: таймер"),
-  ).toBeTruthy();
+  await expect(page.locator(".platform-answer details")).toHaveCount(0);
+  await expect(page.locator(".platform-answer")).toContainText(
+    "Пример: таймер",
+  );
   const beforeReload = await state();
   expect(beforeReload.daily[daily.date]).toEqual(daily);
   await page.reload();

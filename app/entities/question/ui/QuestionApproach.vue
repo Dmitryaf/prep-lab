@@ -15,33 +15,22 @@ const approach = computed(() =>
     aria-label="Подход к решению"
     :data-approach="approach.kind"
   >
-    <details :key="question.id + ':' + question.title + ':' + !!followup">
-      <summary>Как подойти к ответу</summary>
-      <p>{{ approach.summary }}</p>
-      <p>{{ approach.explanation }}</p>
-    </details>
+    <p>{{ approach.summary }}</p>
   </aside>
 </template>
 
 <style scoped>
 .question-approach {
-  margin-block: 16px;
+  margin-block: 0 12px;
+  padding: 13px 18px;
+  border-radius: 8px;
+  background: #edf3fb;
+  color: #365276;
   font-size: 14px;
   line-height: 1.6;
   overflow-wrap: anywhere;
 }
 .question-approach p {
   margin: 0;
-}
-.question-approach summary {
-  color: var(--muted);
-  cursor: pointer;
-}
-.question-approach details[open] p {
-  margin-top: 8px;
-}
-.question-approach summary:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
 }
 </style>

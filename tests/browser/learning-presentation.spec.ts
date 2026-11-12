@@ -122,7 +122,7 @@ for (const kind of ["daily", "full"] as const)
       "interview-hint:" + JSON.stringify([session.id, current.id, 2]),
     );
     await page
-      .getByRole("button", { name: "Свернуть обсуждение", exact: true })
+      .getByRole("button", { name: "Закрыть обсуждение", exact: true })
       .click();
     await stage
       .getByRole("button", { name: "Показать ответ на уточнение" })
@@ -145,14 +145,16 @@ for (const kind of ["daily", "full"] as const)
       "question:" + JSON.stringify([current.id, current.followups[1]]),
     );
     await page
-      .getByRole("button", { name: "Свернуть обсуждение", exact: true })
+      .getByRole("button", { name: "Закрыть обсуждение", exact: true })
       .click();
     await stage.screenshot({
       path: `artifacts/interview-presentation/followup-${kind}-answer.png`,
     });
     await expect(page.locator("[data-action=session-review]")).toHaveCount(0);
     await expect(
-      page.locator(".question-topics a").filter({ hasText: "Proxy и Reflect" }),
+      page
+        .locator(".question-resources a")
+        .filter({ hasText: "Proxy и Reflect" }),
     ).toHaveCount(1);
     await page.locator("[data-action=session-previous]").click();
     await expect(stage).toHaveCount(0);

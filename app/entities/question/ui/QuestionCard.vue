@@ -23,8 +23,31 @@ const stage = computed(() =>
       item.title === props.question.followups?.[(props.followup || 0) - 1],
   ),
 );
+const stagePrompt = computed(() => {
+  const prompt = stage.value?.prompt?.trim() || "";
+  const title = questionTitle();
+  if (prompt === title) return "";
+  return prompt.startsWith(title + "\n\n")
+    ? prompt.slice(title.length + 2)
+    : prompt;
+});
+function questionTitle() {
+  return props.question.followups?.[(props.followup || 0) - 1]?.trim() || "";
+}
 </script>
 <template>
+  <QuestionApproach
+    v-if="!hideApproach"
+    :question="
+      followup
+        ? followupAnswer || {
+            ...question,
+            title: questionTitle() || question.title,
+          }
+        : question
+    "
+    :followup="!!followup"
+  />
   <article class="platform-card question-card">
     <div class="platform-meta">
       {{
@@ -49,7 +72,6 @@ const stage = computed(() =>
       "
       :source-id="question.noteId"
     />
-    <QuestionApproach v-if="!followup && !hideApproach" :question="question" />
     <section
       v-if="followup"
       class="followup-question"
@@ -60,22 +82,9 @@ const stage = computed(() =>
       </div>
       <h3 tabindex="-1">{{ question.followups?.[followup - 1] }}</h3>
       <MarkdownContent
-        v-if="stage?.prompt"
-        :text="
-          stage.prompt.startsWith(stage.title + '\n\n')
-            ? stage.prompt.slice(stage.title.length + 2)
-            : stage.prompt
-        "
+        v-if="stagePrompt"
+        :text="stagePrompt"
         :source-id="question.noteId"
-      />
-      <QuestionApproach
-        :question="
-          followupAnswer || {
-            ...question,
-            title: question.followups?.[followup - 1] || question.title,
-          }
-        "
-        followup
       />
       <AnswerPanel
         v-if="followupRevealed && followupAnswer?.availableAnswer"

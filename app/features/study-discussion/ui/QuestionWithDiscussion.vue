@@ -24,12 +24,9 @@ const currentQuestion = computed(() =>
 const selectedFollowup = computed(() =>
   followupQuestion(props.question, activeFollowup.value, currentQuestion.value),
 );
-watch(
-  () => [props.question.id, activeFollowup.value],
-  () => {
-    followupRevealed.value = false;
-  },
-);
+watch([() => props.question.id, activeFollowup], () => {
+  followupRevealed.value = false;
+});
 const workspace = ref<HTMLElement>();
 const minimumHeight = ref<string>();
 watch(
@@ -38,23 +35,20 @@ watch(
     practiceFollowup.value = 0;
   },
 );
-watch(
-  () => [props.question.id, activeFollowup.value],
-  async () => {
-    const element = workspace.value;
-    if (!element) return;
-    const top = element.getBoundingClientRect().top;
-    const visibleTop = Math.max(16, top);
-    const position = window.scrollY + top - visibleTop;
-    // Keep enough room for a shorter question without the browser clamping scrollY.
-    minimumHeight.value = `${Math.max(0, window.innerHeight - visibleTop)}px`;
-    await nextTick();
-    window.scrollTo({ top: position, behavior: "instant" });
-    element
-      .querySelector<HTMLElement>(".question-card h2")
-      ?.focus({ preventScroll: true });
-  },
-);
+watch([() => props.question.id, activeFollowup], async () => {
+  const element = workspace.value;
+  if (!element?.isConnected) return;
+  const top = element.getBoundingClientRect().top;
+  const visibleTop = Math.max(16, top);
+  const position = window.scrollY + top - visibleTop;
+  // Keep enough room for a shorter question without the browser clamping scrollY.
+  minimumHeight.value = `${Math.max(0, window.innerHeight - visibleTop)}px`;
+  await nextTick();
+  window.scrollTo({ top: position, behavior: "instant" });
+  element
+    .querySelector<HTMLElement>(".question-card h2")
+    ?.focus({ preventScroll: true });
+});
 const canExtendPractice = computed(
   () =>
     !props.sessionId &&
@@ -98,6 +92,14 @@ const context = computed(() =>
   JSON.stringify(
     (activeFollowup.value ? followupRevealed.value : props.revealed)
       ? {
+          id: props.question.id,
+          title: props.question.title,
+          mainQuestion: {
+            id: props.question.id,
+            title: props.question.title,
+            topicId: props.question.topicId,
+            project: props.question.project,
+          },
           question: activeFollowup.value
             ? selectedFollowup.value
             : props.question,
@@ -115,10 +117,11 @@ const context = computed(() =>
             .slice(0, 4),
         }
       : {
-          mode: "Подсказка до самостоятельного ответа. Помоги с рассуждением, не раскрывай полное решение.",
           id: props.question.id,
           title: props.question.title,
           prompt: props.question.prompt,
+          project: props.question.project,
+          topicId: props.question.topicId,
           ...(activeFollowup.value
             ? {
                 followup:
@@ -140,7 +143,7 @@ const context = computed(() =>
   <div
     ref="workspace"
     class="question-workspace"
-    :class="{ 'has-topics': topics.length }"
+    :class="{ 'has-topics': topics.length || $slots.materials }"
     :style="{ minHeight: minimumHeight }"
   >
     <div class="question-workspace-main">
@@ -184,7 +187,17 @@ const context = computed(() =>
         </button>
       </div>
     </div>
-    <QuestionTopics v-if="topics.length" :topics="topics" />
+    <aside
+      v-if="topics.length || $slots.materials"
+      class="question-resources"
+      aria-label="Материалы к вопросу"
+    >
+      <QuestionTopics
+        v-if="topics.length && !$slots.materials"
+        :topics="topics"
+      />
+      <slot name="materials" />
+    </aside>
   </div>
 </template>
 <style scoped>
@@ -201,11 +214,19 @@ const context = computed(() =>
 .question-workspace-main {
   min-width: 0;
 }
+.question-resources {
+  position: sticky;
+  top: 24px;
+  min-width: 0;
+}
 .question-workspace-main :deep(.question-card) {
   max-width: none;
   margin-top: 0;
 }
 @media (max-width: 1050px) {
+  .question-resources {
+    position: static;
+  }
   .question-workspace.has-topics {
     grid-template-columns: minmax(0, 1fr);
     gap: 12px;

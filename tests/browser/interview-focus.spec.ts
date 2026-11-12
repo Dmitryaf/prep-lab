@@ -25,7 +25,7 @@ for (const viewport of [
   { width: 390, height: 844 },
 ]) {
   for (const stage of ["theory", "coding", "followup"] as const) {
-    test(`${stage} at ${viewport.width}: help stays optional and the primary action follows the active answer`, async ({
+    test(`${stage} at ${viewport.width}: principles stay outside the card and the primary action follows the active answer`, async ({
       app: { base },
       page,
     }, info) => {
@@ -89,8 +89,12 @@ for (const viewport of [
           2,
         ),
       );
-      await expect(guide.locator("summary")).toHaveText("Как подойти к ответу");
-      await expect(guide.locator("p").first()).not.toBeVisible();
+      await expect(guide.locator("details, summary, button")).toHaveCount(0);
+      await expect(guide.locator("p")).toHaveCount(1);
+      await expect(guide.locator("p")).toBeVisible();
+      await expect(
+        page.locator(".question-card .question-approach"),
+      ).toHaveCount(0);
       await expect(review).toHaveClass(/primary/);
       await expect(advance).not.toHaveClass(/primary/);
       expect(
@@ -104,13 +108,18 @@ for (const viewport of [
         ),
       ).toBe(true);
       const before = await readProgress(page);
-      await guide.locator("summary").focus();
-      await page.keyboard.press("Enter");
-      await expect(guide.locator("p").first()).toBeVisible();
+      await expect(guide.locator("p")).toBeVisible();
       await expect(page.locator(".platform-answer")).toHaveCount(0);
       expect(await readProgress(page)).toEqual(before);
       await review.click();
       await expect(page.locator(".platform-answer")).toBeVisible();
+      await expect(
+        page.locator(".question-card nav[aria-label='Материалы вопроса']"),
+      ).toHaveCount(0);
+      await expect(
+        page.locator(".question-resources nav[aria-label='Материалы вопроса']"),
+      ).toBeVisible();
+      await expect(page.locator(".question-card details")).toHaveCount(0);
       await expect(advance).toHaveClass(/primary/);
       await page.screenshot({
         path: info.outputPath("revealed.png"),
@@ -118,7 +127,7 @@ for (const viewport of [
       });
       await advance.click();
       await expect(page.locator(".question-card h2")).toHaveText(next.title);
-      await expect(guide.locator("p").first()).not.toBeVisible();
+      await expect(guide.locator("p")).toBeVisible();
       await expect(advance).not.toHaveClass(/primary/);
       await expect(page.locator('[data-action="session-review"]')).toHaveClass(
         /primary/,

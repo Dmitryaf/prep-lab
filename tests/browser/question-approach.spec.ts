@@ -34,6 +34,7 @@ test("guide adapts to a historical followup without rewriting progress or snapsh
     followupAnswers: [
       {
         title: "Почему поздний ответ нельзя применять?",
+        prompt: "Почему поздний ответ нельзя применять?",
         answer: "Исторический ответ уточнения",
       },
     ],
@@ -49,16 +50,25 @@ test("guide adapts to a historical followup without rewriting progress or snapsh
   const guide = page.locator(".question-approach");
   await expect(guide).toHaveAttribute("data-approach", "coding");
   const before = await readProgress(page);
-  await guide.locator("summary").click();
-  await expect(guide.locator("details")).toHaveAttribute("open", "");
+  await expect(guide.locator("details, summary, button")).toHaveCount(0);
+  await expect(guide.locator("p")).toHaveCount(1);
+  await expect(guide.locator("p")).toBeVisible();
+  await expect(page.locator(".question-card .question-approach")).toHaveCount(
+    0,
+  );
   expect(await readProgress(page)).toEqual(before);
   await expect(page.locator(".platform-answer")).toHaveCount(0);
   await page.locator('[data-action="session-followup"]').click();
   await expect(guide).toHaveCount(1);
   await expect(guide).toHaveAttribute("data-approach", "theory");
+  await expect(
+    page
+      .locator(".followup-question")
+      .getByText("Почему поздний ответ нельзя применять?", { exact: true }),
+  ).toHaveCount(1);
   await expect(page.locator(".platform-answer")).toHaveCount(0);
   const followupState = await readProgress(page);
-  await guide.locator("summary").click();
+  await expect(guide.locator("p")).toBeVisible();
   expect(await readProgress(page)).toEqual(followupState);
   await page.locator('[data-action="followup-review"]').click();
   await expect(page.locator(".platform-answer")).toContainText(
@@ -92,9 +102,12 @@ test("approach stays visible without revealing answers and fits mobile", async (
     const guide = page.locator(".question-approach");
     await expect(guide).toHaveAttribute("data-approach", kind);
     await expect(page.locator(".platform-answer")).toHaveCount(0);
-    await guide.locator("summary").focus();
-    await page.keyboard.press("Enter");
-    await expect(guide.locator("details")).toHaveAttribute("open", "");
+    await expect(guide.locator("details, summary, button")).toHaveCount(0);
+    await expect(guide.locator("p")).toHaveCount(1);
+    await expect(guide.locator("p")).toBeVisible();
+    await expect(page.locator(".question-card .question-approach")).toHaveCount(
+      0,
+    );
     await expect(page.locator(".platform-answer")).toHaveCount(0);
     await page.locator("[data-action=reveal]").click();
     await expect(page.locator(".platform-answer")).toBeVisible();

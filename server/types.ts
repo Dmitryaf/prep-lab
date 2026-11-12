@@ -21,6 +21,7 @@ export interface StudyChatOptions {
     context: string,
     message: string,
     materialKey?: string,
+    discussionMode?: "discussion" | "hint",
   ) => Promise<string>;
   directory?: string;
   answer?: Answer;

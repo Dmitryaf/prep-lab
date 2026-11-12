@@ -50,6 +50,62 @@ const send = (page: Page) =>
 const input = (page: Page) =>
   page.getByRole("textbox", { name: "Ваш вопрос или ответ" });
 
+for (const viewport of [
+  { width: 1440, height: 1000 },
+  { width: 390, height: 640 },
+]) {
+  test(`long discussion stays inside its panel at ${viewport.width}`, async ({
+    app: { base },
+    page,
+  }, info) => {
+    await page.setViewportSize(viewport);
+    await open(page, base);
+    const panel = page.getByRole("dialog");
+    await expect(panel).toBeVisible();
+    const pageHeight = await page.evaluate(
+      () => document.documentElement.scrollHeight,
+    );
+    await input(page).fill(
+      Array.from(
+        { length: 65 },
+        (_, i) => `Вопрос ${i}: объясни порядок выполнения очередей.\n`,
+      ).join(""),
+    );
+    await send(page).click();
+    await expect(page.locator(".study-message.assistant")).toContainText(
+      "Вопрос 64",
+    );
+    expect(
+      await page.evaluate(() => document.documentElement.scrollHeight),
+    ).toBe(pageHeight);
+    const history = panel.locator(".study-messages");
+    expect(
+      await history.evaluate((el) => el.scrollHeight > el.clientHeight),
+    ).toBe(true);
+    const box = (await panel.boundingBox())!;
+    expect(box.height).toBeLessThanOrEqual(viewport.height);
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    await history.evaluate((el) => {
+      el.scrollTop = 20;
+    });
+    await input(page).fill("Несохранённое продолжение");
+    await page.screenshot({
+      path: info.outputPath("discussion.png"),
+      fullPage: false,
+    });
+    await page.keyboard.press("Escape");
+    await expect(panel).not.toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Обсудить с помощником", exact: true }),
+    ).toBeFocused();
+    await page
+      .getByRole("button", { name: "Обсудить с помощником", exact: true })
+      .click();
+    await expect(input(page)).toHaveValue("Несохранённое продолжение");
+    await expect.poll(() => history.evaluate((el) => el.scrollTop)).toBe(20);
+  });
+}
+
 test("direct send prepares the task once without a manual preview", async ({
   app: { base },
   page,
@@ -65,6 +121,8 @@ test("direct send prepares the task once without a manual preview", async ({
   ).toHaveText("Ответ для: Объясни порядок микрозадач");
   expect(calls.previews).toHaveLength(1);
   expect(calls.sent).toHaveLength(1);
+  expect(calls.sent[0]!.postDataJSON().discussionMode).toBe("discussion");
+  expect(calls.previews[0]!.postDataJSON().discussionMode).toBe("discussion");
   expect(calls.sent[0]!.postDataJSON().expectedPrompt).toContain(
     "Объясни порядок микрозадач",
   );
@@ -176,6 +234,9 @@ test("pending preparation blocks duplicate submits and discards a task after que
   await started;
   await expect(send(page)).toBeDisabled();
   const previous = await page.locator(".question-card h2").innerText();
+  await page
+    .getByRole("button", { name: "Закрыть обсуждение", exact: true })
+    .click();
   await page.locator('[data-action="next-question"]').click();
   await expect(page.locator(".question-card h2")).not.toHaveText(previous);
   const response = page.waitForResponse(previewUrl);

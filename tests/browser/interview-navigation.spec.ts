@@ -21,9 +21,8 @@ test("interview navigation", async ({
   const previous = page.locator("[data-action=session-previous]");
   await expect(
     previous,
-    "interview has a previous-question action",
-  ).toHaveCount(1);
-  await expect(previous).toBeDisabled();
+    "first question has no unavailable previous action",
+  ).toHaveCount(0);
   await expect(
     page.getByRole("button", { name: "Скачать прогресс", exact: true }),
   ).toHaveCount(0);
@@ -80,7 +79,7 @@ test("interview navigation", async ({
   await previous.click();
   await expect(page.locator(".question-card h2")).toHaveText(title);
   await expect(page.locator(".platform-answer")).toHaveCount(1);
-  await expect(previous).toBeDisabled();
+  await expect(previous).toHaveCount(0);
   await page.locator("[data-action=session-next]").click();
   const after = daily(await state());
   for (const key of [
@@ -111,7 +110,7 @@ test("interview navigation", async ({
   await page.goto(base);
   await page.locator("[data-action=full]:enabled").click();
   await page.locator("[data-action=session-next]").waitFor();
-  await expect(previous).toBeDisabled();
+  await expect(previous).toHaveCount(0);
   await page.locator("[data-action=session-next]").click();
   await previous.click();
   expect(Object.values((await state()).sessions).at(-1)!.index).toBe(0);
@@ -134,6 +133,6 @@ test("interview navigation", async ({
   await expectCompactReview(page, full);
   expect(errors).toEqual([]);
   console.log(
-    "PASS previous main/followup, first disabled, preserved ratings/review/skips/choices, reload, daily/full reveal rules, clean shell, keyboard and desktop/mobile",
+    "PASS previous main/followup, unavailable previous hidden, preserved ratings/review/skips/choices, reload, daily/full reveal rules, clean shell, keyboard and desktop/mobile",
   );
 });

@@ -5,6 +5,35 @@ import { readPromptTemplates } from "#server/infrastructure/prompts/templates.ts
 import { PromptRepository } from "#server/infrastructure/storage/prompts.ts";
 import { openDatabase } from "#server/infrastructure/storage/database.ts";
 
+test("ordinary discussion includes server-selected project code as data and keeps a direct answer contract", async () => {
+  const database = openDatabase(":memory:");
+  try {
+    const prepare = discussionPrompt(
+      async () => readPromptTemplates(),
+      () => new PromptRepository(database),
+      () => "vue",
+      async () => [
+        {
+          id: "project-code",
+          path: "Demo/List.vue:12",
+          text: '<slot :item="item" />',
+        },
+      ],
+    );
+    const prompt = await prepare(
+      "Чем scoped slot отличается от prop?",
+      "Покажи пример в связанном проекте",
+      "question:slots",
+    );
+    assert.match(prompt, /Demo\/List.vue:12/);
+    assert.match(prompt, /Не проси прислать код, который уже найден/);
+    assert.doesNotMatch(prompt, /Дай одну наводящую подсказку/);
+    assert.match(prompt, /Не повторяй служебные оговорки/);
+  } finally {
+    database.close();
+  }
+});
+
 test("hint namespace selects a trusted hint-only result contract despite the ordinary custom prompt", async () => {
   const database = openDatabase(":memory:");
   try {
@@ -34,6 +63,14 @@ test("hint namespace selects a trusted hint-only result contract despite the ord
         prompt.indexOf('"text": "Условие задачи"') <
           prompt.lastIndexOf("КОНТРАКТ РЕЗУЛЬТАТА"),
       );
+      const discussion = await prepare(
+        "Условие задачи",
+        "Объясни на примере",
+        key,
+        "discussion",
+      );
+      assert.match(discussion, /Сначала ответь на текущий вопрос/);
+      assert.doesNotMatch(discussion, /Дай одну наводящую подсказку/);
     }
     const ordinary = await prepare(
       'Материал со строкой "question-hint:q"',

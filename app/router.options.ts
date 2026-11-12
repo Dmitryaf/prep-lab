@@ -1,8 +1,13 @@
 import type { RouterConfig } from "nuxt/schema";
+import { interviewPositions } from "#ui/shared/lib/interview-reading-position.ts";
 
 export default {
   hashMode: true,
   scrollBehavior(to, from, saved) {
+    if (to.path === "/interview" && to.fullPath !== from.fullPath) {
+      const position = saved || interviewPositions.get(to.fullPath);
+      if (position) return position;
+    }
     if (!saved && to.path === "/practice" && from.path === "/practice")
       return false;
     if (

@@ -118,12 +118,11 @@ test("optional coding stage keeps the saved attempt and hides both solutions unt
   await page
     .getByRole("button", { name: "Пропустить усложнение", exact: true })
     .click();
+  await page.locator('[data-action="result-toggle"]').click();
   await expect(
     page.getByText("BASE_SOLUTION_MARKER", { exact: true }),
   ).toBeVisible();
-  await page
-    .getByText("Дополнительные этапы и разбор", { exact: true })
-    .click();
+  await page.getByRole("tab", { name: /Уточнения/ }).click();
   await expect(
     page.getByText("EXTENSION_SOLUTION_MARKER", { exact: true }),
   ).toBeVisible();

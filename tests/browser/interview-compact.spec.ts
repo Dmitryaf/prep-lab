@@ -277,17 +277,22 @@ test("finished result switching keeps the recording editor mounted until dictati
       .getByRole("status")
       .filter({ hasText: /^Слушаю$/ }),
   ).toBeVisible();
-  await rows.nth(1).click();
+  await page
+    .getByRole("button", { name: "Закрыть обсуждение", exact: true })
+    .click();
   await expect(rows.first()).toHaveAttribute("aria-expanded", "true");
   await expect(rows.nth(1)).toHaveAttribute("aria-expanded", "false");
   await expect(composer).toHaveValue("Мой несохранённый вопрос");
   await expect(page.locator(".voice-input")).toContainText(
     "Завершите диктовку или отмените запись перед переходом.",
   );
-  await rows.first().click();
+  await page.keyboard.press("Escape");
   await expect(composer).toBeVisible();
   await page
     .getByRole("button", { name: "Отменить диктовку", exact: true })
+    .click();
+  await page
+    .getByRole("button", { name: "Закрыть обсуждение", exact: true })
     .click();
   await rows.nth(1).click();
   await expect(rows.nth(1)).toHaveAttribute("aria-expanded", "true");
@@ -295,10 +300,19 @@ test("finished result switching keeps the recording editor mounted until dictati
     questions[1]!.title,
   );
   await rows.first().click();
+  await page
+    .getByRole("button", { name: "Обсудить с помощником", exact: true })
+    .click();
   await expect(composer).toHaveValue("Мой несохранённый вопрос");
+  await page
+    .getByRole("button", { name: "Закрыть обсуждение", exact: true })
+    .click();
   await rows.first().click();
   await expect(composer).not.toBeVisible();
   await rows.first().click();
+  await page
+    .getByRole("button", { name: "Обсудить с помощником", exact: true })
+    .click();
   await expect(composer).toHaveValue("Мой несохранённый вопрос");
   expect((await readProgress(page)).sessions[session.id]!.snapshots).toEqual(
     session.snapshots,

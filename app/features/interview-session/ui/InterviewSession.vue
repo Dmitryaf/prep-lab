@@ -41,6 +41,14 @@ import { followupQuestion } from "#domain/knowledge/followup.ts";
 const route = useRoute(),
   router = useRouter(),
   date = ref(localDate());
+// Keep this cached interview intact while another application section is active.
+const sessionId = ref(route.query.session);
+watch(
+  () => route.fullPath,
+  () => {
+    if (route.path === "/interview") sessionId.value = route.query.session;
+  },
+);
 const format = ref<InterviewFormat>("mixed");
 function sessionTitle(value: Interview) {
   return value.kind === "daily"
@@ -56,7 +64,7 @@ const today = computed(
     ],
 );
 const session = computed(() =>
-  sessions.value.find((s) => s.id === route.query.session),
+  sessions.value.find((s) => s.id === sessionId.value),
 );
 const expandedResult = ref<string | null>(null);
 watch(
@@ -171,7 +179,7 @@ onUnmounted(() => {
 watch(() => route.fullPath, refreshDate);
 </script>
 <template>
-  <template v-if="!route.query.session">
+  <template v-if="!sessionId">
     <PageHeading title="Пробное интервью" />
     <section class="platform-card daily-card">
       <div class="platform-meta">
@@ -319,11 +327,14 @@ watch(() => route.fullPath, refreshDate);
             :question="session.snapshots[id]"
             :session-id="session.id"
             revealed
-          />
+          >
+            <template #materials>
+              <StudyLinks :question="session.snapshots[id]" variant="list" />
+            </template>
+          </QuestionCard>
         </KeepAlive>
         <template v-if="expandedResult === id">
           <RatingButtons :id="id" :session-id="session.id" />
-          <StudyLinks :question="session.snapshots[id]" />
         </template>
       </div>
     </section>
@@ -331,14 +342,17 @@ watch(() => route.fullPath, refreshDate);
   <template v-else-if="current">
     <div class="interview-session-heading">
       <PageHeading :title="sessionTitle(session)" />
-      <button
-        v-if="session.index < session.questionIds.length - 1"
-        :disabled="saving"
-        data-action="session-finish"
-        @click="finish(session)"
-      >
-        Завершить интервью
-      </button>
+      <nav class="interview-session-tools" aria-label="Действия интервью">
+        <RouterLink to="/interview">Продолжить позже</RouterLink>
+        <button
+          v-if="session.index < session.questionIds.length - 1"
+          :disabled="saving"
+          data-action="session-finish"
+          @click="finish(session)"
+        >
+          Завершить интервью
+        </button>
+      </nav>
     </div>
     <div class="platform-session-bar">
       <span
@@ -361,6 +375,9 @@ watch(() => route.fullPath, refreshDate);
       :followup="session.followupIndex"
       :revealed="reviewed"
     >
+      <template #materials>
+        <StudyLinks :question="current" variant="list" />
+      </template>
       <template #actions="{ revealed: stageRevealed }">
         <div class="platform-actions interview-answer-actions">
           <button
@@ -372,8 +389,14 @@ watch(() => route.fullPath, refreshDate);
           >
             Проверить ответ
           </button>
+          <RatingButtons
+            v-if="reviewed && !session.followupIndex"
+            :id="current.id"
+            :session-id="session.id"
+            compact
+          />
           <button
-            :class="{ primary: stageRevealed }"
+            :class="stageRevealed ? 'primary' : 'interview-text-action'"
             data-action="session-next"
             :disabled="saving"
             @click="move('next')"
@@ -385,10 +408,6 @@ watch(() => route.fullPath, refreshDate);
             }}
           </button>
         </div>
-        <template v-if="reviewed && !session.followupIndex">
-          <RatingButtons :id="current.id" :session-id="session.id" />
-          <StudyLinks :question="current" />
-        </template>
         <div
           v-if="
             current.roundFormat === 'coding' &&
@@ -412,6 +431,7 @@ watch(() => route.fullPath, refreshDate);
         </div>
         <div class="platform-actions interview-secondary-actions">
           <button
+            v-if="session.index > 0 || session.followupIndex"
             data-action="session-previous"
             :disabled="
               saving || (session.index === 0 && !session.followupIndex)
@@ -450,8 +470,8 @@ watch(() => route.fullPath, refreshDate);
               session.followupIndex
                 ? "Пропустить усложнение"
                 : "Пропустить вопрос"
-            }}</button
-          ><RouterLink to="/interview">Продолжить позже</RouterLink>
+            }}
+          </button>
         </div>
       </template>
     </QuestionCard>
@@ -501,16 +521,71 @@ watch(() => route.fullPath, refreshDate);
   font-weight: 400;
 }
 .interview-answer-actions {
-  margin-block: 18px;
+  margin-block: 24px 12px;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.interview-answer-actions :deep(.platform-ratings) {
+  margin: 0;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0;
+}
+.interview-answer-actions :deep(.platform-ratings button) {
+  flex: 0 1 auto;
+  padding: 8px 10px;
+  font-size: 13px;
+  border-radius: 0;
+  margin-left: -1px;
+}
+.interview-answer-actions :deep(.platform-ratings button:first-child) {
+  border-radius: 6px 0 0 6px;
+  margin-left: 0;
+}
+.interview-answer-actions :deep(.platform-ratings button:last-child) {
+  border-radius: 0 6px 6px 0;
 }
 .interview-secondary-actions {
-  gap: 8px;
-  margin-block: 16px;
+  gap: 20px;
+  margin-block: 12px 0;
   font-size: 14px;
 }
-.interview-secondary-actions button {
-  padding: 7px 10px;
+.interview-secondary-actions button,
+.interview-text-action,
+.coding-stages button,
+.interview-session-tools button {
+  padding: 5px 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent);
   font-size: inherit;
+  border-radius: 0;
+}
+.interview-secondary-actions button:hover,
+.interview-text-action:hover,
+.coding-stages button:hover,
+.interview-session-tools button:hover {
+  text-decoration: underline;
+}
+.coding-stages .platform-actions {
+  display: grid;
+  justify-items: start;
+  gap: 6px;
+  font-size: 14px;
+}
+.interview-session-tools {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  font-size: 13px;
+}
+.interview-session-tools a {
+  text-decoration: none;
+}
+.interview-session-tools a:hover {
+  text-decoration: underline;
 }
 .interview-setup {
   padding-block: 30px;
@@ -596,6 +671,25 @@ watch(() => route.fullPath, refreshDate);
   }
 }
 @media (max-width: 600px) {
+  .interview-answer-actions {
+    gap: 10px;
+  }
+  .interview-answer-actions > button {
+    flex: 0 1 auto;
+    font-size: 13px;
+  }
+  .interview-answer-actions > button.primary {
+    flex: 1 1 auto;
+    padding-inline: 12px;
+  }
+  .interview-secondary-actions {
+    gap: 8px 16px;
+    justify-content: flex-start;
+  }
+  .interview-secondary-actions > button {
+    flex: 0 1 auto;
+    font-size: 13px;
+  }
   .interview-formats {
     grid-template-columns: 1fr;
   }

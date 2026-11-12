@@ -50,7 +50,7 @@ export async function previewDiscussion(
   const response = await fetch(endpoint(key, "preview"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message, context }),
+    body: JSON.stringify({ message, context, discussionMode: "discussion" }),
   });
   await requireSuccess(response);
   return z.object({ prompt: z.string() }).parse(await response.json()).prompt;
@@ -69,6 +69,7 @@ export async function sendDiscussion(
     body: JSON.stringify({
       message,
       context,
+      discussionMode: "discussion",
       ...(expectedPrompt === undefined ? {} : { expectedPrompt }),
     }),
     signal,

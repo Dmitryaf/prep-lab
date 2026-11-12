@@ -543,6 +543,43 @@ if (items) {
 >
 > В работе используй встроенные Pick, Partial и Awaited. Своя короткая версия нужна, чтобы понимать механизм. `PromiseValue` снимает один уровень обычного Promise; встроенный Awaited обрабатывает более общий случай.
 
+### Типизированный Promise.all для массива и кортежа
+
+**Критерии ответа:** Сохраняю тип каждой позиции кортежа, порядок результатов, пустой и разреженный массив; объясняю единственное утверждение типа и отсутствие автоматической отмены.
+**Изучить:** [[Фронтенд/TypeScript/05. Вспомогательные типы и операторы типов|Mapped types и Awaited]], [[Фронтенд/JavaScript/05. Асинхронность/03. Promise — статические методы|Ожидание результата]]
+
+Продолжение задачи [[Собеседования/Практика/JavaScript#Реализовать Promise.all|Promise.all]]: сохрани тип результата каждой позиции readonly-кортежа. Порядок — входной; обычные значения допустимы, пустой массив завершается, первый отказ отклоняет результат. На входе массив или кортеж; произвольный iterable здесь не требуется.
+
+> [!example]- Разбор сохранения типов по позициям
+>
+> ```ts
+> // checked-example: typed-promise-all
+> type AllResults<T extends readonly unknown[]> = {
+>   -readonly [K in keyof T]: Awaited<T[K]>;
+> };
+> function allTyped<const T extends readonly unknown[]>(values: T): Promise<AllResults<T>> {
+>   return new Promise((resolve, reject) => {
+>     const input = Array.from(values);
+>     const result: unknown[] = new Array(input.length);
+>     let remaining = input.length;
+>     const finish = () => resolve(result as AllResults<T>);
+>     if (remaining === 0) { finish(); return; }
+>     input.forEach((value, index) => {
+>       Promise.resolve(value).then((resolved) => {
+>         result[index] = resolved;
+>         if (--remaining === 0) finish();
+>       }, reject);
+>     });
+>   });
+> }
+> const pair = allTyped([Promise.resolve(42), 'ready'] as const);
+> const expected: Promise<[number, 'ready']> = pair;
+> // @ts-expect-error: вторая позиция не number
+> const wrong: Promise<[number, number]> = pair;
+> ```
+>
+> Mapped type сохраняет позиции кортежа, Awaited снимает ожидание Promise/thenable, `-readonly` делает возвращаемый массив изменяемым. Утверждение типа локализовано в finish: индексное заполнение и remaining гарантируют готовность всех позиций, но компилятор не доказывает этот инвариант. Array.from превращает пропуски разреженного массива в undefined, чтобы счётчик не завис. Первый отказ не отменяет оставшуюся работу. Для `Array<Promise<number>>` результат — `number[]`, а не кортеж фиксированной длины. [Awaited](https://www.typescriptlang.org/docs/handbook/utility-types.html#awaitedtype).
+
 ## Ключи по строковому шаблону
 
 Разреши ключи вида `user_...`, но запрети `order_...`. Отдельно объясни, почему строковый шаблон не проверяет произвольный текст из input.

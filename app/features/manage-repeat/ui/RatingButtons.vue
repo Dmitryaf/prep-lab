@@ -7,11 +7,11 @@ const { progress, saving } = storeToRefs(usePreparation());
 import { useRepeat } from "#ui/features/manage-repeat/model/store.ts";
 const { rate } = useRepeat();
 
-defineProps<{ id: string; sessionId?: string }>();
-const options: { value: Rating; label: string }[] = [
-  { value: "done", label: "Ответил уверенно" },
-  { value: "partial", label: "Частично" },
-  { value: "again", label: "Не смог ответить" },
+defineProps<{ id: string; sessionId?: string; compact?: boolean }>();
+const options: { value: Rating; label: string; short: string }[] = [
+  { value: "done", label: "Ответил уверенно", short: "Уверенно" },
+  { value: "partial", label: "Частично", short: "Частично" },
+  { value: "again", label: "Не смог ответить", short: "Не ответил" },
 ];
 </script>
 <template>
@@ -24,9 +24,10 @@ const options: { value: Rating; label: string }[] = [
       :data-rating="option.value"
       :disabled="saving"
       :aria-pressed="progress.questionProgress[id]?.status === option.value"
+      :aria-label="option.label"
       @click="rate(id, option.value, sessionId)"
     >
-      {{ option.label }}
+      {{ compact ? option.short : option.label }}
     </button>
   </div>
 </template>

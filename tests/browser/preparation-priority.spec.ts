@@ -68,10 +68,8 @@ test("the complete practice card retains the ready deep this explanation", async
   );
   await expect(page.locator(".question-card h2")).toHaveText(current.title);
   await page.locator('[data-action="reveal"]').click();
-  const details = page.locator("details.platform-card").filter({
-    has: page.locator("summary", { hasText: "Уточнения и разбор" }),
-  });
-  await details.locator("summary").click();
+  const details = page.locator(".answer-followups");
+  await page.getByRole("tab", { name: /^Уточнения/ }).click();
   await expect(details).toContainText(deepTitle);
   await expect(details).toContainText(deepAnswer.answer.split("\n")[0]!);
   await expect(

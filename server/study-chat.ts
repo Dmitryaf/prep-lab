@@ -133,13 +133,21 @@ export function createStudyChat({
         !input.message.trim() ||
         input.message.length > 8000 ||
         typeof input.context !== "string" ||
-        input.context.length > 80000
+        input.context.length > 80000 ||
+        (input.discussionMode !== undefined &&
+          input.discussionMode !== "discussion" &&
+          input.discussionMode !== "hint")
       ) {
         json(res, 400, { error: "Проверьте сообщение и материал." });
         return true;
       }
       const preparedTask = preparePrompt
-        ? await preparePrompt(input.context, input.message.trim(), key)
+        ? await preparePrompt(
+            input.context,
+            input.message.trim(),
+            key,
+            input.discussionMode,
+          )
         : input.context;
       if (url.pathname.endsWith("/preview")) {
         json(res, 200, { prompt: preparedTask });
