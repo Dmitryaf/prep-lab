@@ -162,6 +162,9 @@ test("prepared topic followups offer an independent answer through interview nav
     "От чего зависит this?",
     "Что делает Service Worker?",
     "Как проверять доступность интерфейса?",
+    "Что TypeScript проверяет и чего не гарантирует?",
+    "Зачем нужны обобщённые типы?",
+    "Что гарантирует readonly?",
   ]) {
     const question = bank.questions.find((q) => q.title === parent)!;
     const session = createSession([question], "full");
