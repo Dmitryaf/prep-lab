@@ -217,9 +217,9 @@ test("structure opens six responsibility blocks and reveals relationships and co
   page,
 }, info) => {
   await page.goto(base + "/#/projects?project=second&mapView=structure");
-  await expect(page.locator(".project-map .node-module")).toHaveCount(6);
-  await expect(page.locator(".project-map .node-scenario")).toHaveCount(0);
-  await expect(page.locator(".project-map .node-technology")).toHaveCount(0);
+  await expect(page.locator("[data-map-node].node-module")).toHaveCount(6);
+  await expect(page.locator("[data-map-node].node-scenario")).toHaveCount(0);
+  await expect(page.locator("[data-map-node].node-technology")).toHaveCount(0);
   await page.locator('[data-map-node="block:0"]').click();
   const panel = page.getByRole("complementary", {
     name: "Выбранный элемент карты",

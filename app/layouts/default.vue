@@ -61,26 +61,17 @@ const active = computed(
 const term = computed(() => search.value.trim().toLocaleLowerCase("ru"));
 const foundQuestions = computed(() =>
   questions.value.filter((q) =>
-    [q.title, q.category, q.prompt]
-      .join(" ")
-      .toLocaleLowerCase("ru")
-      .includes(term.value),
+    q.title.toLocaleLowerCase("ru").includes(term.value),
   ),
 );
 const foundNotes = computed(() =>
   knowledge.value.notes.filter((n) =>
-    [n.title, n.markdown]
-      .join(" ")
-      .toLocaleLowerCase("ru")
-      .includes(term.value),
+    n.title.toLocaleLowerCase("ru").includes(term.value),
   ),
 );
 const foundTopics = computed(() =>
   topics.value.filter((t) =>
-    [t.title, t.summary, projects.value[t.project].name]
-      .join(" ")
-      .toLocaleLowerCase("ru")
-      .includes(term.value),
+    t.title.toLocaleLowerCase("ru").includes(term.value),
   ),
 );
 const nav = [
@@ -377,7 +368,7 @@ onUnmounted(() => {
         ref="searchInput"
         v-model="search"
         type="search"
-        placeholder="Название или технология"
+        placeholder="Название материала, вопроса или темы"
         autocomplete="off"
       />
       <LoadingState
@@ -440,10 +431,10 @@ onUnmounted(() => {
             !foundTopics.length
           "
         >
-          Совпадений нет. Попробуйте другое слово или название технологии.
+          Совпадений нет. Попробуйте другое слово из заголовка.
         </p>
       </div>
-      <p v-else>Введите слово или название технологии.</p>
+      <p v-else>Введите название или часть заголовка.</p>
     </dialog>
   </div>
 </template>
@@ -476,9 +467,10 @@ onUnmounted(() => {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  margin-bottom: 16px;
 }
 .material-search-heading h2 {
-  margin: 0 0 16px;
+  margin: 0;
 }
 .material-search-heading button {
   font-size: 24px;

@@ -2,12 +2,112 @@ import { test, expect } from "#tests/helpers/browser.ts";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { loadCommonKnowledge } from "#server/infrastructure/knowledge/common.ts";
+import { projectFixture } from "#tests/fixtures/projects.ts";
 
 test.use({
   appOptions: {
     projectPackageRoot: null,
     knowledgeRoot: resolve("content/common"),
   },
+});
+
+test("search matches titles only, ignoring content, categories and project names", async ({
+  app: { base },
+  page,
+}) => {
+  const common = loadCommonKnowledge();
+  const catalog = projectFixture();
+  catalog.topics[0]!.title = "Фокус проектной темы";
+  catalog.topics[1]!.summary = "Контекстописания";
+  catalog.projects.first!.name = "Контекстпроекта";
+  await page.route("**/api/projects", (route) =>
+    route.fulfill({ json: catalog }),
+  );
+  await page.route("**/api/knowledge", (route) =>
+    route.fulfill({
+      json: {
+        questions: [
+          {
+            ...common.questions[0]!,
+            title: "Как работает фокус?",
+            category: "Контексткатегории",
+            prompt: "Контекствопроса",
+            profiles: ["vue", "react"],
+          },
+        ],
+        notes: [
+          {
+            id: "test-focus",
+            path: "test-focus.md",
+            category: "Браузер",
+            title: "Управление фокусом",
+            markdown:
+              "Контекстматериала: достаточно подробное объяснение поведения браузера и элементов интерфейса.",
+            profiles: ["vue", "react"],
+          },
+        ],
+        route: [],
+        warnings: [],
+      },
+    }),
+  );
+  await page.goto(`${base}/#/themes`);
+  await page.getByRole("button", { name: "Найти материал" }).click();
+  const dialog = page.getByRole("dialog", { name: "Поиск материалов" });
+  const input = dialog.getByRole("searchbox");
+  await input.fill("  ФоКуС  ");
+  await expect(dialog.locator(".platform-list-row")).toHaveCount(3);
+  for (const title of [
+    "Как работает фокус?",
+    "Управление фокусом",
+    "Фокус проектной темы",
+  ])
+    await expect(
+      dialog.getByRole("link", { name: new RegExp(title.replace("?", "\\?")) }),
+    ).toBeVisible();
+  for (const term of [
+    "Контекстматериала",
+    "Контекствопроса",
+    "Контексткатегории",
+    "Контекстописания",
+    "Контекстпроекта",
+  ]) {
+    await input.fill(term);
+    await expect(dialog.locator(".platform-list-row")).toHaveCount(0);
+    await expect(
+      dialog.getByText("Совпадений нет", { exact: false }),
+    ).toBeVisible();
+  }
+});
+
+test("search focus outline stays clear of the close button on desktop and mobile", async ({
+  app: { base },
+  page,
+}) => {
+  await page.goto(`${base}/#/themes`);
+  await page.getByRole("button", { name: "Найти материал" }).click();
+  const dialog = page.getByRole("dialog", { name: "Поиск материалов" });
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    const input = dialog.getByRole("searchbox");
+    await input.fill("фокус");
+    const ringTop = await input.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return (
+        element.getBoundingClientRect().top -
+        parseFloat(style.outlineWidth) -
+        parseFloat(style.outlineOffset)
+      );
+    });
+    const close = await dialog
+      .getByRole("button", { name: "Закрыть поиск" })
+      .boundingBox();
+    expect(ringTop).toBeGreaterThan(close!.y + close!.height);
+    await mkdir("artifacts/material-search", { recursive: true });
+    await page.screenshot({
+      path: `artifacts/material-search/title-search-${width}.png`,
+    });
+  }
 });
 
 test("search opens separately and returns to the same page", async ({
