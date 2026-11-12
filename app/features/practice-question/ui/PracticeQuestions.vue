@@ -7,11 +7,12 @@ import { practiceState } from "#ui/features/practice-question/model/navigation.t
 import { isTestingTask } from "#domain/knowledge/question.ts";
 import { useRoute, useRouter } from "vue-router";
 import { useMaterials } from "#ui/entities/material/model/store.ts";
-const { knowledge, loading } = storeToRefs(useMaterials());
+const { knowledge, loading, unavailable } = storeToRefs(useMaterials());
 import { useQuestions } from "#ui/entities/question/model/store.ts";
 const { projectCards } = storeToRefs(useQuestions());
 const { questionById } = useQuestions();
 import PageHeading from "#ui/shared/ui/PageHeading.vue";
+import MaterialLoadState from "#ui/entities/material/ui/MaterialLoadState.vue";
 import QuestionCard from "#ui/features/study-discussion/index.ts";
 import RatingButtons from "#ui/features/manage-repeat/index.ts";
 import StudyLinks from "#ui/entities/question/ui/StudyLinks.vue";
@@ -138,6 +139,7 @@ function next(random = false) {
 </script>
 <template>
   <PageHeading title="Практика" />
+  <MaterialLoadState />
   <nav class="practice-sections" aria-label="Разделы практики">
     <RouterLink to="/practice" :aria-current="!advanced ? 'page' : undefined"
       >Основная практика</RouterLink
@@ -225,13 +227,9 @@ function next(random = false) {
       /></template>
     </QuestionCard>
   </template>
-  <div v-else class="platform-card">
+  <div v-else-if="!loading && !unavailable" class="platform-card">
     <p>
-      {{
-        loading
-          ? "Загружаем вопросы…"
-          : "По этому фильтру вопросов нет. Выберите другое направление или формат."
-      }}
+      По этому фильтру вопросов нет. Выберите другое направление или формат.
     </p>
   </div>
 </template>

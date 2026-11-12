@@ -19,6 +19,7 @@ import type { IntensiveContext as Context } from "#domain/intensive/context.ts";
 import IntensiveContext from "./IntensiveContext.vue";
 import QuestionCard from "#ui/entities/question/ui/QuestionCard.vue";
 import MarkdownContent from "#ui/entities/material/ui/MarkdownContent.vue";
+import LoadingState from "#ui/shared/ui/LoadingState.vue";
 import VoiceInput, { canLeaveVoice } from "#ui/features/voice-input/index.ts";
 
 const props = defineProps<{
@@ -32,21 +33,31 @@ const props = defineProps<{
 }>();
 defineEmits<{ next: []; story: [] }>();
 const context = ref<Context>();
+const contextLoading = ref(false);
 const contextError = ref("");
-async function loadContext() {
-  const id = props.lesson.id;
-  try {
-    const loaded = await getIntensiveContext(id);
-    if (id === props.lesson.id) {
-      context.value = loaded;
-      contextError.value = "";
+const contextAttempt = ref(0);
+watch(
+  [() => props.lesson.id, contextAttempt],
+  async ([id], _, onCleanup) => {
+    let active = true;
+    onCleanup(() => {
+      active = false;
+    });
+    context.value = undefined;
+    contextError.value = "";
+    contextLoading.value = true;
+    try {
+      const loaded = await getIntensiveContext(id);
+      if (active) context.value = loaded;
+    } catch {
+      if (active)
+        contextError.value = "Не удалось загрузить материалы занятия.";
+    } finally {
+      if (active) contextLoading.value = false;
     }
-  } catch {
-    if (id === props.lesson.id)
-      contextError.value = "Не удалось загрузить материалы занятия.";
-  }
-}
-onMounted(loadContext);
+  },
+  { immediate: true },
+);
 const progress = reactive<ProgressInput>({
   status: "pending",
   step: "answer",
@@ -535,11 +546,22 @@ defineExpose({ persist });
     </form>
 
     <template v-if="progress.step === 'reading' || revealed">
-      <IntensiveContext v-if="context" :context="context" />
-      <p v-if="contextError" role="alert">
-        {{ contextError }}
-        <button @click="loadContext">Загрузить материалы</button>
-      </p>
+      <LoadingState
+        v-if="contextLoading"
+        compact
+        label="Загружаем материалы занятия…"
+      />
+      <IntensiveContext v-else-if="context" :context="context" />
+      <div
+        v-else-if="contextError"
+        class="platform-card intensive-error"
+        role="alert"
+      >
+        <p>{{ contextError }}</p>
+        <button type="button" @click="contextAttempt++">
+          Повторить загрузку материалов
+        </button>
+      </div>
     </template>
     <div class="intensive-bottom-actions">
       <div class="platform-actions">

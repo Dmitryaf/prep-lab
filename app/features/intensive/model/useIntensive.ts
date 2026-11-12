@@ -23,6 +23,8 @@ export function useIntensive() {
   const snapshot = shallowRef<IntensiveSnapshot | null>(null);
   const catalog = shallowRef<IntensiveCatalog>({ notes: [], projects: [] });
   const loading = ref(true);
+  const catalogLoading = ref(false);
+  const catalogError = ref("");
   const pending = ref(0);
   const error = ref("");
   let queue = Promise.resolve();
@@ -35,27 +37,36 @@ export function useIntensive() {
         getIntensive(),
         getIntensiveCatalog(),
       ]);
-      snapshot.value = saved;
+      if (!snapshot.value || saved.revision >= snapshot.value.revision)
+        snapshot.value = saved;
       catalog.value = available;
-    } catch (cause) {
-      error.value =
-        cause instanceof Error
-          ? cause.message
-          : "Не удалось загрузить интенсив.";
-    } finally {
-      loading.value = false;
-    }
-  }
-  async function refreshCatalog() {
-    try {
-      catalog.value = await getIntensiveCatalog();
+      catalogError.value = "";
       return true;
     } catch (cause) {
       error.value =
         cause instanceof Error
           ? cause.message
+          : "Не удалось загрузить интенсив.";
+      return false;
+    } finally {
+      loading.value = false;
+    }
+  }
+  async function refreshCatalog() {
+    if (loading.value || catalogLoading.value) return false;
+    catalogLoading.value = true;
+    catalogError.value = "";
+    try {
+      catalog.value = await getIntensiveCatalog();
+      return true;
+    } catch (cause) {
+      catalogError.value =
+        cause instanceof Error
+          ? cause.message
           : "Не удалось обновить список материалов.";
       return false;
+    } finally {
+      catalogLoading.value = false;
     }
   }
 
@@ -87,6 +98,8 @@ export function useIntensive() {
     snapshot,
     catalog,
     loading,
+    catalogLoading,
+    catalogError,
     pending,
     error,
     load,

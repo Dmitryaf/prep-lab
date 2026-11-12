@@ -6,6 +6,7 @@ import { projectQuestions } from "./questions.ts";
 export const useProjectCatalog = defineStore("project-catalog", () => {
   const catalog = shallowRef(emptyProjectCatalog()),
     ready = ref(false),
+    loading = ref(false),
     error = ref("");
   const projects = computed(() => catalog.value.projects),
     topics = computed(() => catalog.value.topics);
@@ -15,6 +16,8 @@ export const useProjectCatalog = defineStore("project-catalog", () => {
   let pending: Promise<void> | undefined;
   function initialize() {
     return (pending ??= (async () => {
+      loading.value = true;
+      error.value = "";
       try {
         catalog.value = await getProjectCatalog();
         error.value = "";
@@ -23,9 +26,19 @@ export const useProjectCatalog = defineStore("project-catalog", () => {
           cause instanceof Error ? cause.message : "Личные проекты недоступны.";
       } finally {
         ready.value = true;
+        loading.value = false;
         pending = undefined;
       }
     })());
   }
-  return { catalog, projects, topics, projectCards, ready, error, initialize };
+  return {
+    catalog,
+    projects,
+    topics,
+    projectCards,
+    ready,
+    loading,
+    error,
+    initialize,
+  };
 });

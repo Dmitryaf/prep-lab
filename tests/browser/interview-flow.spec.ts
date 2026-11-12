@@ -172,6 +172,7 @@ test("interview flow", async ({ app: { base }, page, pageErrors: errors }) => {
   await page.locator("[data-action=back]").click();
   await page.locator(".question-card").waitFor();
   await expect(page.locator(".question-card h2")).toHaveText(practiceTitle);
+  await page.getByRole("button", { name: "Найти материал" }).click();
   await page.locator("#platformSearch").fill("IndexedDB");
   await page.keyboard.press("Escape");
   await expect(page.locator(".question-card h2")).toHaveText(practiceTitle);

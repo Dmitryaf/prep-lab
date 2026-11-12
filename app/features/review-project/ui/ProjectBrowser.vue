@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import PageHeading from "#ui/shared/ui/PageHeading.vue";
+import LoadingState from "#ui/shared/ui/LoadingState.vue";
+import { useProjectCatalog } from "#ui/entities/project/model/catalog.ts";
+const catalog = useProjectCatalog();
 import TopicDetail from "./ProjectTopic.vue";
 import ProjectMap from "./ProjectMap.vue";
 import QuestionCard from "#ui/features/study-discussion/index.ts";
@@ -44,7 +47,17 @@ const {
 } = useProjectBrowser();
 </script>
 <template>
-  <template v-if="selected">
+  <LoadingState
+    v-if="catalog.loading"
+    label="Загружаем проекты…"
+    :compact="!!topics.length"
+  />
+  <div v-else-if="catalog.error" class="platform-card" role="alert">
+    <p>{{ catalog.error }}</p>
+    <button @click="catalog.initialize">Повторить загрузку проектов</button>
+  </div>
+  <template v-if="(catalog.loading || catalog.error) && !topics.length" />
+  <template v-else-if="selected">
     <div class="reading-toolbar">
       <button
         class="platform-back"

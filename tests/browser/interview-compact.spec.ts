@@ -112,7 +112,9 @@ for (const width of [390, 1440]) {
       const menu = page.getByRole("button", { name: "Меню", exact: true });
       await menu.click();
       await expect(page.getByLabel("Стек интервью")).toBeDisabled();
-      await expect(page.getByLabel("Найти материал")).toBeDisabled();
+      await expect(
+        page.getByRole("button", { name: "Найти материал" }),
+      ).toBeDisabled();
       await expect(page.locator("#platformNav a")).toHaveCount(8);
       await menu.click();
       await expect(
@@ -138,7 +140,9 @@ for (const width of [390, 1440]) {
       for (const link of await page.locator("#platformNav a").all())
         await expect(link).toBeVisible();
       await expect(page.getByLabel("Стек интервью")).toBeVisible();
-      await expect(page.getByLabel("Найти материал")).toBeVisible();
+      await expect(
+        page.getByRole("button", { name: "Найти материал" }),
+      ).toBeVisible();
       await screenshot(page, `menu-${width}`);
       expect(
         await page.evaluate(
@@ -150,7 +154,9 @@ for (const width of [390, 1440]) {
       await expect(menu).toBeFocused();
       await page.locator("#platformMain").focus();
       await page.keyboard.press("/");
-      await expect(page.getByLabel("Найти материал")).toBeFocused();
+      await expect(
+        page.getByRole("searchbox", { name: "Поиск материалов" }),
+      ).toBeFocused();
       await page.keyboard.press("Escape");
     } else {
       await expect(menu).not.toBeVisible();
@@ -226,7 +232,9 @@ for (const width of [390, 1440]) {
     await expect(
       page.getByRole("navigation", { name: "Основные разделы" }),
     ).toBeVisible();
-    await expect(page.getByLabel("Найти материал")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Найти материал" }),
+    ).toBeVisible();
     await expect(
       page.getByRole("button", { name: "Меню", exact: true }),
     ).toHaveCount(0);

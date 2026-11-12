@@ -5,9 +5,12 @@ import { computed } from "vue";
 import { useQuestions } from "#ui/entities/question/model/store.ts";
 const { weakQuestions, questions } = storeToRefs(useQuestions());
 import { usePreparation } from "#ui/entities/preparation/model/store.ts";
-const { progress } = storeToRefs(usePreparation());
+const { progress, loadError } = storeToRefs(usePreparation());
 
 import PageHeading from "#ui/shared/ui/PageHeading.vue";
+import MaterialLoadState from "#ui/entities/material/ui/MaterialLoadState.vue";
+import { useMaterials } from "#ui/entities/material/model/store.ts";
+const { loading, unavailable } = storeToRefs(useMaterials());
 import QuestionList from "#ui/entities/question/ui/QuestionList.vue";
 const absent = computed(
   () =>
@@ -19,15 +22,18 @@ const absent = computed(
 );
 </script>
 <template>
-  <PageHeading title="Повторить" /><QuestionList
+  <PageHeading title="Повторить" /><MaterialLoadState /><QuestionList
     v-if="weakQuestions.length"
     :items="weakQuestions"
   />
-  <section v-else class="platform-card">
+  <section
+    v-else-if="!loading && !unavailable && !loadError"
+    class="platform-card"
+  >
     <h2>Вопросов для повторения пока нет</h2>
     <RouterLink to="/practice">Перейти к практике →</RouterLink>
   </section>
-  <p v-if="absent" class="platform-notice">
+  <p v-if="absent && !loading" class="platform-notice">
     Ещё {{ absent }} отметок относятся к временно недоступным материалам. Они
     сохранены.
   </p>

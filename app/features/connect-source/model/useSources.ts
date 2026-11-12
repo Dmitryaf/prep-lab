@@ -13,9 +13,13 @@ export function useSources() {
     pending: [],
   });
   const preview = ref<SourcePreview | null>(null),
-    busy = ref(false),
+    acting = ref(false),
+    loading = ref(true),
+    catalogLoaded = ref(false),
+    loadError = ref(""),
     error = ref(""),
     message = ref("");
+  const busy = computed(() => loading.value || acting.value);
   const name = ref(""),
     sourceId = ref(""),
     kind = ref<"upload" | "folder">("upload"),
@@ -42,7 +46,7 @@ export function useSources() {
       ),
   );
   async function run(action: () => Promise<void>) {
-    busy.value = true;
+    acting.value = true;
     error.value = "";
     message.value = "";
     try {
@@ -53,12 +57,29 @@ export function useSources() {
           ? failure.message
           : "Не удалось выполнить действие.";
     } finally {
-      busy.value = false;
+      acting.value = false;
     }
   }
   const reload = async () => {
     catalog.value = await api.readSources();
+    catalogLoaded.value = true;
   };
+  async function load() {
+    loading.value = true;
+    loadError.value = "";
+    try {
+      await reload();
+      if (typeof route.query.preview === "string")
+        show(await api.readPreview(route.query.preview));
+    } catch (failure) {
+      loadError.value =
+        failure instanceof Error
+          ? failure.message
+          : "Не удалось загрузить источники.";
+    } finally {
+      loading.value = false;
+    }
+  }
   function show(value: SourcePreview) {
     preview.value = value;
     resolutions.value = value.resolutions;
@@ -183,18 +204,14 @@ export function useSources() {
       await reload();
     });
   }
-  onMounted(
-    () =>
-      void run(async () => {
-        await reload();
-        if (typeof route.query.preview === "string")
-          show(await api.readPreview(route.query.preview));
-      }),
-  );
+  onMounted(() => void load());
   return {
     catalog,
     preview,
     busy,
+    loading,
+    catalogLoaded,
+    loadError,
     error,
     message,
     name,
@@ -208,6 +225,7 @@ export function useSources() {
     edit,
     report,
     canAccept,
+    load,
     prepare,
     open,
     update,

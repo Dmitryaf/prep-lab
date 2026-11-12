@@ -4,7 +4,8 @@ import { storeToRefs } from "pinia";
 import { computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useMaterials } from "#ui/entities/material/model/store.ts";
-const { knowledge, baseKnowledge, loading } = storeToRefs(useMaterials());
+const { knowledge, baseKnowledge, loading, unavailable } =
+  storeToRefs(useMaterials());
 const { noteFor } = useMaterials();
 
 import { link } from "#ui/shared/lib/navigation.ts";
@@ -13,6 +14,7 @@ const { topics, projects } = storeToRefs(useProjectCatalog());
 import { canonicalNotePath } from "#domain/knowledge/path.ts";
 import { libraryNotes } from "#domain/knowledge/library-navigation.ts";
 import PageHeading from "#ui/shared/ui/PageHeading.vue";
+import MaterialLoadState from "#ui/entities/material/ui/MaterialLoadState.vue";
 import MarkdownContent from "#ui/entities/material/ui/MarkdownContent.vue";
 import QuestionList from "#ui/entities/question/ui/QuestionList.vue";
 import { StudyDiscussion as StudyChat } from "#ui/features/study-discussion/index.ts";
@@ -70,7 +72,7 @@ function back() {
   <template v-if="route.query.note"
     ><button class="platform-back" data-action="back" @click="back">
       ← Вернуться</button
-    ><template v-if="note"
+    ><MaterialLoadState :compact="!!note" /><template v-if="note"
       ><article class="platform-card platform-note">
         <div class="platform-meta">{{ note.category }}</div>
         <MarkdownContent
@@ -102,20 +104,20 @@ function back() {
           }}<span>→</span></RouterLink
         >
       </section></template
-    ><template v-else
+    ><template v-else-if="!loading && !unavailable"
       ><PageHeading title="Материал недоступен" />
       <p>
-        {{
-          loading
-            ? "Подключаем каталог…"
-            : "Эта заметка не подключена, исключена из учебного каталога или была переименована."
-        }}
+        Эта заметка не подключена, исключена из учебного каталога или была
+        переименована.
       </p></template
     ></template
   >
   <template v-else
     ><PageHeading title="Темы" />
-    <p v-if="loading">Подключаем каталог…</p>
+    <MaterialLoadState />
+    <p v-if="!loading && !unavailable && !groups.length">
+      Материалы пока не добавлены.
+    </p>
     <details
       v-for="[title, notes] in groups"
       :key="title"

@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import { useSources } from "#ui/features/connect-source/model/useSources.ts";
+import LoadingState from "#ui/shared/ui/LoadingState.vue";
 import SourcePreview from "./SourcePreview.vue";
 const state = useSources();
 const {
   catalog,
   preview,
   busy,
+  loading,
+  catalogLoaded,
+  loadError,
   error,
   message,
   name,
@@ -30,9 +34,16 @@ function selectFiles(event: Event) {
     <RouterLink :to="{ path: '/generate', query: { scenario: 'import' } }"
       >Подготовить материалы с помощником</RouterLink
     >
+    <LoadingState v-if="loading" label="Загружаем источники…" />
+    <div v-if="loadError">
+      <p role="alert">{{ loadError }}</p>
+      <button type="button" :disabled="busy" @click="state.load">
+        Повторить загрузку источников
+      </button>
+    </div>
     <p v-if="error" role="alert">{{ error }}</p>
     <p v-if="message" role="status">{{ message }}</p>
-    <template v-if="!preview">
+    <template v-if="!preview && catalogLoaded">
       <section v-if="edit">
         <h2>Редактирование материала</h2>
         <label for="sourceEdit">Текст материала</label
@@ -187,7 +198,7 @@ function selectFiles(event: Event) {
         </article>
       </section>
     </template>
-    <template v-else>
+    <template v-else-if="preview">
       <SourcePreview
         v-model:resolutions="resolutions"
         v-model:heading-matches="headingMatches"

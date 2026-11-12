@@ -13,10 +13,14 @@ export function usePromptEditor() {
   const prompts = ref<PromptState[]>([]),
     selectedId = ref<PromptId>("discussion"),
     text = ref("");
-  const busy = ref(false),
+  const acting = ref(false),
+    loading = ref(true),
+    loaded = ref(false),
+    loadError = ref(""),
     error = ref(""),
     message = ref(""),
     composed = ref("");
+  const busy = computed(() => loading.value || acting.value);
   const request = ref(""),
     context = ref(""),
     selectedMaterials = ref<string[]>([]);
@@ -35,7 +39,7 @@ export function usePromptEditor() {
       .map((note) => ({ id: note.id, path: note.path, text: note.markdown })),
   );
   async function run(action: () => Promise<void>) {
-    busy.value = true;
+    acting.value = true;
     error.value = "";
     message.value = "";
     try {
@@ -46,7 +50,7 @@ export function usePromptEditor() {
           ? failure.message
           : "Не удалось выполнить действие.";
     } finally {
-      busy.value = false;
+      acting.value = false;
     }
   }
   function update(state: PromptState) {
@@ -90,11 +94,20 @@ export function usePromptEditor() {
     });
   }
   async function reload() {
-    await run(async () => {
+    if (dirty.value || acting.value) return;
+    loading.value = true;
+    loadError.value = "";
+    try {
       prompts.value = (await readPrompts()).prompts;
       text.value = selected.value?.text || "";
       composed.value = "";
-    });
+      loaded.value = true;
+    } catch (failure) {
+      loadError.value =
+        failure instanceof Error ? failure.message : "Промпты недоступны.";
+    } finally {
+      loading.value = false;
+    }
   }
   watch(
     [
@@ -116,6 +129,9 @@ export function usePromptEditor() {
     selected,
     text,
     busy,
+    loading,
+    loaded,
+    loadError,
     error,
     message,
     dirty,

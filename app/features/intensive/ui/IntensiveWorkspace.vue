@@ -11,6 +11,7 @@ import {
 import IntensiveNavigation from "./IntensiveNavigation.vue";
 import IntensiveStory from "./IntensiveStory.vue";
 import IntensivePlanSettings from "./IntensivePlanSettings.vue";
+import LoadingState from "#ui/shared/ui/LoadingState.vue";
 import PageHeading from "#ui/shared/ui/PageHeading.vue";
 import IntensiveSetup from "./IntensiveSetup.vue";
 import IntensiveProgramEditor from "./IntensiveProgramEditor.vue";
@@ -19,7 +20,15 @@ import IntensiveAssistant from "./IntensiveAssistant.vue";
 import "./intensive.css";
 
 const model = useIntensive();
-const { snapshot, catalog, loading, pending, error } = model;
+const {
+  snapshot,
+  catalog,
+  loading,
+  catalogLoading,
+  catalogError,
+  pending,
+  error,
+} = model;
 const view = ref<"setup" | "preview" | "study" | "settings">("setup");
 const activeId = ref("");
 const storyProjectId = ref("");
@@ -50,12 +59,17 @@ const selectedGoal = computed(() => draft.value?.goal || plan.value?.goal);
 const busy = computed(() => pending.value > 0);
 
 async function load() {
-  if (!canLeaveVoice()) return;
-  await model.load();
-  if (!snapshot.value) return;
-  if (draft.value) view.value = "preview";
-  else if (plan.value) view.value = "study";
-  else view.value = "setup";
+  if (catalogLoading.value || !canLeaveVoice()) return;
+  const initial = !snapshot.value;
+  if (!(await model.load())) return;
+  if (
+    initial ||
+    (view.value === "preview" && !draft.value) ||
+    (["study", "settings"].includes(view.value) && !plan.value)
+  ) {
+    view.value = draft.value ? "preview" : plan.value ? "study" : "setup";
+  }
+  if (lessons.value.some((lesson) => lesson.id === activeId.value)) return;
   activeId.value =
     [...pendingLessons.value]
       .sort((a, b) =>
@@ -136,8 +150,15 @@ async function selectLesson(id: string) {
   }
 }
 async function configure() {
+  const currentView = lessonView.value || storyView.value;
   if (!(await flush())) return;
   if (!(await model.refreshCatalog())) return;
+  if (
+    view.value !== "study" ||
+    currentView !== (lessonView.value || storyView.value) ||
+    !(await flush())
+  )
+    return;
   view.value = "setup";
 }
 async function nextLesson() {
@@ -163,15 +184,41 @@ onMounted(load);
       <PageHeading :title="view === 'study' ? 'Интенсив' : 'План подготовки'" />
       <div v-if="view === 'study'" class="intensive-heading-actions">
         <button :disabled="busy" @click="settings">Настроить программу</button>
-        <button :disabled="busy" @click="configure">Добавить материалы</button>
+        <button
+          :disabled="busy || loading || catalogLoading"
+          @click="configure"
+        >
+          Добавить материалы
+        </button>
       </div>
     </div>
     <div v-if="error" class="platform-card intensive-error" role="alert">
       <p>{{ error }}</p>
-      <button :disabled="busy || loading" @click="load">Обновить данные</button>
+      <button :disabled="busy || loading || catalogLoading" @click="load">
+        Обновить данные
+      </button>
     </div>
-    <p v-if="loading" role="status">Загружаем программу…</p>
-    <template v-else-if="snapshot">
+    <LoadingState
+      v-if="loading"
+      :compact="!!snapshot"
+      :label="snapshot ? 'Обновляем программу…' : 'Загружаем программу…'"
+    />
+    <LoadingState
+      v-if="catalogLoading"
+      compact
+      label="Загружаем список материалов…"
+    />
+    <div
+      v-if="view === 'study' && catalogError"
+      class="platform-card intensive-error"
+      role="alert"
+    >
+      <p>{{ catalogError }}</p>
+      <button :disabled="busy || loading || catalogLoading" @click="configure">
+        Повторить загрузку списка
+      </button>
+    </div>
+    <template v-if="snapshot">
       <IntensivePlanSettings
         v-if="view === 'settings' && plan"
         :plan="plan"

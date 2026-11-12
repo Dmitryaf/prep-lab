@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import MaterialLoadState from "#ui/entities/material/ui/MaterialLoadState.vue";
 import { canLeaveVoice } from "#ui/features/voice-input/index.ts";
 import { storeToRefs } from "pinia";
 
@@ -7,7 +8,7 @@ import { useRoute, useRouter } from "vue-router";
 import { usePreparation } from "#ui/entities/preparation/model/store.ts";
 import { useSettings } from "#ui/entities/preparation/model/settings.ts";
 const instanceSettings = useSettings();
-const { progress, sessions, saving } = storeToRefs(usePreparation());
+const { progress, sessions, saving, loadError } = storeToRefs(usePreparation());
 import { useMaterials } from "#ui/entities/material/model/store.ts";
 const { knowledge, loading } = storeToRefs(useMaterials());
 import { useQuestions } from "#ui/entities/question/model/store.ts";
@@ -179,6 +180,7 @@ onUnmounted(() => {
 watch(() => route.fullPath, refreshDate);
 </script>
 <template>
+  <MaterialLoadState compact />
   <template v-if="!sessionId">
     <PageHeading title="Пробное интервью" />
     <section class="platform-card daily-card">
@@ -200,7 +202,9 @@ watch(() => route.fullPath, refreshDate);
         class="primary"
         data-action="daily"
         :disabled="
-          saving || (!today && (loading || !knowledge.questions.length))
+          saving ||
+          !!loadError ||
+          (!today && (loading || !knowledge.questions.length))
         "
         @click="
           today
@@ -251,7 +255,9 @@ watch(() => route.fullPath, refreshDate);
         <button
           class="primary"
           data-action="full"
-          :disabled="saving || loading || !knowledge.questions.length"
+          :disabled="
+            saving || !!loadError || loading || !knowledge.questions.length
+          "
           @click="start('full')"
         >
           {{ format === "mixed" ? "Начать полное интервью" : "Начать раунд" }}
@@ -281,9 +287,11 @@ watch(() => route.fullPath, refreshDate);
     </div>
   </template>
   <template v-else-if="!session"
-    ><PageHeading title="Интервью не найдено" /><RouterLink to="/interview"
-      >К интервью</RouterLink
-    ></template
+    ><PageHeading
+      :title="
+        loadError ? 'Не удалось загрузить интервью' : 'Интервью не найдено'
+      "
+    /><RouterLink to="/interview">К интервью</RouterLink></template
   >
   <template v-else-if="session.finished">
     <PageHeading title="Разбор интервью" /><RouterLink

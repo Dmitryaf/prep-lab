@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { usePromptEditor } from "#ui/features/edit-prompt/model/usePromptEditor.ts";
+import LoadingState from "#ui/shared/ui/LoadingState.vue";
 const state = usePromptEditor();
 const {
   prompts,
@@ -7,6 +8,9 @@ const {
   selected,
   text,
   busy,
+  loading,
+  loaded,
+  loadError,
   error,
   message,
   dirty,
@@ -21,9 +25,31 @@ const {
 <template>
   <div class="prompt-editor">
     <h1>Промпты</h1>
+    <LoadingState
+      v-if="loading"
+      :compact="loaded"
+      :label="loaded ? 'Обновляем промпты…' : 'Загружаем промпты…'"
+    />
+    <div v-if="loadError">
+      <p role="alert">{{ loadError }}</p>
+      <button
+        v-if="!selected"
+        type="button"
+        :disabled="busy"
+        @click="state.reload"
+      >
+        Повторить загрузку промптов
+      </button>
+    </div>
     <p v-if="error" role="alert">{{ error }}</p>
     <p v-if="message" role="status">{{ message }}</p>
-    <div class="prompt-tabs" role="group" aria-label="Шаблоны заданий">
+    <p v-if="loaded && !loading && !prompts.length">Промптов пока нет.</p>
+    <div
+      v-if="prompts.length"
+      class="prompt-tabs"
+      role="group"
+      aria-label="Шаблоны заданий"
+    >
       <button
         v-for="item in prompts"
         :key="item.template.id"

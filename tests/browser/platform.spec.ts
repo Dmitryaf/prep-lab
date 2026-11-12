@@ -28,6 +28,8 @@ test("platform", async ({ app: { base }, page, pageErrors: errors }) => {
   const go = async (
     view: "interview" | "practice" | "themes" | "projects" | "repeat",
   ) => {
+    if (!(await page.locator(`#platformNav a[href="#/${view}"]`).isVisible()))
+      await page.getByRole("button", { name: "Меню", exact: true }).click();
     await page.locator(`#platformNav a[href="#/${view}"]`).click();
     await page
       .locator("#platformMain h1")
@@ -100,7 +102,9 @@ test("platform", async ({ app: { base }, page, pageErrors: errors }) => {
       ),
     ).toBeTruthy();
     await expect(page.locator(".platform-answer")).toHaveCount(0);
-    await expect(page.locator("#platformSearch")).toBeDisabled();
+    await expect(
+      page.getByRole("button", { name: "Найти материал" }),
+    ).toBeDisabled();
     await page.screenshot({
       path: "artifacts/platform-interview.png",
       fullPage: true,
@@ -140,9 +144,12 @@ test("platform", async ({ app: { base }, page, pageErrors: errors }) => {
       await page.locator("[data-action=session-skip]").click();
       await state();
     }
-    await expect(page.locator(".platform-answer")).toHaveCount(
+    await expect(page.locator('[data-action="result-toggle"]')).toHaveCount(
       first.questionIds.length,
     );
+    await expect(page.locator(".platform-answer")).toHaveCount(0);
+    await page.locator('[data-action="result-toggle"]').first().click();
+    await expect(page.locator(".platform-answer")).toHaveCount(1);
     await page.locator("[data-rating=partial]").first().click();
     const markedId = first.questionIds[0];
     await go("repeat");
@@ -326,8 +333,8 @@ test("platform", async ({ app: { base }, page, pageErrors: errors }) => {
     );
     await page.reload();
     await page
-      .getByRole("status")
-      .filter({ hasText: "База знаний временно недоступна" })
+      .getByRole("alert")
+      .filter({ hasText: "Не удалось загрузить материалы" })
       .waitFor();
     await expect(page.locator("[data-action=daily]")).toBeEnabled();
     await page.locator("[data-action=daily]").click();
