@@ -75,17 +75,35 @@
   margin-block: 6px 0;
   gap: 12px;
 }
-.chat-tools button,
-.discussion-trigger {
+.chat-tools button {
   border: 0;
   background: transparent;
   color: var(--accent);
   padding: 4px 0;
   font-size: 13px;
 }
-.chat-tools button:hover,
-.discussion-trigger:hover {
+.chat-tools button:hover {
   text-decoration: underline;
+}
+.study-chat .discussion-trigger {
+  gap: 8px;
+  padding: 10px 14px;
+  border: 1px solid #d8e3f4;
+  border-radius: 9px;
+  background: #edf3fc;
+  color: #244f99;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+.study-chat .discussion-trigger:hover:not(:disabled) {
+  border-color: #adc3e6;
+  background: #e2ecfb;
+  color: #183d7a;
+  text-decoration: none;
+}
+.discussion-trigger svg {
+  flex: none;
 }
 .study-chat-panel h3 {
   overflow-wrap: anywhere;

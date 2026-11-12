@@ -94,6 +94,20 @@ onBeforeUnmount(restorePage);
       aria-haspopup="dialog"
       @click="canLeaveVoice() && toggle()"
     >
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.6"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <path d="M20 11.5a8 8 0 0 1-8 8H5l-4 3 1.8-5.4A8 8 0 1 1 20 11.5Z" />
+        <path d="M7 10h8M7 14h5" />
+      </svg>
       Обсудить с помощником
     </button>
     <dialog

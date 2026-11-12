@@ -547,7 +547,7 @@ watch(() => route.fullPath, refreshDate);
   border-radius: 0 6px 6px 0;
 }
 .interview-secondary-actions {
-  gap: 20px;
+  gap: 8px;
   margin-block: 12px 0;
   font-size: 14px;
 }
@@ -555,18 +555,23 @@ watch(() => route.fullPath, refreshDate);
 .interview-text-action,
 .coding-stages button,
 .interview-session-tools button {
-  padding: 5px 0;
-  border: 0;
-  background: transparent;
-  color: var(--accent);
-  font-size: inherit;
-  border-radius: 0;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  background: var(--surface);
+  color: #45546b;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 8px;
+  text-decoration: none;
 }
-.interview-secondary-actions button:hover,
-.interview-text-action:hover,
-.coding-stages button:hover,
-.interview-session-tools button:hover {
-  text-decoration: underline;
+.interview-secondary-actions button:hover:not(:disabled),
+.interview-text-action:hover:not(:disabled),
+.coding-stages button:hover:not(:disabled),
+.interview-session-tools button:hover:not(:disabled) {
+  background: #e9eef6;
+  border-color: #d4deec;
+  color: var(--ink);
+  text-decoration: none;
 }
 .coding-stages .platform-actions {
   display: grid;
@@ -683,12 +688,13 @@ watch(() => route.fullPath, refreshDate);
     padding-inline: 12px;
   }
   .interview-secondary-actions {
-    gap: 8px 16px;
+    gap: 8px;
     justify-content: flex-start;
   }
   .interview-secondary-actions > button {
     flex: 0 1 auto;
-    font-size: 13px;
+    padding-inline: 8px;
+    font-size: 12px;
   }
   .interview-formats {
     grid-template-columns: 1fr;
