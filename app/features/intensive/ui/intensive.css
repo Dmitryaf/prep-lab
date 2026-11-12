@@ -316,3 +316,96 @@
     align-items: start;
   }
 }
+
+.intensive-heading-actions,
+.intensive-levels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.intensive-levels button[aria-pressed="true"] {
+  background: #edf3ff;
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.intensive-assessment .study-chat {
+  margin-top: 20px;
+}
+.intensive-navigation {
+  min-width: 0;
+}
+.intensive-navigation > summary {
+  font-size: 18px;
+}
+.intensive-groups {
+  max-height: 58vh;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+.intensive-groups > details {
+  border-top: 1px solid var(--line);
+}
+.intensive-groups h3 {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 20px 0 8px;
+}
+.intensive-groups .intensive-queue {
+  max-height: none;
+  overflow: visible;
+}
+.intensive-story-link {
+  width: 100%;
+  text-align: left;
+}
+.intensive-code-path {
+  font-family: monospace;
+  overflow-wrap: anywhere;
+  font-size: 13px;
+}
+.intensive-code-step {
+  border-top: 1px solid var(--line);
+  padding-block: 16px;
+}
+.intensive-scenario-map {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+.intensive-scenario-map > li {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: 8px;
+  padding: 16px;
+}
+.intensive-map-connection {
+  color: var(--accent);
+  font-size: 14px;
+}
+.intensive-focused-review {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 24px;
+  margin-bottom: 24px;
+}
+.intensive-story {
+  min-width: 0;
+}
+.intensive-story > .platform-card > details {
+  border-bottom: 1px solid var(--line);
+  padding-block: 8px;
+}
+.intensive-lesson-header h2 {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 850px) {
+  .intensive-sidebar {
+    grid-row: 1;
+  }
+  .intensive-groups {
+    max-height: 240px;
+  }
+  .intensive-navigation:not([open]) {
+    margin-bottom: 8px;
+  }
+}

@@ -2,6 +2,7 @@ import { ref, shallowRef } from "vue";
 import type {
   IntensiveGoal,
   IntensiveSnapshot,
+  IntensiveStory,
 } from "#domain/intensive/contracts.ts";
 import {
   getIntensive,
@@ -12,6 +13,8 @@ import {
   saveIntensiveProgress,
   addIntensiveRepeat,
   setIntensiveRepeat,
+  updateIntensivePlan,
+  saveIntensiveStory,
   type IntensiveCatalog,
   type ProgressInput,
 } from "#ui/features/intensive/api/intensive.ts";
@@ -88,6 +91,10 @@ export function useIntensive() {
     error,
     load,
     refreshCatalog,
+    edit: (goal: IntensiveGoal, ids: string[]) =>
+      mutate((revision) => updateIntensivePlan(goal, ids, revision)),
+    story: (projectId: string, story: IntensiveStory) =>
+      mutate((revision) => saveIntensiveStory(projectId, story, revision)),
     prepare: (goal: IntensiveGoal) =>
       mutate((revision) => prepareIntensive(goal, revision)),
     propose: (goal: IntensiveGoal, ids: string[]) =>

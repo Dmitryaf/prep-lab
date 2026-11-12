@@ -1,8 +1,16 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { canLeaveVoice } from "#ui/features/voice-input/index.ts";
+import { computed, nextTick, onMounted, ref } from "vue";
 import type { IntensiveGoal } from "#domain/intensive/contracts.ts";
 import { useIntensive } from "#ui/features/intensive/model/useIntensive.ts";
-import { questionCount } from "#ui/features/intensive/model/presentation.ts";
+import {
+  activeLessons,
+  lessonLocation,
+  lessonGaps,
+} from "#domain/intensive/navigation.ts";
+import IntensiveNavigation from "./IntensiveNavigation.vue";
+import IntensiveStory from "./IntensiveStory.vue";
+import IntensivePlanSettings from "./IntensivePlanSettings.vue";
 import PageHeading from "#ui/shared/ui/PageHeading.vue";
 import IntensiveSetup from "./IntensiveSetup.vue";
 import IntensiveProgramEditor from "./IntensiveProgramEditor.vue";
@@ -12,10 +20,14 @@ import "./intensive.css";
 
 const model = useIntensive();
 const { snapshot, catalog, loading, pending, error } = model;
-const view = ref<"setup" | "preview" | "study">("setup");
+const view = ref<"setup" | "preview" | "study" | "settings">("setup");
 const activeId = ref("");
+const storyProjectId = ref("");
+const storyView = ref<InstanceType<typeof IntensiveStory> | null>(null);
 const lessonView = ref<InstanceType<typeof IntensiveLesson> | null>(null);
+const studyHost = ref<HTMLElement>();
 const plan = computed(() => snapshot.value?.state.plan);
+const lessons = computed(() => activeLessons(plan.value));
 const draft = computed(() => snapshot.value?.state.draft);
 const progress = computed(() => snapshot.value?.state.progress || {});
 const activeLesson = computed(() =>
@@ -23,13 +35,13 @@ const activeLesson = computed(() =>
 );
 const completed = computed(
   () =>
-    plan.value?.lessons.filter(
+    lessons.value.filter(
       (lesson) => progress.value[lesson.id]?.status === "done",
     ).length || 0,
 );
 const pendingLessons = computed(
   () =>
-    plan.value?.lessons.filter(
+    lessons.value.filter(
       (lesson) => progress.value[lesson.id]?.status !== "done",
     ) || [],
 );
@@ -38,6 +50,7 @@ const selectedGoal = computed(() => draft.value?.goal || plan.value?.goal);
 const busy = computed(() => pending.value > 0);
 
 async function load() {
+  if (!canLeaveVoice()) return;
   await model.load();
   if (!snapshot.value) return;
   if (draft.value) view.value = "preview";
@@ -53,7 +66,7 @@ async function load() {
       .find((lesson) => progress.value[lesson.id]?.status === "in-progress")
       ?.id ||
     pendingLessons.value[0]?.id ||
-    plan.value?.lessons[0]?.id ||
+    lessons.value[0]?.id ||
     "";
 }
 async function prepare(goal: IntensiveGoal) {
@@ -65,11 +78,30 @@ async function propose(goal: IntensiveGoal, ids: string[]) {
 async function accept(ids: string[]) {
   if (!(await model.accept(ids))) return;
   view.value = "study";
-  activeId.value =
-    pendingLessons.value[0]?.id || plan.value?.lessons[0]?.id || "";
+  activeId.value = pendingLessons.value[0]?.id || lessons.value[0]?.id || "";
+}
+async function flush() {
+  if (!canLeaveVoice()) return false;
+  if (lessonView.value && !(await lessonView.value.persist())) return false;
+  if (storyView.value && !(await storyView.value.persist())) return false;
+  return true;
+}
+async function openStory(projectId: string) {
+  if (!(await flush())) return;
+  storyProjectId.value = projectId;
+}
+async function settings() {
+  if (!(await flush())) return;
+  view.value = "settings";
+}
+async function edit(goal: IntensiveGoal, ids: string[]) {
+  if (!(await model.edit(goal, ids))) return;
+  if (!ids.includes(activeId.value)) activeId.value = ids[0] || "";
+  view.value = "study";
+  storyProjectId.value = "";
 }
 async function selectLesson(id: string) {
-  if (lessonView.value && !(await lessonView.value.persist())) return;
+  if (!(await flush())) return;
   const lesson = plan.value?.lessons.find((item) => item.id === id);
   if (!lesson) return;
   const existing = progress.value[id];
@@ -87,26 +119,40 @@ async function selectLesson(id: string) {
       notes: existing?.notes || "",
       outcome: existing?.outcome,
       questionId: existing?.questionId,
+      assessments: existing?.assessments,
+      checks: existing?.checks,
     }))
   )
     return;
   activeId.value = id;
+  storyProjectId.value = "";
+  await nextTick();
+  if (window.matchMedia("(max-width: 850px)").matches) {
+    const heading = studyHost.value?.querySelector<HTMLElement>(
+      ".intensive-lesson-header h2",
+    );
+    heading?.scrollIntoView({ block: "start", behavior: "instant" });
+    heading?.focus({ preventScroll: true });
+  }
 }
 async function configure() {
-  if (lessonView.value && !(await lessonView.value.persist())) return;
-  await model.refreshCatalog();
+  if (!(await flush())) return;
+  if (!(await model.refreshCatalog())) return;
   view.value = "setup";
 }
 async function nextLesson() {
-  const lessons = plan.value?.lessons || [];
-  const position = lessons.findIndex((lesson) => lesson.id === activeId.value);
+  const available = lessons.value;
+  const position = available.findIndex(
+    (lesson) => lesson.id === activeId.value,
+  );
   const next =
-    lessons
+    available
       .slice(position + 1)
       .find((lesson) => progress.value[lesson.id]?.status !== "done") ||
     pendingLessons.value[0];
   if (next) await selectLesson(next.id);
-  else await configure();
+  else if (activeLesson.value?.projectId)
+    await openStory(activeLesson.value.projectId);
 }
 onMounted(load);
 </script>
@@ -115,9 +161,10 @@ onMounted(load);
   <div class="intensive-workspace">
     <div class="intensive-page-heading">
       <PageHeading :title="view === 'study' ? 'Интенсив' : 'План подготовки'" />
-      <button v-if="view === 'study'" :disabled="busy" @click="configure">
-        Дополнить программу
-      </button>
+      <div v-if="view === 'study'" class="intensive-heading-actions">
+        <button :disabled="busy" @click="settings">Настроить программу</button>
+        <button :disabled="busy" @click="configure">Добавить материалы</button>
+      </div>
     </div>
     <div v-if="error" class="platform-card intensive-error" role="alert">
       <p>{{ error }}</p>
@@ -125,8 +172,15 @@ onMounted(load);
     </div>
     <p v-if="loading" role="status">Загружаем программу…</p>
     <template v-else-if="snapshot">
+      <IntensivePlanSettings
+        v-if="view === 'settings' && plan"
+        :plan="plan"
+        :busy="busy"
+        @save="edit"
+        @cancel="view = 'study'"
+      />
       <IntensiveSetup
-        v-if="view === 'setup'"
+        v-else-if="view === 'setup'"
         :catalog="catalog"
         :initial="selectedGoal"
         :has-plan="!!plan"
@@ -153,53 +207,62 @@ onMounted(load);
       <template v-else-if="plan && activeLesson">
         <div class="intensive-plan-heading">
           <p>{{ plan.goal.title }}</p>
-          <span
-            >{{ completed }} из {{ plan.lessons.length }} занятий
-            завершено</span
-          >
+          <span>{{ completed }} из {{ lessons.length }} занятий завершено</span>
         </div>
-        <div class="intensive-study-grid">
+        <p v-if="completed === lessons.length" class="platform-card">
+          Все занятия программы пройдены.<span
+            v-if="lessons.some((lesson) => lessonGaps(progress[lesson.id]))"
+          >
+            В программе остались вопросы для разбора.</span
+          >
+        </p>
+        <div ref="studyHost" class="intensive-study-grid">
+          <IntensiveStory
+            v-if="storyProjectId"
+            ref="storyView"
+            :key="storyProjectId"
+            :name="
+              catalog.projects.find((project) => project.id === storyProjectId)
+                ?.name || storyProjectId
+            "
+            :saved="snapshot.state.stories?.[storyProjectId]"
+            :lessons="
+              plan.lessons.filter(
+                (lesson) => lesson.projectId === storyProjectId,
+              )
+            "
+            :busy="busy"
+            :save="(story) => model.story(storyProjectId, story)"
+            @lesson="selectLesson"
+          />
           <IntensiveLesson
+            v-else
             ref="lessonView"
             :key="activeLesson.id"
             :lesson="activeLesson"
+            :title="lessonLocation(activeLesson, catalog).title"
+            :owner="
+              lessonLocation(activeLesson, catalog).owner +
+              ' · ' +
+              lessonLocation(activeLesson, catalog).block
+            "
             :saved-progress="progress[activeLesson.id]"
             :busy="busy"
             :save="(input) => model.save(activeLesson!.id, input)"
             :add-repeat="(text) => model.repeat(activeLesson!.id, text)"
             @next="nextLesson"
+            @story="openStory(activeLesson.projectId!)"
           />
           <aside class="intensive-sidebar" aria-label="Программа подготовки">
-            <section class="platform-card">
-              <h2>Занятия</h2>
-              <ol class="intensive-queue">
-                <li v-for="lesson in plan.lessons" :key="lesson.id">
-                  <button
-                    :aria-current="lesson.id === activeId ? 'true' : undefined"
-                    :disabled="busy"
-                    @click="selectLesson(lesson.id)"
-                  >
-                    <span>{{ lesson.title }}</span
-                    ><small>{{
-                      progress[lesson.id]?.status === "done"
-                        ? "Завершено"
-                        : progress[lesson.id]?.status === "in-progress"
-                          ? "Продолжить"
-                          : lesson.questions.length
-                            ? questionCount(lesson.questions.length)
-                            : "Чтение"
-                    }}</small>
-                  </button>
-                </li>
-              </ol>
-              <button
-                class="intensive-more"
-                :disabled="busy"
-                @click="configure"
-              >
-                Ещё занятия
-              </button>
-            </section>
+            <IntensiveNavigation
+              :lessons="lessons"
+              :catalog="catalog"
+              :progress="progress"
+              :active-id="activeId"
+              :busy="busy"
+              @select="selectLesson"
+              @story="openStory"
+            />
             <details class="platform-card intensive-tomorrow">
               <summary>
                 Завтра

@@ -21,7 +21,7 @@ export function useDiscussion(material: DiscussionMaterial) {
     loaded = ref(false),
     preparedPrompt = ref(""),
     previewing = ref(false),
-    field = ref<HTMLTextAreaElement>();
+    field = ref<{ focus: () => void }>();
   const controller = shallowRef<AbortController>();
   let generation = 0;
   async function load() {

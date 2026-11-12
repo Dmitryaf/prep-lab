@@ -13,17 +13,40 @@ import type {
   LessonProgress,
   ProgressInput,
 } from "#ui/features/intensive/api/intensive.ts";
+import { StudyDiscussion } from "#ui/features/study-discussion/index.ts";
+import { getIntensiveContext } from "#ui/features/intensive/api/intensive.ts";
+import type { IntensiveContext as Context } from "#domain/intensive/context.ts";
+import IntensiveContext from "./IntensiveContext.vue";
 import QuestionCard from "#ui/entities/question/ui/QuestionCard.vue";
 import MarkdownContent from "#ui/entities/material/ui/MarkdownContent.vue";
+import VoiceInput, { canLeaveVoice } from "#ui/features/voice-input/index.ts";
 
 const props = defineProps<{
   lesson: IntensiveLesson;
   savedProgress?: LessonProgress;
   busy: boolean;
   save: (progress: ProgressInput) => Promise<boolean>;
+  title?: string;
+  owner?: string;
   addRepeat: (text: string) => Promise<boolean>;
 }>();
-defineEmits<{ next: [] }>();
+defineEmits<{ next: []; story: [] }>();
+const context = ref<Context>();
+const contextError = ref("");
+async function loadContext() {
+  const id = props.lesson.id;
+  try {
+    const loaded = await getIntensiveContext(id);
+    if (id === props.lesson.id) {
+      context.value = loaded;
+      contextError.value = "";
+    }
+  } catch {
+    if (id === props.lesson.id)
+      contextError.value = "Не удалось загрузить материалы занятия.";
+  }
+}
+onMounted(loadContext);
 const progress = reactive<ProgressInput>({
   status: "pending",
   step: "answer",
@@ -48,18 +71,23 @@ const practiceQuestions = computed(() =>
   ),
 );
 const visibleQuestions = computed(() =>
-  progress.step === "practice"
-    ? practiceQuestions.value
-    : recallQuestions.value,
+  ["check", "reading"].includes(progress.step)
+    ? props.lesson.questions
+    : progress.step === "practice"
+      ? practiceQuestions.value
+      : recallQuestions.value,
 );
 const current = computed(() => visibleQuestions.value[questionIndex.value]);
 const steps = computed(() => [
   ...(recallQuestions.value.length
-    ? [{ id: "answer" as const, title: "Ответ" }]
+    ? [{ id: "answer" as const, title: "Ответить" }]
     : []),
-  { id: "reading" as const, title: "Разбор" },
+  { id: "reading" as const, title: "Изучить разбор" },
   ...(practiceQuestions.value.length
     ? [{ id: "practice" as const, title: "Практика" }]
+    : []),
+  ...(props.lesson.questions.length
+    ? [{ id: "check" as const, title: "Проверить себя" }]
     : []),
   { id: "result" as const, title: "Итог" },
 ]);
@@ -75,6 +103,8 @@ watch(
       initial?.step || (recallQuestions.value.length ? "answer" : "reading");
     progress.drafts = { ...(initial?.drafts || {}) };
     progress.notes = initial?.notes || "";
+    progress.assessments = structuredClone(initial?.assessments || {});
+    progress.checks = { ...(initial?.checks || {}) };
     progress.outcome = initial?.outcome;
     progress.questionId = initial?.questionId;
     questionIndex.value = Math.max(
@@ -95,17 +125,15 @@ watch(
 async function persist() {
   clearTimeout(timer);
   if (!dirty.value) return true;
-  const input = { ...progress, drafts: { ...progress.drafts } };
+  const input: ProgressInput = JSON.parse(JSON.stringify(progress));
   const written = JSON.stringify(input);
   const success = await props.save(input);
   saveFailed.value = !success;
-  if (
-    success &&
-    JSON.stringify({ ...progress, drafts: { ...progress.drafts } }) === written
-  ) {
+  if (success && JSON.stringify(progress) === written) {
     dirty.value = false;
     saved.value = true;
   }
+  if (success && dirty.value) return persist();
   return success;
 }
 function changed() {
@@ -120,16 +148,22 @@ function changed() {
   }, 650);
 }
 async function go(step: ProgressInput["step"]) {
+  if (!canLeaveVoice()) return;
   if (!(await persist())) return;
+  const questionId = progress.questionId;
   progress.step = step;
-  questionIndex.value = 0;
-  progress.questionId = visibleQuestions.value[0]?.id;
+  questionIndex.value = Math.max(
+    0,
+    visibleQuestions.value.findIndex((question) => question.id === questionId),
+  );
+  progress.questionId = current.value?.id;
   if (progress.status === "pending") progress.status = "in-progress";
   dirty.value = true;
   if (!(await persist())) return;
   revealed.value = false;
 }
 async function changeQuestion(offset: number) {
+  if (!canLeaveVoice()) return;
   if (!(await persist())) return;
   questionIndex.value += offset;
   progress.questionId = current.value?.id;
@@ -138,7 +172,65 @@ async function changeQuestion(offset: number) {
   await persist();
   revealed.value = false;
 }
+const assessment = computed(() =>
+  current.value ? progress.assessments?.[current.value.id] : undefined,
+);
+function assess(
+  level: "gap" | "assisted" | "independent",
+  note = assessment.value?.note || "",
+) {
+  if (!current.value) return;
+  progress.assessments ||= {};
+  progress.assessments[current.value.id] = { level, note };
+  changed();
+}
+const answerDraft = computed({
+  get: () =>
+    current.value
+      ? (progress.step === "check"
+          ? progress.checks?.[current.value.id]
+          : progress.drafts[current.value.id]) || ""
+      : "",
+  set: (value: string) => {
+    if (!current.value) return;
+    if (progress.step === "check") {
+      progress.checks ||= {};
+      progress.checks[current.value.id] = value;
+    } else progress.drafts[current.value.id] = value;
+  },
+});
+const gaps = computed(() =>
+  props.lesson.questions.filter(
+    (question) =>
+      progress.assessments?.[question.id] &&
+      progress.assessments[question.id]!.level !== "independent",
+  ),
+);
+const discussionContext = computed(() =>
+  JSON.stringify({
+    question: current.value,
+    answer: answerDraft.value,
+    gap: assessment.value?.note,
+    reading: props.lesson.reading.markdown.slice(0, 12000),
+    code: context.value?.code
+      .map((step) => ({
+        title: step.title,
+        explanation: step.explanation,
+        code: step.preview?.text.slice(0, 4000),
+      }))
+      .slice(0, 4),
+    instruction:
+      "Помоги разобраться в конкретном затруднении. Сначала уточни рассуждение, затем объясни нужную часть проекта. После разбора задай вопрос для самостоятельной проверки. Не придумывай детали реализации и личные достижения.",
+  }),
+);
+async function revisit(id: string) {
+  if (!canLeaveVoice()) return;
+  if (!(await persist())) return;
+  progress.questionId = id;
+  await go("check");
+}
 async function complete() {
+  if (!canLeaveVoice()) return;
   progress.status = "done";
   dirty.value = true;
   if (!(await persist())) return;
@@ -167,7 +259,8 @@ defineExpose({ persist });
       <p class="platform-meta">
         {{ lesson.kind === "project" ? "Разбор проекта" : "Изучение темы" }}
       </p>
-      <h2>{{ lesson.title }}</h2>
+      <p v-if="owner" class="intensive-muted">{{ owner }}</p>
+      <h2 tabindex="-1">{{ title || lesson.title }}</h2>
       <nav class="intensive-steps" aria-label="Этапы занятия">
         <button
           v-for="stage in steps"
@@ -181,7 +274,13 @@ defineExpose({ persist });
       </nav>
     </div>
 
-    <template v-if="progress.step === 'answer' || progress.step === 'practice'">
+    <template
+      v-if="
+        progress.step === 'answer' ||
+        progress.step === 'practice' ||
+        progress.step === 'check'
+      "
+    >
       <div v-if="current" class="intensive-question">
         <div class="intensive-question-toolbar">
           <span>{{ questionIndex + 1 }} из {{ visibleQuestions.length }}</span>
@@ -202,31 +301,88 @@ defineExpose({ persist });
             </button>
           </div>
         </div>
+        <p v-if="progress.step === 'check'" class="platform-meta">
+          Самостоятельный ответ
+        </p>
         <QuestionCard
           :key="current.id"
           :question="current"
           :revealed="revealed"
+          hide-approach
         >
           <button v-if="!revealed" @click="revealed = true">
             Показать разбор ответа
           </button>
         </QuestionCard>
-        <details
-          class="platform-card intensive-draft"
-          :open="!!progress.drafts[current.id]"
-        >
-          <summary>Записать ответ</summary>
-          <label :for="`intensive-answer-${current.id}`"
-            >Ответ или решение</label
+        <VoiceInput
+          v-model="answerDraft"
+          label="Ответ или решение"
+          placeholder="Напишите или надиктуйте ответ…"
+          :rows="5"
+          @changed="changed"
+          @blur="persist"
+        />
+        <section class="platform-card intensive-assessment">
+          <h3>Получилось объяснить?</h3>
+          <div class="intensive-levels" role="group" aria-label="Оценка ответа">
+            <button
+              :aria-pressed="assessment?.level === 'gap'"
+              @click="assess('gap')"
+            >
+              Нужно разобраться
+            </button>
+            <button
+              :aria-pressed="assessment?.level === 'assisted'"
+              @click="assess('assisted')"
+            >
+              С подсказкой
+            </button>
+            <button
+              :aria-pressed="assessment?.level === 'independent'"
+              @click="assess('independent')"
+            >
+              Самостоятельно
+            </button>
+          </div>
+          <template v-if="assessment && assessment.level !== 'independent'">
+            <label for="intensive-gap">В чём затруднение?</label>
+            <textarea
+              id="intensive-gap"
+              :value="assessment.note"
+              rows="2"
+              maxlength="10000"
+              @input="
+                assess(
+                  assessment.level,
+                  ($event.target as HTMLTextAreaElement).value,
+                )
+              "
+              @blur="persist"
+            />
+            <button :disabled="busy" @click="go('reading')">
+              Разобрать этот вопрос
+            </button>
+          </template>
+          <details
+            v-if="
+              progress.step === 'check' &&
+              revealed &&
+              progress.drafts[current.id]
+            "
           >
-          <textarea
-            :id="`intensive-answer-${current.id}`"
-            v-model="progress.drafts[current.id]"
-            rows="6"
-            @input="changed"
-            @blur="persist"
+            <summary>Мой первый ответ</summary>
+            <MarkdownContent
+              :text="progress.drafts[current.id]!"
+              :follow-heading="false"
+            />
+          </details>
+          <StudyDiscussion
+            :key="current.id"
+            :material-key="'intensive:' + lesson.id + ':' + current.id"
+            :title="current.title"
+            :context="discussionContext"
           />
-        </details>
+        </section>
       </div>
     </template>
 
@@ -234,6 +390,16 @@ defineExpose({ persist });
       v-else-if="progress.step === 'reading'"
       class="platform-card intensive-reading"
     >
+      <section
+        v-if="current && assessment && assessment.level !== 'independent'"
+        class="intensive-focused-review"
+      >
+        <p v-if="assessment.note">{{ assessment.note }}</p>
+        <QuestionCard :question="current" revealed hide-approach />
+        <button class="primary" :disabled="busy" @click="go('check')">
+          Ответить ещё раз без подсказки
+        </button>
+      </section>
       <RouterLink class="intensive-source-link" :to="lesson.reading.href"
         >{{ lesson.reading.title }} ↗</RouterLink
       >
@@ -249,6 +415,7 @@ defineExpose({ persist });
           :key="question.id"
           :question="question"
           revealed
+          hide-approach
         />
       </details>
     </section>
@@ -259,8 +426,31 @@ defineExpose({ persist });
       @submit.prevent="complete"
     >
       <h3>Что получилось?</h3>
+      <section v-if="gaps.length" class="intensive-open-gaps">
+        <h4>Нужно разобраться</h4>
+        <ul>
+          <li v-for="question in gaps" :key="question.id">
+            <button
+              type="button"
+              :disabled="busy"
+              @click="revisit(question.id)"
+            >
+              {{ question.title }}
+            </button>
+            <p>{{ progress.assessments?.[question.id]?.note }}</p>
+          </li>
+        </ul>
+      </section>
       <fieldset :disabled="busy">
         <legend class="visually-hidden">Результат занятия</legend>
+        <label class="intensive-option"
+          ><input
+            v-model="progress.outcome"
+            type="radio"
+            value="gap"
+            @change="changed"
+          /><span>Остались вопросы</span></label
+        >
         <label class="intensive-option"
           ><input
             v-model="progress.outcome"
@@ -268,7 +458,7 @@ defineExpose({ persist });
             value="read"
             required
             @change="changed"
-          /><span>Разобрался в материале</span></label
+          /><span>Изучил материал</span></label
         >
         <label class="intensive-option"
           ><input
@@ -295,6 +485,14 @@ defineExpose({ persist });
           /><span>Применил в задаче</span></label
         >
       </fieldset>
+      <button
+        v-if="lesson.projectId"
+        type="button"
+        :disabled="busy"
+        @click="$emit('story')"
+      >
+        Дополнить рассказ о проекте
+      </button>
       <label for="intensive-notes">Заметки к занятию</label>
       <textarea
         id="intensive-notes"
@@ -336,6 +534,13 @@ defineExpose({ persist });
       </p>
     </form>
 
+    <template v-if="progress.step === 'reading' || revealed">
+      <IntensiveContext v-if="context" :context="context" />
+      <p v-if="contextError" role="alert">
+        {{ contextError }}
+        <button @click="loadContext">Загрузить материалы</button>
+      </p>
+    </template>
     <div class="intensive-bottom-actions">
       <div class="platform-actions">
         <button
@@ -356,7 +561,9 @@ defineExpose({ persist });
               ? "Открыть разбор"
               : steps[stageIndex + 1]!.id === "practice"
                 ? "К практике"
-                : "К итогу"
+                : steps[stageIndex + 1]!.id === "check"
+                  ? "Проверить себя"
+                  : "К итогу"
           }}
           →
         </button>

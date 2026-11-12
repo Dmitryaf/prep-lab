@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { canLeaveVoice, voiceOwner } from "#ui/features/voice-input/index.ts";
 import { storeToRefs } from "pinia";
 
 import { computed, ref, watch, toRefs } from "vue";
@@ -122,9 +123,11 @@ function moveTo(value: number) {
   if (route.query.question) void router.push(practiceLocation.value);
 }
 function previous() {
+  if (!canLeaveVoice()) return;
   moveTo(history.value.pop() ?? Math.max(0, position.value - 1));
 }
 function next(random = false) {
+  if (!canLeaveVoice()) return;
   const count = list.value.length;
   if (!count) return;
   history.value.push(position.value);
@@ -150,6 +153,7 @@ function next(random = false) {
       >Направление<select
         id="practiceCategory"
         v-model="filter"
+        :disabled="!!voiceOwner"
         @change="changeFilter"
       >
         <option value="mixed">Все темы</option>
@@ -168,7 +172,12 @@ function next(random = false) {
         </option>
       </select></label
     ><label
-      >Формат<select id="practiceKind" v-model="kind" @change="changeFilter">
+      >Формат<select
+        id="practiceKind"
+        v-model="kind"
+        :disabled="!!voiceOwner"
+        @change="changeFilter"
+      >
         <option value="all">Все форматы</option>
         <option value="theory">Вопросы</option>
         <option value="practice">Практические задачи</option>
@@ -197,7 +206,7 @@ function next(random = false) {
         :disabled="revealed"
         class="primary"
         data-action="reveal"
-        @click="revealed = true"
+        @click="canLeaveVoice() && (revealed = true)"
       >
         Показать ответ</button
       ><button data-action="next-question" @click="next()">

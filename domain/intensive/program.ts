@@ -15,6 +15,12 @@ export function buildIntensiveCatalog(
   projects: ProjectCatalog,
 ): IntensiveCatalog {
   return {
+    topics: projects.topics.map((topic) => ({
+      id: topic.id,
+      projectId: topic.project,
+      title: topic.title,
+      group: topic.group,
+    })),
     notes: knowledge.notes.map((note) => ({
       id: note.id,
       title: note.title,

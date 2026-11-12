@@ -53,14 +53,34 @@ export const intensiveProgramSchema = z.object({
       "Повторяющиеся занятия.",
     ),
   createdAt: z.string(),
+  hiddenLessonIds: ids.optional(),
+});
+export const intensiveAssessmentSchema = z.object({
+  level: z.enum(["gap", "assisted", "independent"]),
+  note: z.string().max(10_000),
+});
+export const intensiveStorySchema = z.object({
+  purpose: z.string().max(30_000),
+  scenario: z.string().max(30_000),
+  structure: z.string().max(30_000),
+  contribution: z.string().max(30_000),
+  decisions: z.string().max(30_000),
+  constraints: z.string().max(30_000),
+  result: z.string().max(30_000),
 });
 export const intensiveProgressInputSchema = z.object({
   status: z.enum(["pending", "in-progress", "done"]),
   drafts: z.record(z.string(), z.string().max(100_000)),
   notes: z.string().max(100_000),
   questionId: z.string().optional(),
-  step: z.enum(["answer", "reading", "practice", "result"]).default("answer"),
-  outcome: z.enum(["read", "assisted", "independent", "applied"]).optional(),
+  step: z
+    .enum(["answer", "reading", "practice", "check", "result"])
+    .default("answer"),
+  outcome: z
+    .enum(["read", "gap", "assisted", "independent", "applied"])
+    .optional(),
+  assessments: z.record(z.string(), intensiveAssessmentSchema).optional(),
+  checks: z.record(z.string(), z.string().max(100_000)).optional(),
 });
 export const intensiveProgressSchema = intensiveProgressInputSchema.extend({
   updatedAt: z.string(),
@@ -70,6 +90,7 @@ export const intensiveStateSchema = z.object({
   plan: intensiveProgramSchema.nullable(),
   draft: intensiveProgramSchema.nullable(),
   progress: z.record(z.string(), intensiveProgressSchema),
+  stories: z.record(z.string(), intensiveStorySchema).optional(),
   tomorrow: z.array(
     z.object({
       id: z.string().min(1),
@@ -91,6 +112,7 @@ export type IntensiveProgram = z.infer<typeof intensiveProgramSchema>;
 export type IntensiveProgress = z.infer<typeof intensiveProgressSchema>;
 export type IntensiveState = z.infer<typeof intensiveStateSchema>;
 export type IntensiveSnapshot = z.infer<typeof intensiveSnapshotSchema>;
+export type IntensiveStory = z.infer<typeof intensiveStorySchema>;
 export interface IntensiveCatalog {
   notes: {
     id: string;
@@ -99,6 +121,7 @@ export interface IntensiveCatalog {
     questionCount: number;
   }[];
   projects: { id: string; name: string; stack: string[]; topicCount: number }[];
+  topics?: { id: string; projectId: string; title: string; group: string }[];
 }
 export const emptyIntensiveState = (): IntensiveState => ({
   version: 1,

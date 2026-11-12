@@ -23,6 +23,7 @@ export function withBundledRounds(
   shared: Knowledge,
 ): Knowledge {
   const existing = new Map(personal.questions.map((q) => [q.id, q]));
+  const sharedQuestions = new Map(shared.questions.map((q) => [q.id, q]));
   const retired = new Set(
     shared.questions
       .filter((q) => q.interviewEligible === false)
@@ -126,6 +127,24 @@ export function withBundledRounds(
     questions: [
       ...personal.questions.map((q) => {
         let current = q;
+        const sharedQuestion = sharedQuestions.get(q.id);
+        // Apply selection metadata only where the personal card still has the
+        // named stages. Never replace its authored wording or stored sessions.
+        if (
+          q.interviewFollowups === undefined &&
+          sharedQuestion?.interviewFollowups?.every((title) =>
+            q.followups.includes(title),
+          )
+        )
+          current = {
+            ...current,
+            interviewFollowups: [...sharedQuestion.interviewFollowups],
+          };
+        if (
+          q.interviewDiagnostic === undefined &&
+          sharedQuestion?.interviewDiagnostic
+        )
+          current = { ...current, interviewDiagnostic: true };
         if (retired.has(q.id))
           current = { ...current, interviewEligible: false };
         if (revisedCoding.has(q.id) && q.roundFormat === "coding") {

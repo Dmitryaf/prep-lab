@@ -5,6 +5,7 @@ import {
   intensiveLessonIdsSchema,
   intensiveProgressInputSchema,
   intensiveRevisionSchema,
+  intensiveStorySchema,
 } from "#domain/intensive/contracts.ts";
 import { IntensiveInputError } from "#domain/intensive/program.ts";
 import { composeIntensivePrompt } from "#domain/intensive/assistant.ts";
@@ -32,6 +33,16 @@ export async function handleIntensive(
         respondJson(response, 200, service().read());
       else if (path === "/api/intensive/catalog")
         respondJson(response, 200, await service().catalog());
+      else if (path === "/api/intensive/context")
+        respondJson(
+          response,
+          200,
+          await service().context(
+            new URL(request.url!, "http://localhost").searchParams.get(
+              "lessonId",
+            ) || "",
+          ),
+        );
       else respondJson(response, 404, { error: "Раздел не найден." });
       return true;
     }
@@ -54,7 +65,33 @@ export async function handleIntensive(
     }
     const raw = await readJsonBody(request, 2_000_000);
     let result;
-    if (path === "/api/intensive/prompt" && request.method === "POST") {
+    if (path === "/api/intensive/plan" && request.method === "PUT") {
+      const input = z
+        .object({
+          goal: intensiveGoalSchema,
+          lessonIds: intensiveLessonIdsSchema,
+          expectedRevision: intensiveRevisionSchema,
+        })
+        .parse(raw);
+      result = service().updatePlan(
+        input.goal,
+        input.lessonIds,
+        input.expectedRevision,
+      );
+    } else if (path === "/api/intensive/story" && request.method === "PUT") {
+      const input = z
+        .object({
+          projectId: z.string(),
+          story: intensiveStorySchema,
+          expectedRevision: intensiveRevisionSchema,
+        })
+        .parse(raw);
+      result = service().saveStory(
+        input.projectId,
+        input.story,
+        input.expectedRevision,
+      );
+    } else if (path === "/api/intensive/prompt" && request.method === "POST") {
       const input = z.object({ goal: intensiveGoalSchema }).parse(raw);
       result = {
         prompt: composeIntensivePrompt(

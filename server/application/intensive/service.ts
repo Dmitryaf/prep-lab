@@ -18,6 +18,8 @@ import {
 } from "#domain/intensive/program.ts";
 import type { IntensiveRepository } from "#server/infrastructure/intensive/repository.ts";
 import { RevisionConflict } from "#server/infrastructure/storage/preparation.ts";
+import { intensiveStorySchema } from "#domain/intensive/contracts.ts";
+import { intensiveContext } from "#domain/intensive/context.ts";
 
 export class IntensiveService {
   private readonly repository: IntensiveRepository;
@@ -37,6 +39,47 @@ export class IntensiveService {
   }
   async catalog() {
     return buildIntensiveCatalog(await this.knowledge(), this.projects());
+  }
+  async context(lessonId: string) {
+    const lesson = this.read().state.plan?.lessons.find(
+      (item) => item.id === lessonId,
+    );
+    if (!lesson)
+      throw new IntensiveInputError("Занятие не найдено в принятой программе.");
+    return intensiveContext(lesson, await this.knowledge(), this.projects());
+  }
+  updatePlan(input: IntensiveGoal, ids: string[], expectedRevision: number) {
+    const goal = intensiveGoalSchema.parse(input);
+    const lessonIds = intensiveLessonIdsSchema.parse(ids);
+    return this.repository.update(expectedRevision, (state) => {
+      if (!state.plan)
+        throw new IntensiveInputError("Сначала примите программу.");
+      const selected = orderIntensiveLessons(state.plan.lessons, lessonIds);
+      const hidden = state.plan.lessons.filter(
+        (lesson) => !lessonIds.includes(lesson.id),
+      );
+      return {
+        ...state,
+        plan: {
+          ...state.plan,
+          goal: {
+            ...goal,
+            noteIds: state.plan.goal.noteIds,
+            projectIds: state.plan.goal.projectIds,
+          },
+          lessons: [...selected, ...hidden],
+          hiddenLessonIds: hidden.map((lesson) => lesson.id),
+        },
+      };
+    });
+  }
+  saveStory(projectId: string, input: unknown, expectedRevision: number) {
+    const story = intensiveStorySchema.parse(input);
+    return this.repository.update(expectedRevision, (state) => {
+      if (!state.plan?.lessons.some((lesson) => lesson.projectId === projectId))
+        throw new IntensiveInputError("Проект не найден в программе.");
+      return { ...state, stories: { ...state.stories, [projectId]: story } };
+    });
   }
   async preview(input: IntensiveGoal): Promise<IntensiveProgram> {
     const goal = intensiveGoalSchema.parse(input);
@@ -127,6 +170,9 @@ export class IntensiveService {
           ...draft,
           goal,
           id: previous?.id || draft.id,
+          ...(previous?.hiddenLessonIds
+            ? { hiddenLessonIds: previous.hiddenLessonIds }
+            : {}),
           lessons: [...(previous?.lessons || []), ...selected],
         },
       };
@@ -146,6 +192,13 @@ export class IntensiveService {
       if (Object.keys(progress.drafts).some((id) => !questions.has(id)))
         throw new IntensiveInputError("Ответ относится к другому занятию.");
       if (
+        [
+          ...Object.keys(progress.assessments || {}),
+          ...Object.keys(progress.checks || {}),
+        ].some((id) => !questions.has(id))
+      )
+        throw new IntensiveInputError("Оценка относится к другому занятию.");
+      if (
         progress.questionId !== undefined &&
         !questions.has(progress.questionId)
       )
@@ -156,7 +209,11 @@ export class IntensiveService {
         ...state,
         progress: {
           ...state.progress,
-          [lessonId]: { ...progress, updatedAt: new Date().toISOString() },
+          [lessonId]: {
+            ...state.progress[lessonId],
+            ...progress,
+            updatedAt: new Date().toISOString(),
+          },
         },
       };
     });

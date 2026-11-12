@@ -65,6 +65,13 @@ export function questionForProfile<T extends Question>(
         ? undefined
         : compatibleText(question.details, profile),
     followups: question.followups?.filter((text) => !blocked.test(text)),
+    ...(question.interviewFollowups === undefined
+      ? {}
+      : {
+          interviewFollowups: question.interviewFollowups.filter(
+            (text) => !blocked.test(text),
+          ),
+        }),
     followupAnswers: question.followupAnswers?.filter(
       (answer) => !blocked.test(answer.title + "\n" + answer.answer),
     ),

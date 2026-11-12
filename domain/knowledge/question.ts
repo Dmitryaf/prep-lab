@@ -9,6 +9,9 @@ export interface StudyLink {
   profiles?: ("vue" | "react")[];
 }
 export interface Question {
+  /** Allowed basic followups for new mixed interviews; omitted preserves legacy selection. */
+  interviewFollowups?: string[];
+  interviewDiagnostic?: boolean;
   interviewEligible?: boolean;
   roundFormat?: "coding" | "review" | "design";
   codingRole?: "short" | "main" | "advanced";

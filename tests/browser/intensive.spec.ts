@@ -75,7 +75,9 @@ test("personal intensive uses imported analytics, preserves work and keeps tomor
   await page
     .getByRole("button", { name: "Изменить подборку", exact: true })
     .click();
-  await page.getByText("Составить программу с ИИ", { exact: true }).click();
+  await page
+    .getByText("Подобрать порядок занятий с ИИ", { exact: true })
+    .click();
   await page
     .getByRole("button", { name: "Скопировать задание", exact: true })
     .click();
@@ -118,7 +120,6 @@ test("personal intensive uses imported analytics, preserves work and keeps tomor
     "Посчитайте число покупок",
   );
   await expect(page.locator(".platform-answer")).toHaveCount(0);
-  await page.getByText("Записать ответ", { exact: true }).click();
   await page
     .getByLabel("Ответ или решение", { exact: true })
     .fill("SELECT customer_id, COUNT(*) FROM orders GROUP BY customer_id;");
@@ -178,7 +179,7 @@ test("personal intensive uses imported analytics, preserves work and keeps tomor
   );
 
   await page
-    .getByRole("button", { name: "Дополнить программу", exact: true })
+    .getByRole("button", { name: "Добавить материалы", exact: true })
     .click();
   await expect(page.getByLabel("Цель подготовки", { exact: true })).toHaveCount(
     0,
@@ -260,7 +261,6 @@ test("personal intensive uses imported analytics, preserves work and keeps tomor
       body: JSON.stringify({ error: "Сервер временно недоступен." }),
     }),
   );
-  await page.getByText("Записать ответ", { exact: true }).click();
   await page
     .getByLabel("Ответ или решение", { exact: true })
     .fill("Мой ответ сохранится после восстановления связи.");

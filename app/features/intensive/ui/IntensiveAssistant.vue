@@ -73,7 +73,7 @@ function apply() {
 
 <template>
   <details class="intensive-assistant">
-    <summary>Составить программу с ИИ</summary>
+    <summary>Подобрать порядок занятий с ИИ</summary>
     <p>Передайте задание своему помощнику и вставьте его ответ.</p>
     <button type="button" :disabled="disabled || busy" @click="prepare">
       {{ busy ? "Подготовка задания…" : "Скопировать задание" }}

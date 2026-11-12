@@ -236,19 +236,28 @@ async function startNitro(directory: string, bundled = false) {
   assert(address && typeof address !== "string");
   const port = address.port;
   await new Promise<void>((done) => reserve.close(() => done()));
-  const child = spawn(process.execPath, [resolve(".output/server/index.mjs")], {
-    cwd: directory,
-    windowsHide: true,
-    stdio: ["ignore", "pipe", "pipe"],
-    env: {
-      ...process.env,
-      HOST: "127.0.0.1",
-      PORT: String(port),
-      CAREER_KNOWLEDGE_ROOT: bundled ? undefined : directory,
-      FRONTEND_LAB_DATA_DIR: join(directory, "data"),
-      FRONTEND_LAB_LEGACY_CHAT_DIR: join(directory, "legacy-chats"),
+  const child = spawn(
+    process.execPath,
+    [
+      resolve(
+        process.env.FRONTEND_LAB_TEST_SERVER_ENTRY ||
+          ".output/server/index.mjs",
+      ),
+    ],
+    {
+      cwd: directory,
+      windowsHide: true,
+      stdio: ["ignore", "pipe", "pipe"],
+      env: {
+        ...process.env,
+        HOST: "127.0.0.1",
+        PORT: String(port),
+        CAREER_KNOWLEDGE_ROOT: bundled ? undefined : directory,
+        FRONTEND_LAB_DATA_DIR: join(directory, "data"),
+        FRONTEND_LAB_LEGACY_CHAT_DIR: join(directory, "legacy-chats"),
+      },
     },
-  });
+  );
   let log = "";
   child.stderr.on("data", (part) => {
     log += String(part);
@@ -339,6 +348,19 @@ test("clean standalone bundles the full common base without a vault or owner pac
     assert.equal(bank.notes.length, 219);
     assert.equal(bank.questions.length, 582);
     assert.equal(bank.route.length, 62);
+    const thisQuestion = bank.questions.find(
+      (q: { title: string }) => q.title === "От чего зависит this?",
+    );
+    assert.deepEqual(thisQuestion.interviewFollowups, [
+      "Может ли call изменить this стрелки?",
+      "Чем call, apply и bind различаются?",
+    ]);
+    assert.equal(
+      bank.questions.filter(
+        (q: { interviewDiagnostic?: boolean }) => q.interviewDiagnostic,
+      ).length,
+      3,
+    );
     assert.deepEqual(bank.warnings, []);
     assert(
       !/Dmitryaf|МЭДО|Inbox Point|Trajectory|Landocs|Docshouse|cokr/i.test(

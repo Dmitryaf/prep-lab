@@ -7,6 +7,7 @@ import QuestionTopics from "#ui/entities/question/ui/QuestionTopics.vue";
 import { useMaterials } from "#ui/entities/material/model/store.ts";
 import { studyTopics } from "#domain/knowledge/study-topics.ts";
 import { followupQuestion } from "#domain/knowledge/followup.ts";
+import { canLeaveVoice } from "#ui/features/voice-input/index.ts";
 const materials = useMaterials();
 const props = defineProps<{
   question: Question;
@@ -150,7 +151,7 @@ const context = computed(() =>
         :followup="activeFollowup"
         :followup-answer="selectedFollowup"
         :followup-revealed="followupRevealed"
-        @reveal-followup="followupRevealed = true"
+        @reveal-followup="canLeaveVoice() && (followupRevealed = true)"
         ><StudyDiscussion
           :key="discussionKey"
           :material-key="discussionKey"
@@ -159,14 +160,17 @@ const context = computed(() =>
       /></QuestionCard>
       <slot />
       <div v-if="canExtendPractice && !revealed" class="platform-actions">
-        <button v-if="practiceFollowup" @click="practiceFollowup = 0">
+        <button
+          v-if="practiceFollowup"
+          @click="canLeaveVoice() && (practiceFollowup = 0)"
+        >
           К основной задаче
         </button>
         <button
           v-for="(title, index) in question.followups"
           :key="title"
           :aria-pressed="practiceFollowup === index + 1"
-          @click="practiceFollowup = index + 1"
+          @click="canLeaveVoice() && (practiceFollowup = index + 1)"
         >
           Усложнение {{ index + 1 }}: {{ title }}
         </button>

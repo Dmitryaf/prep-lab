@@ -13,6 +13,7 @@
     "node": "^22.22.3 || ^24.15.0 || >=26.0.0"
   },
   "scripts": {
+    "speech:setup": "node --experimental-strip-types scripts/setup-speech.ts",
     "dev": "node --experimental-strip-types scripts/dev.ts",
     "labs:package": "node --experimental-strip-types scripts/package-labs.ts",
     "build": "npm run labs:package && nuxt prepare && vue-tsc --noEmit && nuxt build",

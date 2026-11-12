@@ -29,6 +29,11 @@ export function selectInterview(
             q.roundFormat === "design" &&
             q.answer.trim() &&
             q.criteria?.trim()))) ||
+        (format === "mixed" &&
+          q.interviewDiagnostic &&
+          q.kind === "practice" &&
+          q.answer.trim() &&
+          q.criteria?.trim()) ||
         q.source === "projects" ||
         !hasCurriculum ||
         q.curriculumTier === "core") &&
@@ -120,6 +125,7 @@ export function selectInterview(
   const practice = eligible.filter(
     (q) =>
       q.kind === "practice" &&
+      !q.interviewDiagnostic &&
       [
         "JavaScript",
         "TypeScript",
@@ -128,10 +134,31 @@ export function selectInterview(
       ].includes(q.category),
   );
   const design = eligible.filter((q) => q.kind === "design");
+  const diagnostics = eligible.filter(
+    (q) =>
+      q.interviewDiagnostic &&
+      q.kind === "practice" &&
+      q.answer.trim() &&
+      q.criteria?.trim(),
+  );
   if (full) {
-    take(practice, 2);
+    take(diagnostics, 1);
+    take(practice, diagnostics.length ? 1 : 2);
     take(design, 1);
-  } else take(hash(date) % 2 && design.length ? design : practice, 1);
+  } else if (
+    diagnostics.length &&
+    (hash(date) % 2 || (!practice.length && !design.length))
+  ) {
+    take(diagnostics, 1);
+  } else {
+    const rotation = diagnostics.length
+      ? Math.floor(hash(date) / 2)
+      : hash(date);
+    take(
+      design.length && (rotation % 2 || !practice.length) ? design : practice,
+      1,
+    );
+  }
   const projects = eligible.filter((q) => q.kind === "project");
   const projectLimit = full ? 5 : 2;
   const projectCount = () =>
@@ -186,10 +213,14 @@ function makeSession(
       chosen.map((q) => {
         const snapshot = structuredClone(q);
         if (snapshot.followupAnswers !== undefined)
-          snapshot.followups = (snapshot.followups || []).filter((title) =>
-            snapshot.followupAnswers?.some(
-              (item) => item.title === title && item.answer.trim(),
-            ),
+          snapshot.followups = (snapshot.followups || []).filter(
+            (title) =>
+              (format !== "mixed" ||
+                snapshot.interviewFollowups === undefined ||
+                snapshot.interviewFollowups.includes(title)) &&
+              snapshot.followupAnswers?.some(
+                (item) => item.title === title && item.answer.trim(),
+              ),
           );
         return [q.id, snapshot];
       }),

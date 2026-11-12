@@ -11,6 +11,7 @@ import QuestionApproach from "./QuestionApproach.vue";
 const props = defineProps<{
   question: Question;
   revealed?: boolean;
+  hideApproach?: boolean;
   followup?: number;
   followupAnswer?: Question | null;
   followupRevealed?: boolean;
@@ -48,7 +49,7 @@ const stage = computed(() =>
       "
       :source-id="question.noteId"
     />
-    <QuestionApproach v-if="!followup" :question="question" />
+    <QuestionApproach v-if="!followup && !hideApproach" :question="question" />
     <section
       v-if="followup"
       class="followup-question"

@@ -1,3 +1,4 @@
+import { createSpeechHandler } from "#server/infrastructure/speech/http.ts";
 // Static app and read-only knowledge index. Corporate sources and preserved data are never served.
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { createHash } from "node:crypto";
@@ -49,6 +50,7 @@ export interface ServerOptions {
   lifecycle?: LifecycleOptions;
   databasePath?: string;
   projectPackageRoot?: string | null;
+  speech?: Parameters<typeof createSpeechHandler>[0];
 }
 const root = resolve(process.cwd(), ".output/public");
 const types: Record<string, string> = {
@@ -60,6 +62,7 @@ const types: Record<string, string> = {
   ".zip": "application/zip",
 };
 export function createHttpService({
+  speech,
   credentialDirectory,
   generationAnswer = answerWithCodex,
   knowledgeRoot = process.env.CAREER_KNOWLEDGE_ROOT,
@@ -68,6 +71,7 @@ export function createHttpService({
   databasePath = ":memory:",
   projectPackageRoot = ownerPackagePath(),
 }: ServerOptions = {}) {
+  const handleSpeech = createSpeechHandler(speech);
   const database = openDatabase(databasePath);
   const history =
     studyChatOptions?.directory || studyChatOptions?.history
@@ -173,6 +177,7 @@ export function createHttpService({
       )
     )
       return;
+    if (await handleSpeech(req, res)) return;
     if (await chat.handle(req, res)) return;
     if (req.method !== "GET" && req.method !== "HEAD") return reject(405);
     try {
@@ -274,7 +279,7 @@ export function createHttpService({
         "Content-Type": types[extname(path)] + "; charset=utf-8",
         "Cache-Control": "no-store",
         "X-Content-Type-Options": "nosniff",
-        "Content-Security-Policy": `default-src 'self'; script-src 'self' ${scriptHashes}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'none'`,
+        "Content-Security-Policy": `default-src 'self'; script-src 'self' ${scriptHashes}; style-src 'self' 'unsafe-inline'; img-src 'self' data:; media-src 'self' blob:; connect-src 'self'; frame-ancestors 'self'; object-src 'none'; base-uri 'none'`,
       });
       res.end(req.method === "HEAD" ? undefined : body);
     } catch {

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { canLeaveVoice } from "#ui/features/voice-input/index.ts";
 import { storeToRefs } from "pinia";
 
 import { computed, ref, onMounted, onUnmounted, watch } from "vue";
@@ -92,6 +93,11 @@ function keydown(event: KeyboardEvent) {
   if (event.key === "Escape") search.value = "";
 }
 async function changeProfile(event: Event) {
+  if (!canLeaveVoice()) {
+    (event.target as HTMLSelectElement).value =
+      instanceSettings.settings.profile;
+    return;
+  }
   const profile = (event.target as HTMLSelectElement).value;
   if (profile === "vue" || profile === "react")
     await instanceSettings.save({ profile });

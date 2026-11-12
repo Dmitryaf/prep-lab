@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { canLeaveVoice } from "#ui/features/voice-input/index.ts";
 import { storeToRefs } from "pinia";
 
 import { computed, ref, watch, onMounted, onUnmounted, nextTick } from "vue";
@@ -84,6 +85,7 @@ async function start(kind: "daily" | "full") {
   if (id) void router.push(link("interview", { session: id }));
 }
 async function finish(value: Interview) {
+  if (!canLeaveVoice()) return;
   if (!(await setSession(finishInterview(value)))) return;
   await nextTick();
   document.getElementById("platformMain")?.focus();
@@ -92,6 +94,7 @@ async function move(
   action: "next" | "skip" | "followup" | "previous",
   stageIndex?: number,
 ) {
+  if (!canLeaveVoice()) return;
   if (!session.value) return;
   const next =
     action === "previous"
@@ -107,6 +110,7 @@ async function move(
   if (next !== session.value) await setSession(next);
 }
 function review() {
+  if (!canLeaveVoice()) return;
   if (!session.value || !current.value) return;
   setSession({
     ...session.value,

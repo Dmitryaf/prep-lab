@@ -2,6 +2,7 @@
 import type { DiscussionMaterial } from "#domain/discussion/contracts.ts";
 import { useDiscussion } from "#ui/features/study-discussion/model/useDiscussion.ts";
 import MarkdownContent from "#ui/entities/material/ui/MarkdownContent.vue";
+import VoiceInput, { canLeaveVoice } from "#ui/features/voice-input/index.ts";
 const props = defineProps<DiscussionMaterial>();
 const {
   opened,
@@ -24,7 +25,7 @@ const {
 </script>
 <template>
   <section class="study-chat" aria-label="Обсуждение материала с помощником">
-    <button :aria-expanded="opened" @click="toggle">
+    <button :aria-expanded="opened" @click="canLeaveVoice() && toggle()">
       {{ opened ? "Свернуть обсуждение" : "Обсудить с помощником" }}
     </button>
     <div v-if="opened" class="study-chat-panel">
@@ -94,17 +95,39 @@ const {
           Пример из проекта
         </button>
       </div>
-      <form @submit.prevent="send">
-        <label
-          >Ваш вопрос или ответ<textarea
-            ref="field"
-            v-model="draft"
-            rows="4"
-            maxlength="8000"
-            :disabled="busy || !loaded"
-            placeholder="Что осталось непонятно?"
-          />
-        </label>
+      <form @submit.prevent="canLeaveVoice() && send()">
+        <VoiceInput
+          ref="field"
+          v-model="draft"
+          label="Ваш вопрос или ответ"
+          placeholder="Напишите или надиктуйте сообщение…"
+          :max-length="8000"
+          :disabled="busy || !loaded"
+        >
+          <template #actions="{ active }">
+            <button
+              class="primary voice-icon"
+              aria-label="Отправить"
+              title="Отправить"
+              :disabled="
+                active || busy || previewing || !loaded || !draft.trim()
+              "
+              type="submit"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                aria-hidden="true"
+              >
+                <path d="M12 20V4m-7 7 7-7 7 7" />
+              </svg>
+            </button>
+          </template>
+        </VoiceInput>
         <div class="platform-actions">
           <button
             type="button"
@@ -113,13 +136,7 @@ const {
           >
             Просмотреть задание
           </button>
-          <button
-            class="primary"
-            :disabled="busy || previewing || !loaded || !draft.trim()"
-            type="submit"
-          >
-            Отправить</button
-          ><button v-if="busy" type="button" @click="stop">Остановить</button
+          <button v-if="busy" type="button" @click="stop">Остановить</button
           ><button
             type="button"
             :disabled="loading || !!controller"

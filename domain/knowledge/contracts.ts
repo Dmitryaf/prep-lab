@@ -17,7 +17,12 @@ export const bundledManifestSchema = z.object({
       ),
   ),
   profiles: profileRoutesSchema,
+  interviewFollowups: z
+    .record(z.string(), z.array(z.string()).max(2))
+    .optional(),
+  interviewDiagnostics: z.array(z.string()).optional(),
 });
+export type BundledManifest = z.infer<typeof bundledManifestSchema>;
 
 const studyLink = z.object({
   profiles: z.array(z.enum(["vue", "react"])).optional(),
@@ -27,6 +32,8 @@ const studyLink = z.object({
   label: z.string(),
 });
 export const preparedQuestionSchema = z.looseObject({
+  interviewFollowups: z.array(z.string()).optional(),
+  interviewDiagnostic: z.boolean().optional(),
   interviewEligible: z.boolean().optional(),
   roundFormat: z.enum(["coding", "review", "design"]).optional(),
   codingRole: z.enum(["short", "main", "advanced"]).optional(),

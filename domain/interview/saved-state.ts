@@ -171,6 +171,16 @@ function sessionMap(value: unknown): Record<string, Interview> {
       throw Error("Некорректные уточнения");
     for (const q of Object.values(s.snapshots)) {
       if (
+        (q.interviewFollowups !== undefined &&
+          (!Array.isArray(q.interviewFollowups) ||
+            !q.interviewFollowups.every(
+              (title) => typeof title === "string",
+            ))) ||
+        (q.interviewDiagnostic !== undefined &&
+          typeof q.interviewDiagnostic !== "boolean")
+      )
+        throw Error("Некорректный приоритет подготовки");
+      if (
         q.interviewEligible !== undefined &&
         typeof q.interviewEligible !== "boolean"
       )

@@ -1,6 +1,9 @@
 import { useStorage } from "nitropack/runtime";
 import { z } from "zod";
-import { compileKnowledge } from "#domain/knowledge/catalog.ts";
+import {
+  applyBundledManifest,
+  compileKnowledge,
+} from "#domain/knowledge/catalog.ts";
 import { categoryFor } from "#domain/knowledge/markdown.ts";
 import type { Note } from "#domain/knowledge/material.ts";
 import { bundledManifestSchema } from "#domain/knowledge/contracts.ts";
@@ -26,5 +29,5 @@ export async function readBundledKnowledge() {
       };
     }),
   );
-  return { ...compileKnowledge(notes), profiles: manifest.profiles };
+  return applyBundledManifest(compileKnowledge(notes), manifest);
 }

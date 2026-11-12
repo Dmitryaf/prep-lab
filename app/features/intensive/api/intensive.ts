@@ -1,17 +1,12 @@
 import type {
   IntensiveGoal,
   IntensiveSnapshot,
+  IntensiveStory,
 } from "#domain/intensive/contracts.ts";
 
-export interface IntensiveCatalog {
-  notes: {
-    id: string;
-    title: string;
-    category: string;
-    questionCount: number;
-  }[];
-  projects: { id: string; name: string; stack: string[]; topicCount: number }[];
-}
+import type { IntensiveContext } from "#domain/intensive/context.ts";
+import type { IntensiveCatalog } from "#domain/intensive/contracts.ts";
+export type { IntensiveCatalog } from "#domain/intensive/contracts.ts";
 
 export type LessonProgress = IntensiveSnapshot["state"]["progress"][string];
 export type ProgressInput = Omit<LessonProgress, "updatedAt">;
@@ -41,6 +36,30 @@ async function request<T>(
 }
 
 export const getIntensive = () => request<IntensiveSnapshot>("");
+export const getIntensiveContext = (lessonId: string) =>
+  request<IntensiveContext>(
+    `/context?lessonId=${encodeURIComponent(lessonId)}`,
+  );
+export const updateIntensivePlan = (
+  goal: IntensiveGoal,
+  lessonIds: string[],
+  expectedRevision: number,
+) =>
+  request<IntensiveSnapshot>("/plan", "PUT", {
+    goal,
+    lessonIds,
+    expectedRevision,
+  });
+export const saveIntensiveStory = (
+  projectId: string,
+  story: IntensiveStory,
+  expectedRevision: number,
+) =>
+  request<IntensiveSnapshot>("/story", "PUT", {
+    projectId,
+    story,
+    expectedRevision,
+  });
 export const getIntensiveCatalog = () => request<IntensiveCatalog>("/catalog");
 export const prepareIntensive = (
   goal: IntensiveGoal,
