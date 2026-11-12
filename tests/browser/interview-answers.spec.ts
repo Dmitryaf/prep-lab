@@ -187,6 +187,9 @@ test("interview answers", async ({
     await page
       .getByRole("heading", { name: "Разбор интервью", exact: true })
       .waitFor();
+    await expect(page.locator(".platform-answer")).toHaveCount(0);
+    await expect(page.locator('[data-action="result-toggle"]')).toHaveCount(1);
+    await page.locator('[data-action="result-toggle"]').click();
     expect(
       (await page.locator(".platform-answer").innerText()).includes(
         "Browser APIs",

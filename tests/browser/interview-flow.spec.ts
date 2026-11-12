@@ -4,6 +4,7 @@ import type { Knowledge } from "#domain/knowledge/material.ts";
 import type { Progress } from "#domain/interview/state.ts";
 import { readProgress } from "#tests/helpers/browser-progress.ts";
 import { test, expect } from "#tests/helpers/browser.ts";
+import { expectCompactReview } from "#tests/helpers/interview-review.ts";
 import { mkdir } from "node:fs/promises";
 
 test("interview flow", async ({ app: { base }, page, pageErrors: errors }) => {
@@ -132,7 +133,10 @@ test("interview flow", async ({ app: { base }, page, pageErrors: errors }) => {
     }
   }
   expect(steps).toBe(20);
-  await expect(page.locator(".platform-answer")).toHaveCount(20);
+  await expectCompactReview(
+    page,
+    Object.values((await state()).sessions).at(-1)!,
+  );
   await page.locator("[data-rating=again]").last().click();
   expect(Object.values((await state()).sessions).at(-1)!.finished).toBeTruthy();
   await page.setViewportSize({ width: 390, height: 844 });

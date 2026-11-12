@@ -217,3 +217,22 @@
     scroll-behavior: auto !important;
   }
 }
+@media (max-width: 760px) {
+  .platform-header.is-interview {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    padding-block: 12px;
+  }
+  .is-interview .platform-navigation-toggle {
+    display: block;
+    min-height: 44px;
+  }
+  .platform-header.is-interview > :is(nav, .platform-profile, .platform-tools) {
+    grid-column: 1 / -1;
+  }
+  .platform-header.is-interview:not(.is-navigation-open)
+    > :is(nav, .platform-profile, .platform-tools) {
+    display: none;
+  }
+}

@@ -1,4 +1,5 @@
 import { ownerAvailable } from "#tests/helpers/owner-package.ts";
+import { expectCompactReview } from "#tests/helpers/interview-review.ts";
 import { required } from "#tests/helpers/values.ts";
 import type { Progress } from "#domain/interview/state.ts";
 import type { Question } from "#domain/knowledge/question.ts";
@@ -35,7 +36,13 @@ test("interview followups", async ({
   await mkdir("artifacts/optional-followups", { recursive: true });
 
   await page.clock.setFixedTime(new Date("2026-10-28T12:00:00+05:00"));
+  const knowledgeLoaded = page.waitForResponse(
+    (response) => new URL(response.url()).pathname === "/api/knowledge",
+  );
   await page.goto(base);
+  const knowledgeResponse = await knowledgeLoaded;
+  expect(knowledgeResponse.ok()).toBe(true);
+  await knowledgeResponse.finished();
   await expect(
     page.getByRole("heading", { name: "Ежедневное интервью", exact: true }),
   ).toBeVisible();
@@ -67,7 +74,8 @@ test("interview followups", async ({
   expect(daily(await state()).finished).toBeTruthy();
   expect(daily(await state()).skipped).toEqual([]);
   expect(daily(await state()).ratings).toEqual({});
-  await expect(page.locator(".platform-answer")).toHaveCount(11);
+  await expectCompactReview(page, daily(await state()));
+  await page.locator('[data-action="result-toggle"]').first().click();
   expect(
     (await page.getByText("Уточнения и разбор", { exact: true }).count()) > 0,
   ).toBeTruthy();
@@ -167,7 +175,7 @@ test("interview followups", async ({
     await expect(page.locator(".platform-answer")).toHaveCount(0);
     await page.locator("[data-action=session-next]").click();
   }
-  await expect(page.locator(".platform-answer")).toHaveCount(20);
+  await expectCompactReview(page, (await state()).sessions[full.id]);
   expect((await state()).sessions[full.id].skipped).toEqual([]);
   // Legacy payloads retain an already-open third followup, even beyond the new cap.
   for (const kind of ["daily", "full"] as const) {

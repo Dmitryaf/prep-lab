@@ -58,6 +58,44 @@ const today = computed(
 const session = computed(() =>
   sessions.value.find((s) => s.id === route.query.session),
 );
+const expandedResult = ref<string | null>(null);
+watch(
+  () => session.value?.id,
+  () => {
+    expandedResult.value = null;
+  },
+);
+async function toggleResult(id: string, event: Event) {
+  if (!canLeaveVoice()) return;
+  const button = event.currentTarget as HTMLButtonElement;
+  expandedResult.value = expandedResult.value === id ? null : id;
+  await nextTick();
+  if (expandedResult.value !== id) return;
+  const heading = document
+    .getElementById(button.getAttribute("aria-controls")!)
+    ?.querySelector(".question-card h2")
+    ?.getBoundingClientRect();
+  if (heading && (heading.top < 0 || heading.bottom > window.innerHeight))
+    button.scrollIntoView({ block: "start", behavior: "instant" });
+}
+function resultStatus(value: Interview, id: string) {
+  const labels = {
+    done: "Ответил уверенно",
+    partial: "Частично",
+    again: "Не смог ответить",
+  };
+  const rating = value.ratings[id];
+  return [
+    value.skipped.includes(id) ? "Пропущен" : "",
+    rating
+      ? labels[rating]
+      : value.reviewed?.includes(id)
+        ? "Ответ просмотрен"
+        : "Без оценки",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
 const current = computed(
   () =>
     session.value?.snapshots[session.value.questionIds[session.value.index]],
@@ -247,21 +285,47 @@ watch(() => route.fullPath, refreshDate);
     >
     <section
       v-for="(id, i) in session.questionIds"
-      :key="id"
-      class="platform-result"
+      :key="session.id + ':' + id"
+      class="platform-result interview-result"
     >
-      <div class="platform-meta">
-        {{ i + 1 }} из {{ session.questionIds.length
-        }}{{ session.skipped.includes(id) ? " · Пропущен" : "" }}
+      <h2 class="interview-result-heading">
+        <button
+          :id="'result-toggle-' + i"
+          class="interview-result-toggle"
+          data-action="result-toggle"
+          :aria-expanded="expandedResult === id"
+          :aria-controls="'result-panel-' + i"
+          @click="toggleResult(id, $event)"
+        >
+          <span class="interview-result-number">{{ i + 1 }}</span>
+          <span class="interview-result-label">
+            <span>{{ session.snapshots[id].title }}</span>
+            <small>{{ resultStatus(session, id) }}</small>
+          </span>
+          <span aria-hidden="true">{{
+            expandedResult === id ? "−" : "+"
+          }}</span>
+        </button>
+      </h2>
+      <div
+        v-show="expandedResult === id"
+        :id="'result-panel-' + i"
+        role="region"
+        :aria-labelledby="'result-toggle-' + i"
+      >
+        <KeepAlive>
+          <QuestionCard
+            v-if="expandedResult === id"
+            :question="session.snapshots[id]"
+            :session-id="session.id"
+            revealed
+          />
+        </KeepAlive>
+        <template v-if="expandedResult === id">
+          <RatingButtons :id="id" :session-id="session.id" />
+          <StudyLinks :question="session.snapshots[id]" />
+        </template>
       </div>
-      <QuestionCard
-        :question="session.snapshots[id]"
-        :session-id="session.id"
-        revealed
-      />
-      <RatingButtons :id="id" :session-id="session.id" /><StudyLinks
-        :question="session.snapshots[id]"
-      />
     </section>
   </template>
   <template v-else-if="current">
@@ -394,6 +458,48 @@ watch(() => route.fullPath, refreshDate);
   </template>
 </template>
 <style scoped>
+.interview-result {
+  margin-block: 0;
+  padding-bottom: 0;
+}
+.interview-result-heading {
+  margin: 0;
+  font-size: 16px;
+}
+.interview-result-toggle {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  line-height: 1.5;
+}
+.interview-result-toggle:hover {
+  background: #f3f6fc;
+}
+.interview-result-number {
+  flex: 0 0 24px;
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+}
+.interview-result-label {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.interview-result-label small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 400;
+}
 .interview-answer-actions {
   margin-block: 18px;
 }

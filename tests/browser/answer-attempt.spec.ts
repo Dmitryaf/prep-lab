@@ -72,6 +72,11 @@ test("full interview keeps historical attempts without displaying answer fields"
       solutionUrl: "",
       updatedAt: "2026-11-01",
     },
+    [second.id]: {
+      text: "Вторая прежняя попытка",
+      solutionUrl: "https://example.com/second-solution",
+      updatedAt: "2026-11-01",
+    },
   };
   await page.goto(base + "/#/interview");
   await restoreProgressFixture(page, {
@@ -89,8 +94,20 @@ test("full interview keeps historical attempts without displaying answer fields"
   await expect(
     page.getByRole("heading", { name: "Разбор интервью", exact: true }),
   ).toBeVisible();
-  await expect(page.locator(".platform-answer")).toHaveCount(2);
-  await expect(page.locator(".answer-attempt")).toHaveCount(0);
+  await expect(page.locator(".platform-answer")).toHaveCount(0);
+  const results = page.locator('[data-action="result-toggle"]');
+  await expect(results).toHaveCount(2);
+  for (let index = 0; index < session.questionIds.length; index++) {
+    await results.nth(index).click();
+    await expect(page.locator(".platform-answer")).toHaveCount(1);
+    await expect(page.locator(".question-card h2")).toHaveText(
+      session.snapshots[session.questionIds[index]!]!.title,
+    );
+    await expect(page.locator(".answer-attempt")).toHaveCount(0);
+    expect((await readProgress(page)).sessions[session.id].attempts).toEqual(
+      session.attempts,
+    );
+  }
   await page.reload();
   expect((await readProgress(page)).sessions[session.id].attempts).toEqual(
     session.attempts,
@@ -158,6 +175,7 @@ test("pre-reveal discussion excludes solutions and keeps prior revealed discussi
     "Подумайте о входных данных.",
   );
   await page.locator("[data-action=session-next]").click();
+  await page.locator('[data-action="result-toggle"]').first().click();
   await page
     .getByRole("button", { name: "Обсудить с помощником", exact: true })
     .click();

@@ -78,6 +78,9 @@
 .platform-tools {
   margin-top: auto;
 }
+.platform .platform-navigation-toggle {
+  display: none;
+}
 .platform-profile {
   display: grid;
   gap: 7px;

@@ -1,4 +1,5 @@
 import { test, expect } from "#tests/helpers/browser.ts";
+import { expectCompactReview } from "#tests/helpers/interview-review.ts";
 import { readProgress } from "#tests/helpers/browser-progress.ts";
 import { mkdtemp, mkdir, writeFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -74,9 +75,7 @@ test("a clean instance starts practical rounds, preserves explicit answer reveal
     await expect(
       page.getByRole("heading", { name: "Разбор интервью" }),
     ).toBeVisible();
-    await expect(page.locator(".platform-answer")).toHaveCount(
-      session.questionIds.length,
-    );
+    await expectCompactReview(page, session);
     await page.getByRole("link", { name: "← Все интервью" }).click();
   }
   await page.setViewportSize({ width: 390, height: 844 });
@@ -174,9 +173,7 @@ legacyTest(
           page.getByRole("heading", { name: "Разбор интервью" }),
         ).toBeVisible();
         await page.reload();
-        await expect(page.locator(".platform-answer")).toHaveCount(
-          session.questionIds.length,
-        );
+        await expectCompactReview(page, session);
         await page.getByRole("link", { name: "← Все интервью" }).click();
       }
     }

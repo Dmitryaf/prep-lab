@@ -775,6 +775,8 @@ checkOrder();
 
 Реализуйте deepCopy(obj). Изменения копии и исходного объекта должны быть независимы. Сначала согласуйте поддерживаемые типы, циклы и сохранение прототипа. Обсудите ограничения JSON-копирования и structuredClone.
 
+**Уточнение условия:** реализуйте рекурсивную deepCopy для примитивов, обычных объектов с Object.prototype или null-прототипом и обычных массивов из той же среды выполнения. Копируются собственные перечисляемые строковые свойства-данные; длина и пропуски массива сохраняются. Символьные ключи и неперечисляемые свойства в контракт не входят. Общие ссылки и циклы сохраняют структуру графа, но все поддерживаемые объекты копии должны отличаться от объектов исходника. Функции, экземпляры классов, Date/Map/Set и перечисляемые getters/setters отвергаются. Proxy и изменение исходника во время обхода исключены. Дескрипторы readonly/frozen не сохраняются: копия изменяемая. Не обещайте неограниченную глубину рекурсии.
+
 ```js
 function deepCopy(obj) {
   // Ваш код
@@ -800,6 +802,52 @@ console.assert(JSON.stringify(copyArr) === JSON.stringify(arr));
 
 > [!note]- Подсказка
 > проверка массива и объекта, typeof, instanceof и разные realms; символы, accessors, функции, Map/Set, Date и циклы.
+
+> [!example]- Рекурсивная копия с ограниченным контрактом
+>
+> Сначала отделяем примитив, затем создаём пустую копию контейнера. Таблица исходный объект → копия заполняется **до** обхода детей: повторная ссылка получает уже созданную копию. Поэтому цикл замыкается внутри нового графа, а общее поддерево не дублируется.
+>
+> ~~~js
+> // checked-example: bounded-deep-copy
+> function deepCopy(input) {
+>   const copies = new WeakMap();
+>   function clone(value) {
+>     if (typeof value === 'function') throw new TypeError('Functions are unsupported');
+>     if (value === null || typeof value !== 'object') return value;
+>     if (copies.has(value)) return copies.get(value);
+>
+>     const proto = Object.getPrototypeOf(value);
+>     const array = Array.isArray(value);
+>     if (array ? proto !== Array.prototype : proto !== Object.prototype && proto !== null) {
+>       throw new TypeError('Unsupported object prototype');
+>     }
+>     const result = array ? new Array(value.length) : Object.create(proto);
+>     copies.set(value, result);
+>     for (const key of Object.keys(value)) {
+>       const descriptor = Object.getOwnPropertyDescriptor(value, key);
+>       if (!Object.hasOwn(descriptor, 'value')) {
+>         throw new TypeError('Accessors are unsupported');
+>       }
+>       Object.defineProperty(result, key, {
+>         value: clone(descriptor.value),
+>         enumerable: true, writable: true, configurable: true,
+>       });
+>     }
+>     return result;
+>   }
+>   return clone(input);
+> }
+> ~~~
+>
+> Чтение дескриптора не вызывает getter. defineProperty создаёт собственное поле даже для ключа `__proto__`, не меняя прототип результата. Object.keys определяет границу свойств, которые мы копируем; это не копирование всех возможных свойств JavaScript-объекта.
+>
+> Инвариант: каждому уже встреченному контейнеру соответствует ровно одна новая копия. При обработке его свойства ссылка заменяется копией того же значения. Для V контейнеров и E просматриваемых свойств время O(V + E), результат и таблица требуют O(V + E) памяти; стек вызовов дополнительно зависит от максимальной глубины. Для чрезмерно глубокой цепочки рекурсивное решение всё ещё может переполнить стек — WeakMap решает циклы, а не эту проблему.
+>
+> Исправленная проверка исходного примера: `const copyNullProto = deepCopy(nullProto)` и `Object.getPrototypeOf(copyNullProto) === null`. Одного сравнения ссылок или JSON.stringify недостаточно: JSON не проверяет прототип, пропуски и структуру общих ссылок.
+>
+> Проверьте вложенный объект/массив, null, undefined и BigInt; независимость после изменения копии; общий дочерний объект; цикл; null-прототип; пропуск массива; собственный `__proto__`; отказ для Date и getter без запуска getter. Для реального приложения сначала выбирают подходящий стандартный механизм, а не расширяют этот учебный clone до всех типов.
+>
+> Источники: [Object.keys](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/keys), [перечисляемость и владение свойствами](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Enumerability_and_ownership_of_properties), [structuredClone](https://developer.mozilla.org/en-US/docs/Web/API/Window/structuredClone).
 
 > [!example]- Ограничения стандартных способов
 >

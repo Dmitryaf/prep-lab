@@ -2,6 +2,7 @@ import { required } from "#tests/helpers/values.ts";
 import type { Progress, Interview } from "#domain/interview/state.ts";
 import { readProgress } from "#tests/helpers/browser-progress.ts";
 import { test, expect } from "#tests/helpers/browser.ts";
+import { expectCompactReview } from "#tests/helpers/interview-review.ts";
 import { mkdir } from "node:fs/promises";
 
 test("interview navigation", async ({
@@ -130,9 +131,7 @@ test("interview navigation", async ({
   await page
     .getByRole("heading", { name: "Разбор интервью", exact: true })
     .waitFor();
-  await expect(page.locator(".platform-answer")).toHaveCount(
-    full.questionIds.length,
-  );
+  await expectCompactReview(page, full);
   expect(errors).toEqual([]);
   console.log(
     "PASS previous main/followup, first disabled, preserved ratings/review/skips/choices, reload, daily/full reveal rules, clean shell, keyboard and desktop/mobile",

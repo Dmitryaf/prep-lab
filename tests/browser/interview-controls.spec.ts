@@ -1,4 +1,5 @@
 import { resolve } from "node:path";
+import { expectCompactReview } from "#tests/helpers/interview-review.ts";
 import { test, expect } from "#tests/helpers/browser.ts";
 import {
   restoreProgressFixture,
@@ -124,7 +125,7 @@ for (const kind of ["daily", "full"] as const)
     await expect(
       page.getByRole("heading", { name: "Разбор интервью", exact: true }),
     ).toBeVisible();
-    await expect(page.locator(".platform-answer")).toHaveCount(2);
+    await expectCompactReview(page, session);
   });
 
 test("testing tasks are absent from practice including direct links and advanced practice, while theory remains", async ({

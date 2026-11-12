@@ -53,6 +53,8 @@ for (const viewport of sessions) {
     });
 
     await page.goto(base + "/#/interview");
+    if (viewport.width === 390)
+      await page.getByRole("button", { name: "Меню", exact: true }).click();
     await page.locator("#preparationProfile").selectOption(viewport.profile);
     await expect(page.locator("#platformMain")).toHaveAttribute(
       "aria-busy",

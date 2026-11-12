@@ -2,7 +2,7 @@
 import { canLeaveVoice } from "#ui/features/voice-input/index.ts";
 import { storeToRefs } from "pinia";
 
-import { computed, ref, onMounted, onUnmounted, watch } from "vue";
+import { computed, ref, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { usePreparation } from "#ui/entities/preparation/model/store.ts";
 import { useSettings } from "#ui/entities/preparation/model/settings.ts";
@@ -30,6 +30,8 @@ import PageHeading from "#ui/shared/ui/PageHeading.vue";
 const route = useRoute(),
   search = ref(""),
   searchInput = ref<HTMLInputElement>();
+const navigationOpen = ref(false);
+const navigationToggle = ref<HTMLButtonElement>();
 let interaction = 0,
   navigationInteraction = 0;
 const removeNavigationGuard = useRouter().beforeEach(() => {
@@ -78,7 +80,7 @@ const nav = [
   ["repeat", "Повторить"],
   ["prompts", "Промпты"],
 ];
-function keydown(event: KeyboardEvent) {
+async function keydown(event: KeyboardEvent) {
   interaction++;
   if (
     event.key === "/" &&
@@ -88,9 +90,18 @@ function keydown(event: KeyboardEvent) {
     !active.value
   ) {
     event.preventDefault();
+    navigationOpen.value = true;
+    await nextTick();
     searchInput.value?.focus();
   }
-  if (event.key === "Escape") search.value = "";
+  if (event.key === "Escape") {
+    search.value = "";
+    if (navigationOpen.value) {
+      navigationOpen.value = false;
+      if (navigationToggle.value?.getClientRects().length)
+        navigationToggle.value.focus();
+    }
+  }
 }
 async function changeProfile(event: Event) {
   if (!canLeaveVoice()) {
@@ -105,6 +116,7 @@ async function changeProfile(event: Event) {
 watch(
   () => route.fullPath,
   () => {
+    navigationOpen.value = false;
     if (interaction === navigationInteraction) {
       search.value = "";
       document.getElementById("platformMain")?.focus({ preventScroll: true });
@@ -127,7 +139,13 @@ onUnmounted(() => {
 </script>
 <template>
   <div class="platform-shell">
-    <header class="platform-header">
+    <header
+      class="platform-header"
+      :class="{
+        'is-interview': route.path === '/interview',
+        'is-navigation-open': navigationOpen,
+      }"
+    >
       <RouterLink class="platform-brand" to="/interview"
         ><svg
           class="platform-logo"
@@ -149,6 +167,16 @@ onUnmounted(() => {
           ></span
         ></RouterLink
       >
+      <button
+        v-if="route.path === '/interview'"
+        ref="navigationToggle"
+        class="platform-navigation-toggle"
+        :aria-expanded="navigationOpen"
+        aria-controls="platformNav platformProfile platformTools"
+        @click="navigationOpen = !navigationOpen"
+      >
+        Меню
+      </button>
       <nav id="platformNav" aria-label="Основные разделы">
         <RouterLink
           v-for="[id, label] in nav"
@@ -161,7 +189,11 @@ onUnmounted(() => {
           }}</span></RouterLink
         >
       </nav>
-      <div v-if="route.path !== '/intensive'" class="platform-profile">
+      <div
+        v-if="route.path !== '/intensive'"
+        id="platformProfile"
+        class="platform-profile"
+      >
         <label for="preparationProfile">Стек интервью</label>
         <select
           id="preparationProfile"
@@ -175,7 +207,7 @@ onUnmounted(() => {
           <option value="react">React</option>
         </select>
       </div>
-      <div class="platform-tools">
+      <div id="platformTools" class="platform-tools">
         <label class="platform-search-label" for="platformSearch"
           >Найти материал</label
         ><input
