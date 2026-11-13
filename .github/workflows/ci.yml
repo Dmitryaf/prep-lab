@@ -29,6 +29,11 @@ jobs:
         with:
           node-version: 24
           cache: npm
+      - name: Use canonical temporary paths
+        run: |
+          $taskTemp = node -p "require('node:fs').realpathSync.native(process.env.RUNNER_TEMP)"
+          "TEMP=$taskTemp" >> $env:GITHUB_ENV
+          "TMP=$taskTemp" >> $env:GITHUB_ENV
       - run: npm ci --ignore-scripts
       - run: npm rebuild better-sqlite3
       - run: npx playwright install chromium

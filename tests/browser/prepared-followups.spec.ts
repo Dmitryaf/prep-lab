@@ -197,7 +197,7 @@ test("prepared topic followups offer an independent answer through interview nav
     expect(answer).toBeTruthy();
     await page.locator('[data-action="followup-review"]').click();
     await expect(page.locator(".platform-answer")).toContainText(
-      answer!.split("\n")[0],
+      answer!.split("\n")[0]!.replace(/`([^`]+)`/g, "$1"),
     );
     expect(
       (await readProgress(page)).sessions[session.id].snapshots[question.id],
