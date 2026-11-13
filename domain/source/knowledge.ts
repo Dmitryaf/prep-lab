@@ -39,6 +39,7 @@ export function validateSourceLinks(knowledge: Knowledge, sourceId?: string) {
     (note) => !!note.sourceId && (!sourceId || note.sourceId === sourceId),
   )) {
     renderMarkdown(note.markdown, {
+      highlight: false,
       resolveLink(raw) {
         const target = resolveKnowledgeLink(raw, note.id, lookup, (id) => id);
         if (!target && errors.length < 20) errors.push(`${note.path}: ${raw}`);

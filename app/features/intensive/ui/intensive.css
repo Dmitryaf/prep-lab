@@ -48,11 +48,23 @@
 .intensive-workspace input:not([type="checkbox"]):not([type="radio"]),
 .intensive-workspace textarea {
   width: 100%;
-  background: var(--surface);
+  background: var(--paper);
   color: var(--ink);
-  border: 1px solid var(--line);
+  border: 1px solid #9aa9be;
   border-radius: 7px;
   padding: 11px 13px;
+}
+.intensive-workspace .answer-composer {
+  background: var(--paper);
+  border-color: #9aa9be;
+}
+.intensive-workspace .answer-composer textarea {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+.intensive-workspace .answer-composer:focus-within {
+  border-color: var(--accent);
 }
 .intensive-workspace textarea {
   resize: vertical;

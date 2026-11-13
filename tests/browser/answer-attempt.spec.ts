@@ -168,12 +168,17 @@ test("pre-reveal discussion excludes solutions and keeps prior revealed discussi
   await expect(preview).toContainText(hiddenQuestion.title);
   await expect(preview).not.toContainText("HIDDEN_");
   await expect(preview).not.toContainText("PREVIOUS_SOLUTION");
-  await expect(preview).toContainText("Дай одну наводящую подсказку");
+  await expect(preview).toContainText("Небольшая подсказка");
+  await expect(preview).toContainText("Сначала ответь на текущий вопрос");
+  await expect(preview).not.toContainText("Дай одну наводящую подсказку");
   await expect(page.locator(".study-message")).toHaveCount(0);
   await page.getByRole("button", { name: "Отправить", exact: true }).click();
   await expect(page.locator(".study-message.assistant")).toContainText(
     "Подумайте о входных данных.",
   );
+  await page
+    .getByRole("button", { name: "Закрыть обсуждение", exact: true })
+    .click();
   await page.locator("[data-action=session-next]").click();
   await page.locator('[data-action="result-toggle"]').first().click();
   await page

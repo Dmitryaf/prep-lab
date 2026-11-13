@@ -28,7 +28,11 @@ export function renderMarkdown(
   text: unknown,
   {
     resolveLink,
-  }: { resolveLink?: (target: string, label: string) => string | null } = {},
+    highlight = true,
+  }: {
+    resolveLink?: (target: string, label: string) => string | null;
+    highlight?: boolean;
+  } = {},
 ) {
   const lines = cleanEditorialNotes(
     String(text || "")
@@ -121,7 +125,7 @@ export function renderMarkdown(
         code.push(lines[i++]);
       if (i < lines.length) i++;
       const source = code.join("\n");
-      const highlighted = highlightCode(source, fence[2]);
+      const highlighted = highlight ? highlightCode(source, fence[2]) : null;
       html += `<pre tabindex="0" aria-label="Пример кода"><code>${highlighted ?? escapeHtml(source)}</code></pre>`;
       continue;
     }
@@ -131,7 +135,10 @@ export function renderMarkdown(
         quote.push(lines[i++].replace(/^> ?/, ""));
       const callout = /^\[!([\w-]+)\]([+-]?)(.*)$/.exec(quote[0]);
       if (callout) {
-        const body = renderMarkdown(quote.slice(1).join("\n"), { resolveLink });
+        const body = renderMarkdown(quote.slice(1).join("\n"), {
+          resolveLink,
+          highlight,
+        });
         const label =
           callout[3].trim() ||
           (
@@ -150,7 +157,7 @@ export function renderMarkdown(
             ? `<details class="md-callout"><summary>${inline(label)}</summary>${body}</details>`
             : `<aside class="md-callout"><strong>${inline(label)}</strong>${body}</aside>`;
       } else
-        html += `<blockquote>${renderMarkdown(quote.join("\n"), { resolveLink })}</blockquote>`;
+        html += `<blockquote>${renderMarkdown(quote.join("\n"), { resolveLink, highlight })}</blockquote>`;
       continue;
     }
     const identity = /^\*\*ID вопроса:\*\*\s*(\S[^\r\n]*)$/.exec(line);

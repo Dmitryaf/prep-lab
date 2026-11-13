@@ -18,7 +18,8 @@ export const useRepeat = defineStore("repeat", () => {
         next.daily[dailyKey(session.date, session.profile)] = updated;
       else next.sessions[session.id] = updated;
     }
-    if (await preparation.persist(next)) notices.notify("Отметка сохранена.");
+    if (await preparation.persist(next))
+      notices.notify("Отметка сохранена.", "success");
   }
   return { rate };
 });

@@ -127,7 +127,7 @@ test(
       projects.filter((q) =>
         ["lanit", "trajectory", "inbox"].includes(q.project || ""),
       ).length,
-      172,
+      174,
     );
     assert.equal(
       projects.length,

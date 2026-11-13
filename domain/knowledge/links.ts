@@ -3,6 +3,27 @@ import { canonicalNotePath } from "./path.ts";
 import { renderMarkdown, escapeHtml, headingId } from "./rendering.ts";
 import { isPublicLabResource } from "./labs.ts";
 
+// Link checks share note objects within a catalog. Render each Markdown revision
+// once, without code highlighting; replaced catalogs can be garbage collected.
+const headingCache = new WeakMap<
+  object,
+  { markdown: string; ids: Set<string> }
+>();
+function renderedHeadings(note: Pick<Note, "markdown">) {
+  const markdown = note.markdown;
+  const cached = headingCache.get(note);
+  if (cached?.markdown === markdown) return cached.ids;
+  const ids = new Set(
+    [
+      ...renderMarkdown(markdown, { highlight: false }).matchAll(
+        /\bid="([^"]+)"/g,
+      ),
+    ].map((match) => match[1]),
+  );
+  headingCache.set(note, { markdown, ids });
+  return ids;
+}
+
 export function materialHeading(note: Partial<Note>, heading: string) {
   const visited = new Set<string>();
   while (
@@ -62,12 +83,7 @@ export function resolveKnowledgeLink(
   if (resolvedHeading === null) return null;
   heading = resolvedHeading;
   // Use the renderer's own IDs, including qualified and callout headings.
-  if (
-    heading &&
-    !renderMarkdown(note.markdown).includes(
-      `id="${escapeHtml(headingId(heading))}"`,
-    )
-  )
+  if (heading && !renderedHeadings(note).has(escapeHtml(headingId(heading))))
     return null;
   return hrefFor(note.id, heading);
 }

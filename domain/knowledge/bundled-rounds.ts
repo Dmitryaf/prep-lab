@@ -21,6 +21,7 @@ function codingContract(question: PreparedQuestion): string {
 export function withBundledRounds(
   personal: Knowledge,
   shared: Knowledge,
+  retainedIds: readonly string[] = [],
 ): Knowledge {
   const existing = new Map(personal.questions.map((q) => [q.id, q]));
   const sharedQuestions = new Map(shared.questions.map((q) => [q.id, q]));
@@ -84,6 +85,17 @@ export function withBundledRounds(
         (existing.has(q.id) || roundNotes.has(q.noteId)),
     ),
   );
+  const activeIds = new Set(rounds.map((q) => q.id));
+  const retainedOnly = new Set<string>();
+  for (const id of new Set(retainedIds)) {
+    const question = sharedQuestions.get(id);
+    if (!question) throw new Error(`Сохранённый вопрос не найден: ${id}`);
+    if (activeIds.has(id)) continue;
+    // Historical links remain readable after a personal answer is completed.
+    // These aliases must not duplicate that answer in a new interview.
+    rounds.push(question);
+    retainedOnly.add(id);
+  }
   const bundledIds = new Set(rounds.map((q) => q.id));
   const scoped = (id: string) => `bundled-rounds/${id}`;
   const required = new Set(
@@ -99,6 +111,7 @@ export function withBundledRounds(
     const note = byId.get(id);
     if (!note) continue;
     renderMarkdown(note.markdown, {
+      highlight: false,
       resolveLink: (raw) =>
         resolveKnowledgeLink(
           raw,
@@ -157,6 +170,7 @@ export function withBundledRounds(
       }),
       ...rounds.map((q) => ({
         ...q,
+        ...(retainedOnly.has(q.id) ? { interviewEligible: false } : {}),
         id: `bundled-rounds:${q.id}`,
         ...(q.parentId && bundledIds.has(q.parentId)
           ? { parentId: `bundled-rounds:${q.parentId}` }

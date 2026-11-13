@@ -50,7 +50,7 @@ const removeNavigationGuard = useRouter().beforeEach(() => {
   navigationInteraction = interaction;
   navigationHadSearch = !!searchDialog.value?.open;
 });
-const pointerdown = () => {
+const recordInteraction = () => {
   interaction++;
 };
 const active = computed(
@@ -214,11 +214,14 @@ onMounted(() => {
   void instanceSettings.initialize();
   void fetchKnowledge();
   document.addEventListener("keydown", keydown);
-  document.addEventListener("pointerdown", pointerdown);
+  document.addEventListener("pointerdown", recordInteraction);
+  // A link focused while navigation finishes must keep the next keyboard action.
+  document.addEventListener("focusin", recordInteraction);
 });
 onUnmounted(() => {
   document.removeEventListener("keydown", keydown);
-  document.removeEventListener("pointerdown", pointerdown);
+  document.removeEventListener("pointerdown", recordInteraction);
+  document.removeEventListener("focusin", recordInteraction);
   closeSearch(false);
   removeNavigationGuard();
 });

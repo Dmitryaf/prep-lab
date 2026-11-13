@@ -135,6 +135,39 @@ test("a completed task supplements an unanswered legacy card without overwriting
   assert.equal(withBundledRounds(shared, shared).questions.length, 1);
 });
 
+test("retained supplements preserve old links after a personal answer is completed without entering new interviews", () => {
+  const shared = compileKnowledge([document("")]);
+  const personal = structuredClone(shared);
+  personal.questions[0].answer = "";
+  const old = withBundledRounds(personal, shared).questions[1];
+  personal.questions[0].answer = "Мой полный ответ";
+  const id = shared.questions[0].id;
+  for (const retired of [false, true]) {
+    if (retired) shared.questions[0].interviewEligible = false;
+    const combined = withBundledRounds(personal, shared, [id, id]);
+    assert.equal(combined.questions.length, 2);
+    assert.equal(combined.questions[0].answer, "Мой полный ответ");
+    const retained = combined.questions.find((q) => q.id === old.id)!;
+    assert(retained.answer);
+    assert.equal(retained.interviewEligible, false);
+    assert(combined.notes.some((note) => note.id === retained.noteId));
+    assert(
+      !selectInterview(combined.questions, "full", "day", [], {}, "vue").some(
+        (q) => q.id === old.id,
+      ),
+    );
+  }
+  assert.throws(
+    () => withBundledRounds(personal, shared, ["missing"]),
+    /Сохранённый вопрос/,
+  );
+  personal.questions[0].answer = "";
+  delete shared.questions[0].interviewEligible;
+  const active = withBundledRounds(personal, shared, [id]);
+  assert.equal(active.questions.length, 2);
+  assert.notEqual(active.questions[1].interviewEligible, false);
+});
+
 test("non-round supplements repair only known empty cards and never copy unrelated ready questions", () => {
   const shared = compileKnowledge([document("")]);
   const emptyPersonal = compileKnowledge([]);

@@ -236,7 +236,8 @@ test("discussion composer keeps dictation unsent and survives blocked navigation
   page,
 }) => {
   await microphone(page);
-  await page.goto(`${base}/#/practice`);
+  await page.goto(`${base}/#/interview`);
+  await page.getByRole("link", { name: "Практика", exact: true }).click();
   await page
     .getByRole("button", { name: "Обсудить с помощником", exact: true })
     .click();
@@ -249,23 +250,21 @@ test("discussion composer keeps dictation unsent and survives blocked navigation
   await input.fill("Вопрос про данные.");
   await record(voice, page);
   const title = await page.locator(".question-card h2").textContent();
-  await page.locator('[data-action="next-question"]').click();
+  await page
+    .getByRole("button", { name: "Закрыть обсуждение", exact: true })
+    .click();
   await expect(voice).toContainText(
     "Завершите диктовку или отмените запись перед переходом.",
   );
   await expect(page.locator(".question-card h2")).toHaveText(title!);
   await expect(page.locator("#practiceCategory")).toBeDisabled();
-  await page
-    .getByRole("button", { name: "Показать ответ", exact: true })
-    .click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).toBeVisible();
   await expect(
     voice.getByRole("button", { name: "Завершить запись", exact: true }),
   ).toBeVisible();
-  await page
-    .getByRole("link", { name: "Дополнительная практика", exact: true })
-    .click();
-  await expect(page).toHaveURL(`${base}/#/practice`);
-  await page.getByRole("link", { name: "Интервью", exact: true }).click();
+  await page.goBack();
   await expect(page).toHaveURL(`${base}/#/practice`);
   let reply: (() => Promise<void>) | undefined;
   await page.route("**/api/speech", async (route) => {
@@ -306,6 +305,12 @@ test("discussion composer keeps dictation unsent and survives blocked navigation
     voice.getByRole("button", { name: "Отправить", exact: true }),
   ).toBeEnabled();
   await expect(page.locator("#practiceCategory")).toBeEnabled();
+  await page
+    .getByRole("button", { name: "Закрыть обсуждение", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.locator('[data-action="next-question"]').click();
+  await expect(page.locator(".question-card h2")).not.toHaveText(title!);
 });
 
 test("text remains editable and saved without an installed speech engine", async ({

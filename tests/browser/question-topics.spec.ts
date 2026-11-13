@@ -26,7 +26,7 @@ test("topics are visible before the solution and navigation preserves the select
   );
   const initial = await readProgress(page);
   await page.evaluate(() => window.scrollTo(0, 0));
-  const main = await page.locator(".question-card").boundingBox();
+  const main = await page.locator(".question-workspace-main").boundingBox();
   const sidebar = await topics.boundingBox();
   expect(sidebar!.x).toBeGreaterThan(main!.x + main!.width);
   expect(Math.abs(sidebar!.y - main!.y)).toBeLessThanOrEqual(2);
@@ -66,7 +66,9 @@ test("reading theory during a full interview keeps its position without revealin
   await page.goto(base + "/#/interview");
   await page.locator('input[value="coding"]').check();
   await page.locator('[data-action="full"]:enabled').click();
-  const topics = page.getByRole("complementary", { name: "Полезные темы" });
+  const topics = page.getByRole("complementary", {
+    name: "Материалы к вопросу",
+  });
   await expect(topics).toBeVisible();
   const initial = await readProgress(page);
   await topics.getByRole("link").first().click();

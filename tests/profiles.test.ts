@@ -13,10 +13,10 @@ import { loadState, validateState } from "#domain/interview/saved-state.ts";
 const common = loadCommonKnowledge();
 test("the complete common base contains no owner materials and retains stable question identities", () => {
   assert.equal(common.notes.length, 219);
-  assert.equal(common.questions.length, 586);
+  assert.equal(common.questions.length, 592);
   assert.equal(
     new Set(common.questions.map((question) => question.id)).size,
-    586,
+    592,
   );
   assert(
     !/Dmitryaf|МЭДО|Inbox Point|Trajectory|Landocs|Docshouse|cokr/i.test(

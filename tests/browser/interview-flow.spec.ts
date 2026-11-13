@@ -1,4 +1,10 @@
-import { ownerAvailable, ownerCatalog } from "#tests/helpers/owner-package.ts";
+import {
+  ownerAvailable,
+  ownerCatalog,
+  highlightedCode,
+  sourceUrl,
+} from "#tests/helpers/owner-package.ts";
+import { codePresentation } from "#domain/projects/code.ts";
 import { required } from "#tests/helpers/values.ts";
 import type { Knowledge } from "#domain/knowledge/material.ts";
 import type { Progress } from "#domain/interview/state.ts";
@@ -42,10 +48,12 @@ test("interview flow", async ({ app: { base }, page, pageErrors: errors }) => {
   expect((await state()).questionProgress[id].status).toBe("partial");
   // Reach a project, open its source map and inspect actual code references in the native project view.
   const projectIndex = first.questionIds.findIndex(
-    (id) =>
-      first.snapshots[id].kind === "project" &&
-      !!ownerCatalog.repositories[first.snapshots[id].project || ""],
+    (id) => first.snapshots[id].kind === "project",
   );
+  expect(
+    projectIndex,
+    "daily includes a project from the loaded catalog",
+  ).toBeGreaterThanOrEqual(0);
   for (let i = 0; i < projectIndex; i++)
     await page.locator("[data-action=session-skip]").click();
   await page.locator("[data-action=session-review]").click();
@@ -60,12 +68,37 @@ test("interview flow", async ({ app: { base }, page, pageErrors: errors }) => {
   expect(
     (await frame.locator("body").innerText()).includes("Реализация"),
   ).toBeTruthy();
-  const code = frame.locator(".code-step a").first();
-  await code.scrollIntoViewIfNeeded();
-  await expect(code).toBeVisible();
-  expect(await code.getAttribute("href")).toMatch(
-    /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/blob\/[a-f0-9]+\/.+#L\d+/,
+  const topic = required(
+    ownerCatalog.topics.find(
+      (item) => item.id === first.snapshots[projectId].topicId,
+    ),
   );
+  const step = required(
+    highlightedCode(topic.pilot)?.[0]?.step || topic.pilot.code.steps[0],
+  );
+  const code = frame.locator(".code-step").first();
+  await code.scrollIntoViewIfNeeded();
+  await expect(code.locator(".code-path")).toContainText(
+    `${step.path}:${step.line}`,
+  );
+  const remote = sourceUrl(step, topic.pilot.sourceRevision);
+  if (remote) {
+    await expect(code.locator("a.code-path")).toHaveAttribute("href", remote);
+    expect(remote).toMatch(
+      /^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/blob\/[a-f0-9]+\/.+#L\d+/,
+    );
+  } else {
+    await expect(code.locator('[data-action="copy-source"]')).toBeVisible();
+    const preview = required(codePresentation(step).preview);
+    await code.getByText("Показать код", { exact: true }).click();
+    const sourceLines = preview.text.split("\n");
+    await expect(code.locator(".code-line code")).toHaveText(
+      sourceLines.map((line) => line || " "),
+    );
+    await expect(code.locator(".code-line-number")).toHaveText(
+      sourceLines.map((_, index) => String(preview.startLine + index)),
+    );
+  }
   await page.screenshot({
     path: "artifacts/interview-fixes/project-code.png",
     fullPage: true,
@@ -122,17 +155,20 @@ test("interview flow", async ({ app: { base }, page, pageErrors: errors }) => {
     ).size,
   ).toBeGreaterThanOrEqual(2);
   await expect(page.locator("[data-action=session-review]")).toBeVisible();
-  let steps = 0;
-  while (await page.locator("[data-action=session-next]").count()) {
-    expect(++steps <= 20).toBeTruthy();
+  for (let steps = 1; steps <= full.questionIds.length; steps++) {
     await expect(page.locator(".platform-answer")).toHaveCount(0);
     await page.locator("[data-action=session-next]").click();
+    await expect
+      .poll(async () => {
+        const saved = (await state()).sessions[full.id];
+        return saved.finished ? full.questionIds.length : saved.index;
+      })
+      .toBe(steps);
     if (steps === 5) {
       await page.reload();
       await page.locator("[data-action=session-next]").waitFor();
     }
   }
-  expect(steps).toBe(20);
   await expectCompactReview(
     page,
     Object.values((await state()).sessions).at(-1)!,

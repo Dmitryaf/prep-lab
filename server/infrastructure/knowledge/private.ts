@@ -23,31 +23,43 @@ export const privateNoteSchema = z.strictObject({
 });
 export type PrivateNote = z.infer<typeof privateNoteSchema>;
 
-// Optional metadata belongs to the configured personal vault, never bundled assets.
-export function loadPrivateKnowledge(root: string) {
-  const path = join(resolve(root), "private-notes.json");
-  let metadata: PrivateNote[] = [];
+function privateMetadata(root: string, name: string): unknown {
+  const path = join(resolve(root), name);
   try {
     const entry = lstatSync(path);
     const key = (value: string) =>
       process.platform === "win32" ? value.toLowerCase() : value;
     if (
       !entry.isFile() ||
+      entry.size > 1_000_000 ||
       entry.isSymbolicLink() ||
       key(realpathSync(path)) !== key(path)
     )
       throw new Error(
         "Метаданные личных материалов должны быть обычным файлом.",
       );
-    metadata = z
-      .array(privateNoteSchema)
-      .max(2000)
-      .parse(JSON.parse(readFileSync(path, "utf8")));
-    if (new Set(metadata.map((note) => note.path)).size !== metadata.length)
-      throw new Error("Повторяется путь личного материала.");
+    return JSON.parse(readFileSync(path, "utf8"));
   } catch (error) {
     if (!(error instanceof Error && "code" in error && error.code === "ENOENT"))
       throw error;
+    return [];
   }
+}
+
+export function loadRetainedBundledQuestions(root: string): string[] {
+  return z
+    .array(z.string().min(1).max(2048))
+    .max(2000)
+    .parse(privateMetadata(root, "retained-bundled-questions.json"));
+}
+
+// Optional metadata belongs to the configured personal vault, never bundled assets.
+export function loadPrivateKnowledge(root: string) {
+  const metadata = z
+    .array(privateNoteSchema)
+    .max(2000)
+    .parse(privateMetadata(root, "private-notes.json"));
+  if (new Set(metadata.map((note) => note.path)).size !== metadata.length)
+    throw new Error("Повторяется путь личного материала.");
   return loadKnowledge(root, metadata);
 }

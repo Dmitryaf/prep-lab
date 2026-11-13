@@ -23,7 +23,15 @@ const concepts: Array<[RegExp, string[]]> = [
   ],
   [
     /debounce|throttle|автосохран|черновик|draft/i,
-    ["debounce", "throttle", "draft", "autosave", "setTimeout"],
+    [
+      "debounce",
+      "throttle",
+      "draft",
+      "autosave",
+      "setTimeout",
+      "save",
+      "persist",
+    ],
   ],
   [
     /reactiv|реактив|computed|watch/i,
@@ -31,6 +39,9 @@ const concepts: Array<[RegExp, string[]]> = [
   ],
   [/замыкан|closure/i, ["setTimeout", "addEventListener", "useCallback"]],
 ];
+const slotConsumerPattern =
+  /(?:v-slot|<template\s+#[\w-]+)\s*(?::[^=\s]+)?\s*=/s;
+const slotProviderPattern = /<slot\b[^>]*:[\w-]+/s;
 function requestContext(raw: string) {
   try {
     const value = JSON.parse(raw);
@@ -95,8 +106,13 @@ export function projectDiscussionContext(dependencies: Dependencies) {
           ? [current.project]
           : [],
     );
-    const matches: Array<{ material: Material; score: number; key: string }> =
-      [];
+    const matches: Array<{
+      material: Material;
+      score: number;
+      key: string;
+      slotConsumer: boolean;
+      slotProvider: boolean;
+    }> = [];
     const statuses: Array<{ source: string; status: string }> = [];
     function consider(
       project: string,
@@ -111,33 +127,107 @@ export function projectDiscussionContext(dependencies: Dependencies) {
       const lower = text.toLowerCase();
       const hits = aliases.filter((word) => lower.includes(word));
       const terms = words.filter((word) => lower.includes(word));
+      const slotConsumer = slotExample && slotConsumerPattern.test(text);
       const scopedSlot =
-        slotExample &&
-        /<slot\b[^>]*:[\w-]+|v-slot|<template\s+#\w+\s*=/s.test(text);
+        slotExample && (slotProviderPattern.test(text) || slotConsumer);
       const score =
         hits.length * 10 +
         terms.length +
         boost +
         (scopedSlot ? 30 : 0) -
         (/(?:test|spec|fixture)/i.test(path) ? 10 : 0);
-      if (aliases.length ? !hits.length : !terms.length) return;
+      if (!slotConsumer && (aliases.length ? !hits.length : !terms.length))
+        return;
       const lines = text.split(/\r?\n/);
-      const first = Math.max(
-        0,
-        lines.findIndex((line) =>
-          (hits.length ? hits : terms).some((word) =>
-            line.toLowerCase().includes(word),
-          ),
-        ) - 8,
-      );
-      const excerpt = lines
-        .slice(first, first + 90)
-        .map((line, index) => `${startLine + first + index}: ${line}`)
-        .join("\n")
-        .slice(0, 10000);
+      // State declarations can precede the behavior by hundreds of lines.
+      // Select bounded windows around actual handlers and slot bindings too.
+      const ranked = lines
+        .map((line, index) => {
+          const lowerLine = line.toLowerCase();
+          const count = (hits.length ? hits : terms).filter((word) =>
+            lowerLine.includes(word),
+          ).length;
+          const slot =
+            slotExample &&
+            /<slot\b|v-slot|<template\s+#[\w-]+\s*=|^\s*#[\w-]+\s*=/.test(line);
+          const handler =
+            count > 0 &&
+            /(?:function\s|(?:const|let)\s+\w+\s*=\s*(?:async\s*)?\(|watch\s*\()/i.test(
+              line,
+            );
+          const persistence =
+            count > 0 &&
+            /(?:function\s+\w*(?:save|persist)\w*|(?:await\s+)?\w+\.(?:save|persist|remove)\w*\s*\()/i.test(
+              line,
+            );
+          const method =
+            count > 0 &&
+            /^\s*(?:async\s+)?(?:save|persist|remove)\w*\s*\([^;]*\)\s*(?::[^={]+)?\s*\{/i.test(
+              line,
+            );
+          return {
+            index,
+            score:
+              count +
+              (slot ? 40 : 0) +
+              (handler ? 10 : 0) +
+              (persistence ? 20 : 0) +
+              (method ? 35 : 0),
+          };
+        })
+        .filter((item) => item.score > 0)
+        .sort((a, b) => b.score - a.score || a.index - b.index);
+      const ranges: Array<{ start: number; end: number; hit: number }> = [];
+      for (const hit of ranked) {
+        if (
+          ranges.some(
+            (range) => hit.index >= range.start && hit.index < range.end,
+          )
+        )
+          continue;
+        const start = Math.max(0, hit.index - 8);
+        ranges.push({
+          start,
+          end: Math.min(lines.length, start + 75),
+          hit: hit.index,
+        });
+        if (ranges.length === 3) break;
+      }
+      // Spend the character budget by relevance before restoring source order.
+      // A long earlier window must not truncate the selected handler at the end.
+      const selectedIndices = new Set<number>();
+      let remaining = 14000;
+      const addLine = (index: number) => {
+        if (selectedIndices.has(index)) return;
+        // Reserve the line separator and an omission marker for every line.
+        const cost = `${startLine + index}: ${lines[index]}`.length + 3;
+        if (cost > remaining) return;
+        selectedIndices.add(index);
+        remaining -= cost;
+      };
+      for (const range of ranges) {
+        addLine(range.hit);
+        for (let index = range.hit + 1; index < range.end; index++)
+          addLine(index);
+        for (let index = range.hit - 1; index >= range.start; index--)
+          addLine(index);
+      }
+      const selectedLines = [...selectedIndices].sort((a, b) => a - b);
+      const selectedSource = selectedLines
+        .map((index) => lines[index])
+        .join("\n");
+      const first = selectedLines[0] || 0;
+      const excerpt = selectedLines
+        .map(
+          (index, position) =>
+            `${position && index > selectedLines[position - 1]! + 1 ? "…\n" : ""}${startLine + index}: ${lines[index]}`,
+        )
+        .join("\n");
       matches.push({
         score,
         key: project + ":" + path,
+        slotConsumer: slotExample && slotConsumerPattern.test(selectedSource),
+        slotProvider: slotExample && slotProviderPattern.test(selectedSource),
         material: {
           id: `project-code:${project}:${path}`.slice(0, 2048),
           path: `${project}/${path}:${startLine + first}`.slice(0, 1024),
@@ -235,8 +325,23 @@ export function projectDiscussionContext(dependencies: Dependencies) {
       }
     }
     const seen = new Set<string>();
-    const found = matches
+    const rankedMatches = matches
       .sort((a, b) => b.score - a.score || a.key.localeCompare(b.key))
+      .filter((match) => {
+        if (seen.has(match.key)) return false;
+        seen.add(match.key);
+        return true;
+      });
+    // Keep both sides of the slot contract when available. Many providers must
+    // not crowd out the consumer (or vice versa) at the six-fragment boundary.
+    const preferred = slotExample
+      ? [
+          rankedMatches.find((match) => match.slotProvider),
+          rankedMatches.find((match) => match.slotConsumer),
+        ].filter((match) => match !== undefined)
+      : [];
+    seen.clear();
+    const found = [...preferred, ...rankedMatches]
       .filter((match) => {
         if (seen.has(match.key)) return false;
         seen.add(match.key);

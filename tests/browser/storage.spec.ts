@@ -17,7 +17,7 @@ test("a corrupt browser record stays untouched and blocks automatic writes", asy
     "Прежние данные браузера повреждены",
   );
   const before = await readProgress(page);
-  await page.locator("[data-action=daily]").click();
+  await expect(page.locator("[data-action=daily]")).toBeDisabled();
   expect(await readProgress(page)).toEqual(before);
   expect(
     await page.evaluate((key) => localStorage.getItem(key), storageKey),

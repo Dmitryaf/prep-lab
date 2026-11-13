@@ -1,5 +1,6 @@
 import { test, expect } from "#tests/helpers/browser.ts";
 import { readProgress } from "#tests/helpers/browser-progress.ts";
+import { expectCompactReview } from "#tests/helpers/interview-review.ts";
 import { supportsQuestion } from "#domain/knowledge/profile.ts";
 import { mkdir } from "node:fs/promises";
 
@@ -51,13 +52,15 @@ test("a clean instance prepares both profiles, preserves separate daily snapshot
     await expect(page.locator(".platform-answer")).toHaveCount(0);
     await page.locator("[data-action=session-next]").click();
   }
-  await expect(page.locator(".platform-answer")).toHaveCount(20);
+  const completed = await readProgress(page);
+  await expectCompactReview(page, completed.sessions[completed.activeSession!]);
   await page.reload();
   await expect(page.locator("#preparationProfile")).toHaveValue("vue");
   expect((await readProgress(page)).daily[react.date + ":react"]).toEqual(
     preserved,
   );
   await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: "Меню", exact: true }).click();
   await page.locator('#platformNav a[href="#/projects"]').click();
   await expect(
     page.getByRole("heading", { name: "Добавьте свой проект" }),

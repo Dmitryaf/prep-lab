@@ -35,7 +35,7 @@ test("a clean instance starts practical rounds, preserves explicit answer reveal
     await expect(page.locator(".platform-answer")).toHaveCount(0);
     await expect(page.locator(".question-source")).toHaveCount(0);
     await expect(
-      page.getByRole("complementary", { name: "Полезные темы" }),
+      page.getByRole("complementary", { name: "Материалы к вопросу" }),
     ).toBeVisible();
     await expect(
       page.getByRole("textbox", { name: "Моя попытка", exact: true }),

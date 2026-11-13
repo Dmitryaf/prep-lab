@@ -70,7 +70,7 @@ export const usePreparation = defineStore("preparation", () => {
     saveError.value = "";
     if (!ready.value || loadError.value || saving.value) {
       saveError.value = loadError.value || "Подождите завершения сохранения.";
-      notices.notify(saveError.value);
+      notices.notify(saveError.value, "error");
       return false;
     }
     saving.value = true;
@@ -90,7 +90,7 @@ export const usePreparation = defineStore("preparation", () => {
         cause instanceof Error
           ? cause.message
           : "Изменение не сохранено. Прежняя запись сохранена.";
-      notices.notify(saveError.value);
+      notices.notify(saveError.value, "error");
       return false;
     } finally {
       saving.value = false;

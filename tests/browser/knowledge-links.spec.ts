@@ -1,6 +1,15 @@
 import { test, expect } from "#tests/helpers/browser.ts";
 import { mkdir } from "node:fs/promises";
 import { headingId } from "#ui/entities/material/lib/markdown.ts";
+import type { Router } from "vue-router";
+
+type NavigationWindow = typeof window & {
+  knowledgeNavigation: {
+    entered: boolean;
+    release: () => void;
+    finished: Promise<void>;
+  };
+};
 
 const sourceId = "Фронтенд/JavaScript/Навигация";
 const targetId = "Фронтенд/JavaScript/Материал с пробелами";
@@ -39,6 +48,77 @@ const bank = {
   route: [],
   warnings: [],
 };
+
+test("returning navigation keeps a newly focused material link", async ({
+  app: { base },
+  page,
+}) => {
+  await page.route("**/api/knowledge", (route) =>
+    route.fulfill({ json: bank }),
+  );
+  await page.goto(base + "/#/themes?note=" + encodeURIComponent(sourceId));
+  await page
+    .getByRole("link", { name: "Локальный раздел", exact: true })
+    .click();
+  await expect(page.locator("#platformMain")).toBeFocused();
+
+  // Hold navigation after its guards started, before the route watcher runs.
+  // This reproduces focus chosen during navigation without a timing-based sleep.
+  await page.evaluate(() => {
+    const root = document.getElementById("__nuxt") as HTMLElement & {
+      __vue_app__: { config: { globalProperties: { $router: Router } } };
+    };
+    const router = root.__vue_app__.config.globalProperties.$router;
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let finished!: () => void;
+    const state = {
+      entered: false,
+      release,
+      finished: new Promise<void>((resolve) => {
+        finished = resolve;
+      }),
+    };
+    (window as NavigationWindow).knowledgeNavigation = state;
+    const removeGuard = router.beforeResolve(async () => {
+      state.entered = true;
+      await gate;
+      removeGuard();
+    });
+    const removeAfter = router.afterEach(() => {
+      removeAfter();
+      finished();
+    });
+  });
+  await page.goBack();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => (window as NavigationWindow).knowledgeNavigation.entered,
+      ),
+    )
+    .toBe(true);
+  const link = page.getByRole("link", {
+    name: "Относительная заметка",
+    exact: true,
+  });
+  await link.focus();
+  await page.evaluate(async () => {
+    const state = (window as NavigationWindow).knowledgeNavigation;
+    state.release();
+    await state.finished;
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => resolve()),
+    );
+  });
+  await expect(link).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("heading", { name: "Учебный материал", exact: true }),
+  ).toBeVisible();
+});
 
 test("knowledge links", async ({ app: { base }, browser }) => {
   await mkdir("artifacts/final-check", { recursive: true });

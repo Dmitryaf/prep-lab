@@ -1,4 +1,7 @@
-import { loadPrivateKnowledge } from "#server/infrastructure/knowledge/private.ts";
+import {
+  loadPrivateKnowledge,
+  loadRetainedBundledQuestions,
+} from "#server/infrastructure/knowledge/private.ts";
 import { lstatSync } from "node:fs";
 import { join } from "node:path";
 import { ownerPackagePath } from "#server/infrastructure/projects/catalog.ts";
@@ -16,9 +19,13 @@ export async function readKnowledge({
   common?: () => Knowledge | Promise<Knowledge>;
 } = {}) {
   const shared = await common();
-  const withProfiles = (knowledge: Knowledge) =>
-    withBundledRounds(knowledge, shared);
-  if (knowledgeRoot) return withProfiles(loadPrivateKnowledge(knowledgeRoot));
+  const withProfiles = (root: string) =>
+    withBundledRounds(
+      loadPrivateKnowledge(root),
+      shared,
+      loadRetainedBundledQuestions(root),
+    );
+  if (knowledgeRoot) return withProfiles(knowledgeRoot);
   if (projectPackageRoot !== null) {
     let present = false;
     try {
@@ -34,10 +41,7 @@ export async function readKnowledge({
       ))
         throw error;
     }
-    if (present)
-      return withProfiles(
-        loadPrivateKnowledge(join(projectPackageRoot, "knowledge")),
-      );
+    if (present) return withProfiles(join(projectPackageRoot, "knowledge"));
   }
   return shared;
 }

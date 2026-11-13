@@ -93,7 +93,7 @@ export const useAnswerAttempts = defineStore("answer-attempts", () => {
         draft.baselineText = attempt.text;
         draft.baselineUrl = attempt.solutionUrl;
         draft.saved = true;
-        notices.notify("Попытка сохранена.");
+        notices.notify("Попытка сохранена.", "success");
       } else
         draft.error =
           preparation.saveError ||

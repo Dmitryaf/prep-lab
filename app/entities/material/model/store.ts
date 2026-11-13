@@ -42,6 +42,7 @@ export const useMaterials = defineStore("materials", () => {
           notices.notify(
             "Некоторые материалы требуют внимания: " +
               data.warnings.slice(0, 2).join(" "),
+            "info",
           );
       } catch {
         unavailable.value =
